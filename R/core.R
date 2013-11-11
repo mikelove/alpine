@@ -16,19 +16,17 @@ addGRangesAtZero <- function(x) {
 exonCoverage <- function(x, gene, addZero=TRUE) {
   x <- sort(x)
   gene <- reduce(sort(gene))
-  z <- lapply(seq_along(gene), function(i) {
-    shiftedGR <- shift(x[x %over% gene[i]], 
-                       -start(gene[i]) + 
-                         ifelse(i==1,1,sum(width(gene[seq_len(i-1)]))))
-    if (addZero) {
-      return(c(shiftedGR, GRanges(seqnames(x)[1],
-                                  IRanges(sum(width(gene[seq_len(i)])),width=0),
-                                  score=0)))
-    } else {
-      return(shiftedGR) 
-    }
-  })
-  do.call(c,z)
+  fo <- findOverlaps(x,gene)
+  shiftAmount <- -start(gene) + c(1,cumsum(width(gene))[-length(gene)])
+  z <- shift(x[queryHits(fo)], shiftAmount[subjectHits(fo)])
+  if (!addZero) {
+    return(z)
+  } else {
+    zero <- GRanges(seqnames(x)[1],
+                    IRanges(cumsum(width(gene))[-length(gene)],width=0),
+                    score=rep(0,length(gene)-1))
+    return(sort(c(z,zero)))
+  } 
 }
 
 GRangesCoverageToNumericCoverage <- function(x, gene) {
