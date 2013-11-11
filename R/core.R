@@ -17,8 +17,12 @@ exonCoverage <- function(x, gene, addZero=TRUE) {
   x <- sort(x)
   gene <- reduce(sort(gene))
   fo <- findOverlaps(x,gene)
-  shiftAmount <- -start(gene) + c(1,cumsum(width(gene))[-length(gene)])
-  z <- shift(x[queryHits(fo)], shiftAmount[subjectHits(fo)])
+  xR <- restrict(x[queryHits(fo)], 
+                 start=start(gene)[subjectHits(fo)],
+                 end=end(gene)[subjectHits(fo)])
+  foR <- findOverlaps(xR, gene)
+  shiftAmount <- -start(gene) + c(0,cumsum(width(gene))[-length(gene)]) + 1
+  z <- shift(xR[queryHits(foR)], shiftAmount[subjectHits(foR)])
   if (!addZero) {
     return(z)
   } else {
@@ -29,12 +33,14 @@ exonCoverage <- function(x, gene, addZero=TRUE) {
   } 
 }
 
+# takes GRanges and returns data.frame of base by base coverage
 GRangesCoverageToNumericCoverage <- function(x, gene) {
+  if (length(x) == 0) return(data.frame(x=numeric(0),y=numeric(0)))
   totalWidth <- sum(width(gene))
   strand <- as.character(strand(gene)[1])
   d0 <- data.frame(x=start(x), y=mcols(x)$score)
   lastPos <- d0$x[length(d0$x)]
-  widths <- c(d0$x, lastPos, totalWidth) - c(1, d0$x, lastPos)
+  widths <- c(d0$x, lastPos+1, totalWidth+1) - c(0, d0$x, lastPos)
   rlex <- Rle(values=c(0,d0$y,0), lengths=widths)
   if (strand == "-") {
     y <- rev(as.numeric(rlex))
