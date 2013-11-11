@@ -33,7 +33,10 @@ exonCoverage <- function(x, gene, addZero=TRUE) {
   } 
 }
 
-# takes GRanges and returns data.frame of base by base coverage
+# takes a GRanges x and a GRanges gene
+# returns a data.frame of base by base coverage along exons
+# from TSS continuing downstream, i.e. negative strand genes 
+# have the wiggle flipped
 GRangesCoverageToNumericCoverage <- function(x, gene) {
   if (length(x) == 0) return(data.frame(x=numeric(0),y=numeric(0)))
   totalWidth <- sum(width(gene))
@@ -47,5 +50,5 @@ GRangesCoverageToNumericCoverage <- function(x, gene) {
   } else {
     y <- as.numeric(rlex)
   }
-  data.frame(x=seq_len(totalWidth-1), y=y)
+  data.frame(x=seq_along(y), y=y)
 }
