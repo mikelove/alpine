@@ -5,7 +5,7 @@ addGRangesAtZero <- function(x) {
   x <- sort(x)
   idx <- which(start(x)[-1] != end(x)[-length(x)] + 1)
   zeros <- GRanges(seqnames(x)[1],
-                   IRanges(c(end(x)[idx] + 1,start(x)[idx+1] - 1),width=0),
+                   IRanges(c(end(x)[idx] + 1,start(x)[idx+1] - 1),width=1),
                  score=rep(0,2*length(idx)))
   sort(c(x,zeros))
 }
@@ -27,7 +27,7 @@ exonCoverage <- function(x, gene, addZero=TRUE) {
     return(z)
   } else {
     zero <- GRanges(seqnames(x)[1],
-                    IRanges(cumsum(width(gene))[-length(gene)],width=0),
+                    IRanges(cumsum(width(gene))[-length(gene)],width=1),
                     score=rep(0,length(gene)-1))
     return(sort(c(z,zero)))
   } 
@@ -40,15 +40,25 @@ exonCoverage <- function(x, gene, addZero=TRUE) {
 GRangesCoverageToNumericCoverage <- function(x, gene) {
   if (length(x) == 0) return(data.frame(x=numeric(0),y=numeric(0)))
   totalWidth <- sum(width(gene))
+  x <- restrict(x,start=1,end=totalWidth)
   strand <- as.character(strand(gene)[1])
-  d0 <- data.frame(x=start(x), y=mcols(x)$score)
-  lastPos <- d0$x[length(d0$x)]
-  widths <- c(d0$x, lastPos+1, totalWidth+1) - c(0, d0$x, lastPos)
-  rlex <- Rle(values=c(0,d0$y,0), lengths=widths)
-  if (strand == "-") {
-    y <- rev(as.numeric(rlex))
+  firstPos <- start(x)[1]
+  lastPos <- end(x)[length(x)]
+  if (firstPos == 1 & lastPos == totalWidth) {
+    rlex <- Rle(values=mcols(x)$score, lengths=width(x))
+  } else if (firstPos == 1) {
+    widths <- c(width(x), totalWidth - lastPos)
+    rlex <- Rle(values=c(mcols(x)$score, 0), lengths=widths)
+  } else if (lastPos == totalWidth) {
+    widths <- c(firstPos - 1, width(x))
+    rlex <- Rle(values=c(0, mcols(x)$score), lengths=widths)
   } else {
-    y <- as.numeric(rlex)
+    widths <- c(firstPos - 1, width(x), totalWidth - lastPos)
+    rlex <- Rle(values=c(0, mcols(x)$score, 0), lengths=widths)
   }
-  data.frame(x=seq_along(y), y=y)
+  if (strand == "-") {
+    return(rev(as.numeric(rlex)))
+  } else {
+    return(as.numeric(rlex))
+  }
 }
