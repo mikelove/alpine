@@ -1,0 +1,158 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{alpine}
+-->
+
+# Modeling and correcting fragment sequence bias
+
+Here we show a brief example of using the *alpine* package to model
+bias parameters and then using those parameters to estimate transcript
+abundance. The core *alpine* functions will soon be be wrapped into
+convenience functions. First, load some small, subset BAM files from
+the *airway* package. 
+
+```{r, echo=FALSE} 
+library(knitr)
+opts_chunk$set(cache=FALSE)
+```
+
+```{r, message=FALSE}
+library(airway)
+library(GenomicAlignments)
+library(GenomicFeatures)
+```
+
+```{r}
+dir <- system.file("extdata", package="airway")
+list.files(dir)
+bamfiles <- list.files(dir, "bam$", full=TRUE)
+names(bamfiles) <- sub("(.*)_subset.bam","\\1",basename(bamfiles))
+bamfiles[1]
+```
+
+These are reads from a small region.
+
+```{r}
+ga <- readGAlignments(bamfiles[1])
+range(ranges(ga))
+```
+
+To fit the bias model, we need to identify transcripts which belong to
+single-isoform genes.
+
+```{r}
+gtffile <- file.path(dir,"Homo_sapiens.GRCh37.75_subset.gtf")
+txdb <- makeTxDbFromGFF(gtffile, format="gtf", circ_seqs=character())
+geneids <- keys(txdb, "GENEID")
+txdf <- select(txdb, columns=c("TXNAME","TXID"), keys=geneids, keytype="GENEID")
+# normally, we would pick a set of single isoform genes
+tab <- table(txdf$GENEID)
+single.tx.genes <- names(tab)[tab == 1]
+single.txs <- sort(txdf$TXID[txdf$GENEID %in% single.tx.genes])
+# this dataset is too small, so we pick one tx per gene (not recommended)
+txs <- sort(sapply(split(txdf$TXID, txdf$GENEID), `[`, 1))
+ebt <- exonsBy(txdb, "tx")
+ebt <- ebt[txs]
+```
+
+These transcripts should have medium to high coverage.
+
+```{r}
+so <- summarizeOverlaps(ebt, bamfiles, singleEnd=FALSE)
+ebt <- ebt[apply(assay(so),1,min) > 50]
+so <- summarizeOverlaps(ebt, bamfiles, singleEnd=FALSE)
+assay(so)
+```
+
+An example of fitting the bias model. Here, we don't have enough data
+to properly fit the model because these BAM files are too small of a subset.
+We demonstrate the functions nevertheless and plan to create a small
+demonstration dataset in the meantime. Robust fitting of these bias
+parameters requires 50 or more medium to highly expressed genes.
+
+```{r}
+library(alpine)
+library(BSgenome.Hsapiens.UCSC.hg19)
+seqlevelsStyle(Hsapiens) <- "NCBI" # because the BAMs are NCBI-style
+genenames <- names(ebt)
+names(genenames) <- genenames
+# list of fragment types for each single-isoform gene
+fragtypes <- lapply(genenames, function(gene) {
+               buildFragtypesFromExons(ebt[[gene]], genome=Hsapiens,
+               readlength=63, minsize=100, maxsize=300)
+             })
+indexBam(bamfiles[1])
+# here, we can include many kinds of modeling terms
+models <- list("GC"=list(formula="count~ns(gc,knots=gc.knots,Boundary.knots=gc.bk) + gene",
+                 offset=c("fraglen")))
+# fits one sample at a time
+fitpar <- fitModelOverGenes(ebt, bamfiles[1], fragtypes, genome=Hsapiens,
+                            models=models,
+                            readlength=63, minsize=100, maxsize=300)
+fitpar <- list(fitpar)
+names(fitpar) <- names(bamfiles)[1]
+```
+
+Visually exploring the bias parameters. These are not robustly fit
+in this case because the paucity of reads and genes in the example dataset.
+
+```{r}
+plot(fitpar[[1]]$fraglen.density)
+plotOrder0(fitpar[[1]]$vlmm.fivep$order0)
+plotGC(fitpar, m="GC")
+unname(fitpar[[1]]$coefs[["GC"]])
+fitpar[[1]]$summary
+```
+
+Estimate transcript abundance, first pick a multiple isoform gene.
+
+```{r}
+tab <- table(txdf$GENEID)
+mult.tx.genes <- names(tab)[tab > 1]
+txs <- sort(txdf$TXID[txdf$GENEID %in% mult.tx.genes])
+ebt <- exonsBy(txdb, "tx")
+ebt <- ebt[txs]
+```
+
+For demonstration, pick a gene that has sufficient fragment count.
+
+```{r}
+so <- summarizeOverlaps(ebt, bamfiles[1])
+tx <- rownames(so)[which.max(assay(so))]
+geneid <- txdf$GENEID[txdf$TXID == tx]
+txs <- txdf$TXID[txdf$GENEID == geneid]
+ebt <- exonsBy(txdb, "tx")
+ebt <- ebt[txs]
+```
+
+```{r}
+models <- list("null"=list(formula=NULL, offset=NULL),
+               "GC"=list(formula="count~ns(gc,knots=gc.knots,Boundary.knots=gc.bk) + 0",
+                 offset=c("fraglen")))
+```
+
+```{r}
+lib.sizes <- 30e6 # must be pre-calculated
+names(lib.sizes) <- names(bamfiles)[1]
+# for efficiency, should be run with all models and all samples at once
+res <- estimateTheta(transcripts=ebt, bamfiles=bamfiles[1],
+                     fitpar=fitpar, genome=Hsapiens,
+                     models=models, readlength=63,
+                     subset=TRUE, zerotopos=20, niter=100,
+                     lib.sizes=lib.sizes,
+                     minsize=100, maxsize=300)
+```
+
+These estimates are consistent within sample, but should be scaled
+to the null model, and then calibrated across sample using the
+median-ratio method. (Functions to come).
+
+```{r}
+res
+```
+
+```{r}
+sessionInfo()
+```
+
+.

@@ -1,0 +1,8 @@
+import("Biostrings")
+import("GenomicRanges")
+import("GenomicAlignments")
+import("Rsamtools")
+import("GenomeInfoDb")
+import("speedglm")
+import("splines")
+exportPattern("^[^\\.]")

@@ -1,102 +1,197 @@
-# for all sequences (e.g. chromsomes)
-# bwGR is a GRanges produced by import(BigWig(...))
-# exons is a GRangesList of exons by genes produced by exonsBy(txdb, by="gene")
-# this should also be sorted using exonsSort <- endoapply(exons, sort)
-# this returns a list of lists:
-# for each sequence for each gene an integer vector of exonic coverage
-bwGRInExonsGRListToInt <- function(bwGR, exons, flipNames=NULL) {
-  x <- coverage(bwGR,weight=mcols(bwGR)$score)
-  seqNames <- names(x)
-  names(seqNames) <- seqNames
-  lapply(seqNames, function(seqname) {
-    exonsSub <- exons[seqnames(exons) == seqname]
-    exonsSub <- exonsSub[sapply(exonsSub,length) > 0]
-    intCov <- rleInRangesListToInt(x[[seqname]],ranges(exonsSub))
-    if (!is.null(flipNames)) {
-      idx <- names(intCov) %in% flipNames
-      intCov[idx] <- lapply(intCov[idx], rev) 
-    }
-    intCov
+## core functions
+startLeft <- function(x) {
+  first.plus <- as.logical(strand(first(x)) == "+")
+  ifelse(first.plus, start(first(x)), start(last(x)))
+}
+endRight <- function(x) {
+  first.plus <- as.logical(strand(first(x)) == "+")
+  ifelse(first.plus, end(last(x)), end(first(x)))
+}
+mapTxToGenome <- function(exons) {
+  strand <- as.character(strand(exons)[1])
+  stopifnot(all(exons$exon_rank == seq_along(exons)))
+  bases <- if (strand == "+") {
+    do.call(c,lapply(exons, function(exon) start(exon):end(exon)))
+  } else if (strand == "-") {
+    do.call(c,lapply(exons, function(exon) end(exon):start(exon)))    
+  }
+  data.frame(tx=seq_along(bases),
+             genome=bases,
+             exon_rank=rep(exons$exon_rank, width(exons)))
+}
+genomeToTx <- function(genome, map) map$tx[match(genome, map$genome)]
+txToGenome <- function(tx, map) map$genome[match(tx, map$tx)]
+txToExon <- function(tx, map) map$exon_rank[match(tx, map$tx)]
+# npre = 8 and npost = 12 describe the number of bp needed for the VLMM (Roberts et al 2011)
+buildFragtypesFromExons <- function(exons, genome, readlength,
+                                    minsize, maxsize, npre=8, npost=12,
+                                    gc.stretches=TRUE) {
+  stopifnot(is(exons,"GRanges"))
+  stopifnot(is(genome,"BSgenome"))
+  stopifnot(is.numeric(minsize) & is.numeric(maxsize) & is.numeric(readlength))
+  stopifnot(sum(width(exons)) > maxsize)
+  stopifnot(all(c("exon_rank","exon_id") %in% names(mcols(exons))))
+  map <- mapTxToGenome(exons)
+  l <- nrow(map)
+  strand <- as.character(strand(exons)[1])
+  start <- rep(seq_len(l-minsize+1),each=maxsize-minsize+1)
+  end <- as.integer(start + minsize:maxsize - 1)
+  mid <- as.integer(0.5 * (start + end))
+  relpos <- mid/l
+  fraglen <- as.integer(end - start + 1)
+  id <- IRanges(start, end)
+  fragtypes <- DataFrame(start=start,end=end,mid=mid,relpos=relpos,fraglen=fraglen,id=id)
+  fragtypes <- fragtypes[fragtypes$end <= l,,drop=FALSE]
+  exon.dna <- getSeq(genome, exons)
+  tx.dna <- unlist(exon.dna)
+  # strings needed for VLMM
+  fragtypes$fivep.test <- fragtypes$start - npre >= 1
+  fragtypes$fivep <- as(Views(tx.dna, fragtypes$start - ifelse(fragtypes$fivep.test, npre, 0),
+                        fragtypes$start + npost), "DNAStringSet")
+  fragtypes$threep.test <- fragtypes$end + npre <= length(tx.dna) 
+  fragtypes$threep <- as(Views(tx.dna, fragtypes$end - npost,
+                         fragtypes$end + ifelse(fragtypes$threep.test, npre, 0),),
+                         "DNAStringSet")
+  # reverse complement the three prime sequence
+  fragtypes$threep <- reverseComplement(fragtypes$threep)
+  # get the GC content for the entire fragment
+  fragrange <- minsize:maxsize
+  gc.vecs <- lapply(fragrange, function(i) {
+    letterFrequencyInSlidingView(tx.dna, view.width=i, letters="CG", as.prob=TRUE)
   })
-}
-
-# for a single sequence (e.g. chromosome)
-# x is an Rle
-# y is a RangesList
-rleInRangesListToInt <- function(x,y) {
-  sp <- rep(names(y),sapply(y,length))
-  ry <- unlist(y,use.names=FALSE)
-  intCovList <- split(viewApply(Views(x,ry),as.integer),sp)
-  lapply(intCovList, function(z) do.call(c,z))
-}
-
-# for imported BigWig files, this function adds GRanges with score 0
-# before and after every contiguous region, so that plotting doesn't
-# generate diagonal lines over large regions
-addGRangesAtZero <- function(x) {
-  x <- sort(x)
-  idx <- which(start(x)[-1] != end(x)[-length(x)] + 1)
-  zeros <- GRanges(seqnames(x)[1],
-                   IRanges(c(end(x)[idx] + 1,start(x)[idx+1] - 1),width=1),
-                 score=rep(0,2*length(idx)))
-  sort(c(x,zeros))
-}
-
-# NOTE: slow, designed for plotting
-# this function takes a GRanges x with coverage info and a
-# GRanges gene with exons, and moves the coverage to start
-# at the origin, and removes introns
-exonCoverage <- function(x, gene, addZero=TRUE) {
-  x <- sort(x)
-  gene <- reduce(gene)
-  fo <- findOverlaps(x,gene)
-  xR <- restrict(x[queryHits(fo)], 
-                 start=start(gene)[subjectHits(fo)],
-                 end=end(gene)[subjectHits(fo)])
-  foR <- findOverlaps(xR, gene)
-  shiftAmount <- -start(gene) + c(0,cumsum(width(gene))[-length(gene)]) + 1
-  z <- shift(xR[queryHits(foR)], shiftAmount[subjectHits(foR)])
-  if (!addZero) {
-    return(z)
-  } else {
-    zero <- GRanges(seqnames(x)[1],
-                    IRanges(cumsum(width(gene))[-length(gene)],width=1),
-                    score=rep(0,length(gene)-1))
-    return(sort(c(z,zero)))
-  } 
-}
-
-# NOTE: slow, designed for plotting
-# takes a GRanges produced by exonCoverage x and a GRanges gene
-# returns a numeric of base by base coverage along exons
-# from TSS continuing downstream, i.e. negative strand genes 
-# have the wiggle flipped
-exonCoverageToNumericCoverage <- function(x, gene) {
-  x <- sort(x)
-  gene <- reduce(gene)
-  totalWidth <- sum(width(gene))
-  if (length(x) == 0) return(numeric(totalWidth))
-  x <- restrict(x,start=1,end=totalWidth)
-  strand <- as.character(strand(gene)[1])
-  firstPos <- start(x)[1]
-  lastPos <- end(x)[length(x)]
-  if (firstPos == 1 & lastPos == totalWidth) {
-    rlex <- Rle(values=mcols(x)$score, lengths=width(x))
-  } else if (firstPos == 1) {
-    widths <- c(width(x), totalWidth - lastPos)
-    rlex <- Rle(values=c(mcols(x)$score, 0), lengths=widths)
-  } else if (lastPos == totalWidth) {
-    widths <- c(firstPos - 1, width(x))
-    rlex <- Rle(values=c(0, mcols(x)$score), lengths=widths)
-  } else {
-    widths <- c(firstPos - 1, width(x), totalWidth - lastPos)
-    rlex <- Rle(values=c(0, mcols(x)$score, 0), lengths=widths)
+  fragtypes <- fragtypes[order(fragtypes$fraglen),,drop=FALSE]
+  fragtypes$gc <- do.call(c, gc.vecs)
+  fragtypes <- fragtypes[order(fragtypes$start),,drop=FALSE]
+  if (gc.stretches) {
+    # additional features: GC in smaller sections
+    gc.40 <- as.numeric(letterFrequencyInSlidingView(tx.dna, 40, letters="CG", as.prob=TRUE))
+    max.gc.40 <- max(Views(gc.40, fragtypes$start, fragtypes$end - 40 + 1))
+    gc.20 <- as.numeric(letterFrequencyInSlidingView(tx.dna, 20, letters="CG", as.prob=TRUE))
+    max.gc.20 <- max(Views(gc.20, fragtypes$start, fragtypes$end - 20 + 1))
+    fragtypes$GC40.90 <- as.numeric(max.gc.40 >= 36/40)
+    fragtypes$GC40.80 <- as.numeric(max.gc.40 >= 32/40)
+    fragtypes$GC20.90 <- as.numeric(max.gc.20 >= 18/20)
+    fragtypes$GC20.80 <- as.numeric(max.gc.20 >= 16/20)
   }
-  if (strand == "-") {
-    return(rev(as.numeric(rlex)))
-  } else {
-    return(as.numeric(rlex))
-  }
+  # these are the fragment start and end in genomic space
+  # so for minus strand tx, gstart > gend
+  fragtypes$gstart <- txToGenome(fragtypes$start, map)
+  fragtypes$gend <- txToGenome(fragtypes$end, map)
+  fragtypes$gread1end <- txToGenome(fragtypes$start + readlength - 1, map)
+  fragtypes$gread2start <- txToGenome(fragtypes$end - readlength + 1, map)
+  #message("nrow fragtypes: ",nrow(fragtypes))
+  fragtypes
 }
-
-
+gaToReadsOnTx <- function(ga, grl, fco=NULL) {
+  reads <- list()
+  for (i in seq_along(grl)) {
+    exons <- grl[[i]]
+    strand <- as.character(strand(exons)[1])
+    read.idx <- if (is.null(fco)) {
+      seq_along(ga)
+    } else {
+      queryHits(fco)[subjectHits(fco) == i]
+    }
+    map <- mapTxToGenome(exons)
+    # depending on strand of gene:
+    # start of left will be the first coordinate on the transcript (+ gene)
+    # or start of left will be the last coordinate on the transcript (- gene)
+    if (strand == "+") {
+      start <- genomeToTx(startLeft(ga[read.idx]), map)
+      end <- genomeToTx(endRight(ga[read.idx]), map)
+    } else if (strand == "-") {
+      start <- genomeToTx(endRight(ga[read.idx]), map)
+      end <- genomeToTx(startLeft(ga[read.idx]), map)
+    }
+    valid <- start < end & !is.na(start) & !is.na(end)
+    reads[[i]] <- IRanges(start[valid], end[valid])
+  }
+  names(reads) <- names(grl)
+  reads
+}
+matchReadsToFraglist <- function(reads, fraglist) {
+  for (tx.idx in seq_along(fraglist)) {
+    unique.reads <- unique(reads[[tx.idx]])
+    readtab <- table(match(reads[[tx.idx]], unique.reads))
+    fraglist[[tx.idx]]$count <- 0
+    reads.in.fraglist <- unique.reads %in% fraglist[[tx.idx]]$id
+    unique.reads <- unique.reads[reads.in.fraglist]
+    readtab <- readtab[reads.in.fraglist]    
+    fraglist[[tx.idx]][match(unique.reads, fraglist[[tx.idx]]$id),"count"] <- as.numeric(readtab)
+  }
+  fraglist
+}
+subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=20000) {
+  ntx <- length(fraglist)
+  fraglist.sub <- list()
+  for (tx.idx in seq_len(ntx)) {
+    count <- fraglist[[tx.idx]]$count
+    sumpos <- sum(count > 0)
+    sumzero <- sum(count == 0)
+    # how many zeros to subset?
+    # some multiple of the #pos, or a preset minimum value
+    multzero <- max(round(zerotopos*sumpos), minzero)
+    # max out at a certain amount, and then sample equal to #pos
+    multzero <- if (multzero > maxmult) max(maxmult, sumpos) else multzero
+    # and not more than the #zero
+    (numzero <- min(sumzero, multzero))
+    idx <- c(which(count > 0), sample(which(count == 0), numzero, replace=FALSE))
+    # subset the rows
+    fraglist.sub[[tx.idx]] <- fraglist[[tx.idx]][idx,]
+    # add weights
+    fraglist.sub[[tx.idx]]$wts <- c(rep(1,sumpos), rep(sumzero/numzero,numzero))
+  }  
+  fragtypes <- do.call(rbind, fraglist.sub)
+  fragtypes
+}
+matchToDensity <- function(x, d) {
+  idx <- cut(x, c(-Inf, d$x, Inf))
+  pdf <- c(0, d$y)
+  pdf.x <- pdf[ idx ] + 1e-6
+  stopifnot(all(pdf.x > 0))
+  pdf.x
+}
+getFPBP <- function(genes, bamfile) {
+  gene.ranges <- unlist(range(genes))
+  gene.lengths <- sum(width(genes))
+  res <- countBam(bamfile, param=ScanBamParam(which=gene.ranges))
+  # two records per fragment
+  out <- (res$records / 2)/gene.lengths
+  names(out) <- names(genes)
+  out
+}
+getLogLambda <- function(fragtypes, models, modeltype, fitpar, bamname) {
+  # knots and boundary knots should come from the environ where the formula were defined
+  f <- models[[modeltype]]$formula
+  offset <- numeric(nrow(fragtypes))
+  if ("fraglen" %in% models[[modeltype]]$offset) {
+    # message("-- fragment length correction")
+    offset <- offset + fragtypes$logdfraglen
+  }
+  if ("vlmm" %in% models[[modeltype]]$offset) {
+    # message("-- VLMM fragment start/end correction")
+    offset <- offset + fragtypes$fivep.bias + fragtypes$threep.bias
+  }
+  if (!is.null(f)) {
+    gc.knots <- seq(from=.4, to=.6, length=3)
+    gc.bk <- c(0,1)
+    relpos.knots <- seq(from=.25, to=.75, length=3)
+    relpos.bk <- c(0,1)
+    # assume: no intercept in formula
+    # sparse.model.matrix produces different column names, so don't use
+    # mm.big <- sparse.model.matrix(f, data=fragtypes)
+    mm.big <- model.matrix(formula(f), data=fragtypes)
+    beta <- fitpar[[bamname]][["coefs"]][[modeltype]]
+    stopifnot(any(colnames(mm.big) %in% names(beta)))
+    if (all(is.na(beta))) stop("all coefs are NA")
+    beta[is.na(beta)] <- 0 # replace NA coefs with 0: these were not observed in the training data
+    # this gets rid of the gene1, gene2 and Intercept terms
+    beta <- beta[match(colnames(mm.big), names(beta))]
+    # add offset
+    log.lambda <- as.numeric(mm.big %*% beta) + offset
+  } else {
+    log.lambda <- offset
+  }
+  if (!all(is.finite(log.lambda))) stop("log.lambda is not finite")
+  log.lambda
+}
