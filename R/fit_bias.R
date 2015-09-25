@@ -72,31 +72,35 @@ fitModelOverGenes <- function(genes, bamfile, fragtypes, genome,
   # check the FPBP after downsampling:
   ## gene.counts <- sapply(fragtypes.sub.list, function(x) sum(x$count))
   ## gene.lengths <- sum(width(genes))
-  ## round(unname(gene.counts / gene.lengths[names(gene.counts)]), 2)    
-
-  ## -- fragment bias --
-  pos.count <- fragtypes.sub$count > 0
-  fraglens <- rep(fragtypes.sub$fraglen[pos.count], fragtypes.sub$count[pos.count])
-  fraglen.density <- density(fraglens)
-  fragtypes.sub$logdfraglen <- log(matchToDensity(fragtypes.sub$fraglen, fraglen.density))
-  # with(fragtypes.sub, plot(fraglen, exp(logdfraglen), cex=.1))
-
-  ## -- random hexamer priming bias with VLMM --  
-  fivep <- fragtypes.sub$fivep[fragtypes.sub$fivep.test]
-  threep <- fragtypes.sub$threep[fragtypes.sub$threep.test]
-  vlmm.fivep <- fitVLMM(fivep, gene.seqs)
-  vlmm.threep <- fitVLMM(threep, gene.seqs)
-  ## par(mfrow=c(2,1))
-  ## plotOrder0(vlmm.fivep$order0)
-  ## plotOrder0(vlmm.threep$order0)
-
-  # now calculate log(bias) for each fragment based on the VLMM
-  fragtypes.sub <- addVLMMBias(fragtypes.sub, vlmm.fivep, vlmm.threep)
+  ## round(unname(gene.counts / gene.lengths[names(gene.counts)]), 2)
 
   fitpar.sub[["models"]] <- models
-  fitpar.sub[["fraglen.density"]] <- fraglen.density
-  fitpar.sub[["vlmm.fivep"]] <- vlmm.fivep
-  fitpar.sub[["vlmm.threep"]] <- vlmm.threep
+  
+  if (any(sapply(models, function(m) "fraglen" %in% m$offset))) {
+    ## -- fragment bias --
+    pos.count <- fragtypes.sub$count > 0
+    fraglens <- rep(fragtypes.sub$fraglen[pos.count], fragtypes.sub$count[pos.count])
+    fraglen.density <- density(fraglens)
+    fragtypes.sub$logdfraglen <- log(matchToDensity(fragtypes.sub$fraglen, fraglen.density))
+    # with(fragtypes.sub, plot(fraglen, exp(logdfraglen), cex=.1))
+    fitpar.sub[["fraglen.density"]] <- fraglen.density
+  }
+
+  if (any(sapply(models, function(m) "vlmm" %in% m$offset))) {
+    ## -- random hexamer priming bias with VLMM --  
+    fivep <- fragtypes.sub$fivep[fragtypes.sub$fivep.test]
+    threep <- fragtypes.sub$threep[fragtypes.sub$threep.test]
+    vlmm.fivep <- fitVLMM(fivep, gene.seqs)
+    vlmm.threep <- fitVLMM(threep, gene.seqs)
+    ## par(mfrow=c(2,1))
+    ## plotOrder0(vlmm.fivep$order0)
+    ## plotOrder0(vlmm.threep$order0)
+    
+    # now calculate log(bias) for each fragment based on the VLMM
+    fragtypes.sub <- addVLMMBias(fragtypes.sub, vlmm.fivep, vlmm.threep)
+    fitpar.sub[["vlmm.fivep"]] <- vlmm.fivep
+    fitpar.sub[["vlmm.threep"]] <- vlmm.threep
+  }
   
   # allow a gene-specific intercept (although mostly handled already with downsampling)
   fragtypes.sub$gene <- factor(rep(seq_along(gene.nrows), gene.nrows))
