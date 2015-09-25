@@ -119,12 +119,16 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     ## -- fragment bias --
     fraglen.density <- fitpar[[bamname]][["fraglen.density"]]
     fragtypes$logdfraglen <- log(matchToDensity(fragtypes$fraglen, fraglen.density))
-    # message("priming bias")
-    ## -- random hexamer priming bias with VLMM --
-    vlmm.fivep <- fitpar[[bamname]][["vlmm.fivep"]]
-    vlmm.threep <- fitpar[[bamname]][["vlmm.threep"]]
-    fragtypes <- addVLMMBias(fragtypes, vlmm.fivep, vlmm.threep)
 
+    if (any(sapply(models, function(m) "vlmm" %in% m$offset))) {
+      stopifnot( "vlmm.fivep" %in% names(fitpar[[bamname]]) )
+      # message("priming bias")
+      ## -- random hexamer priming bias with VLMM --
+      vlmm.fivep <- fitpar[[bamname]][["vlmm.fivep"]]
+      vlmm.threep <- fitpar[[bamname]][["vlmm.threep"]]
+      fragtypes <- addVLMMBias(fragtypes, vlmm.fivep, vlmm.threep)
+    }
+      
     # specific code for one isoform
     if (singleiso) {
       n.obs <- fragtypes$count
