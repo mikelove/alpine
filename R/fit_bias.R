@@ -7,6 +7,9 @@ fitModelOverGenes <- function(genes, bamfile, fragtypes, genome,
   stopifnot(all(!is.na(sapply(models, function(x) x$formula))))
   stopifnot(is.numeric(readlength) & length(readlength) == 1)
   stopifnot(all(names(genes) %in% names(fragtypes)))
+  if (any(sapply(models, function(m) "vlmm" %in% m$offset))) {
+    stopifnot("fivep" %in% colnames(fragtypes[[1]]))
+  }
   exon.dna <- getSeq(genome, genes)
   gene.seqs <- as(lapply(exon.dna, unlist), "DNAStringSet")
   # FPBP needed to downsample to a target fragment per kilobase

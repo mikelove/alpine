@@ -25,7 +25,7 @@ txToExon <- function(tx, map) map$exon_rank[match(tx, map$tx)]
 # npre = 8 and npost = 12 describe the number of bp needed for the VLMM (Roberts et al 2011)
 buildFragtypesFromExons <- function(exons, genome, readlength,
                                     minsize, maxsize, npre=8, npost=12,
-                                    gc.stretches=TRUE) {
+                                    gc=TRUE, gc.str=TRUE, vlmm=TRUE) {
   stopifnot(is(exons,"GRanges"))
   stopifnot(is(genome,"BSgenome"))
   stopifnot(is.numeric(minsize) & is.numeric(maxsize) & is.numeric(readlength))
@@ -40,29 +40,33 @@ buildFragtypesFromExons <- function(exons, genome, readlength,
   relpos <- mid/l
   fraglen <- as.integer(end - start + 1)
   id <- IRanges(start, end)
-  fragtypes <- DataFrame(start=start,end=end,mid=mid,relpos=relpos,fraglen=fraglen,id=id)
+  fragtypes <- DataFrame(start=start,end=end,relpos=relpos,fraglen=fraglen,id=id)
   fragtypes <- fragtypes[fragtypes$end <= l,,drop=FALSE]
   exon.dna <- getSeq(genome, exons)
   tx.dna <- unlist(exon.dna)
-  # strings needed for VLMM
-  fragtypes$fivep.test <- fragtypes$start - npre >= 1
-  fragtypes$fivep <- as(Views(tx.dna, fragtypes$start - ifelse(fragtypes$fivep.test, npre, 0),
-                        fragtypes$start + npost), "DNAStringSet")
-  fragtypes$threep.test <- fragtypes$end + npre <= length(tx.dna) 
-  fragtypes$threep <- as(Views(tx.dna, fragtypes$end - npost,
-                         fragtypes$end + ifelse(fragtypes$threep.test, npre, 0),),
-                         "DNAStringSet")
-  # reverse complement the three prime sequence
-  fragtypes$threep <- reverseComplement(fragtypes$threep)
-  # get the GC content for the entire fragment
-  fragrange <- minsize:maxsize
-  gc.vecs <- lapply(fragrange, function(i) {
-    letterFrequencyInSlidingView(tx.dna, view.width=i, letters="CG", as.prob=TRUE)
-  })
-  fragtypes <- fragtypes[order(fragtypes$fraglen),,drop=FALSE]
-  fragtypes$gc <- do.call(c, gc.vecs)
-  fragtypes <- fragtypes[order(fragtypes$start),,drop=FALSE]
-  if (gc.stretches) {
+  if (vlmm) {
+    # strings needed for VLMM
+    fragtypes$fivep.test <- fragtypes$start - npre >= 1
+    fragtypes$fivep <- as(Views(tx.dna, fragtypes$start - ifelse(fragtypes$fivep.test, npre, 0),
+                                fragtypes$start + npost), "DNAStringSet")
+    fragtypes$threep.test <- fragtypes$end + npre <= length(tx.dna) 
+    fragtypes$threep <- as(Views(tx.dna, fragtypes$end - npost,
+                                 fragtypes$end + ifelse(fragtypes$threep.test, npre, 0),),
+                           "DNAStringSet")
+    # reverse complement the three prime sequence
+    fragtypes$threep <- reverseComplement(fragtypes$threep)
+  }
+  if (gc) {
+    # get the GC content for the entire fragment
+    fragrange <- minsize:maxsize
+    gc.vecs <- lapply(fragrange, function(i) {
+                        letterFrequencyInSlidingView(tx.dna, view.width=i, letters="CG", as.prob=TRUE)
+                      })
+    fragtypes <- fragtypes[order(fragtypes$fraglen),,drop=FALSE]
+    fragtypes$gc <- do.call(c, gc.vecs)
+    fragtypes <- fragtypes[order(fragtypes$start),,drop=FALSE]
+  }
+  if (gc.str) {
     # additional features: GC in smaller sections
     gc.40 <- as.numeric(letterFrequencyInSlidingView(tx.dna, 40, letters="CG", as.prob=TRUE))
     max.gc.40 <- max(Views(gc.40, fragtypes$start, fragtypes$end - 40 + 1))

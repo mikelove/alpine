@@ -51,24 +51,14 @@ predictOneGene <- function(gene, bamfiles, fitpar, genome=Hsapiens,
     not.first.or.last.bp <- !(fragtypes.temp$start == 1 | fragtypes.temp$end == l)
     fragtypes.temp <- fragtypes.temp[not.first.or.last.bp,]
 
-    # summarize counts and predicted counts on the fragment midpoint
-    ir <- IRanges(fragtypes.temp$start, fragtypes.temp$end)
-    fac <- factor(fragtypes.temp$mid, seq_len(l))
-    cts <- sapply(split(fragtypes.temp$count, fac), sum)
-    gc <- sapply(split(fragtypes.temp$gc, fac), mean)
     res[[bamname]]$l <- l
     res[[bamname]]$frag.cov <- frag.cov
-    res[[bamname]]$cts <- cts
-    res[[bamname]]$gc <- gc
-    res[[bamname]]$pred.cts <- list()
     res[[bamname]]$pred.cov <- list()
     for (modeltype in names(models)) {
       # message("predicting model type: ",modeltype)
       log.lambda <- getLogLambda(fragtypes.temp, models, modeltype, fitpar, bamname)
       pred0 <- exp(log.lambda)
       pred <- pred0/mean(pred0)*mean(fragtypes.temp$count)
-      pred.cts <- sapply(split(pred, fac), sum)
-      res[[bamname]][["pred.cts"]][[modeltype]] <- pred.cts
       res[[bamname]][["pred.cov"]][[modeltype]] <- coverage(ir, weight=pred)
     }
   }
