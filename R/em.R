@@ -143,7 +143,9 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
           }
         A <- N * exp(as.numeric(log.lambda))
         wts <- if (subset) { fragtypes$wts } else { 1 } 
-        sum(n.obs  * wts)/sum(A * wts)
+        theta <- sum(n.obs  * wts)/sum(A * wts)
+        names(theta) <- names(transcripts)
+        theta
       })
       return(res.sub) # return results for this sample
     }
