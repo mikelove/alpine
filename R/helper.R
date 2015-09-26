@@ -193,7 +193,6 @@ countBamfiles <- function(bamfiles, which) {
   # assume paired end
   round(sapply(seq_along(bamfiles), function(i) countBam(bamfiles[i], param=ScanBamParam(which=which))$records/2))
 }
-alpineFlag <- function() scanBamFlag(isSecondaryAlignment=FALSE,isProperPair=TRUE)
 getReadlength <- function(bamfiles) {
   getRL1 <- function(file) {
     qwidth(readGAlignments(BamFile(file, yieldSize=1)))
@@ -225,11 +224,10 @@ densityToMean <- function(d) {
   delta <- d$x[2] - d$x[1]
   delta * sum(d$x * d$y)
 }
+alpineFlag <- function() scanBamFlag(isSecondaryAlignment=FALSE)
 readGAlignAlpine <- function(bamfile, generange) {
-  ga <- readGAlignments(bamfile, use.names=TRUE,
-                        param=ScanBamParam(which=generange,
-                          flag=alpineFlag(),
-                          what=c("flag", "mrnm", "mpos")))
-  makeGAlignmentPairs(ga)
+  readGAlignmentPairs(bamfile,
+                      param=ScanBamParam(which=generange,
+                        flag=alpineFlag()))
 }
 nogenbank <- function(x) sub("(.*)\\(GenBank)","\\1",x)
