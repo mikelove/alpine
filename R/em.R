@@ -135,17 +135,19 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
       # this gives list output for one bamfile
       res.sub <- lapply(model.names, function(modeltype) {
         log.lambda <- getLogLambda(fragtypes, models, modeltype, fitpar, bamname)
+        log.lambda <- as.numeric(log.lambda)
         N <- if (is.null(lib.sizes)) {
           mean(n.obs)
         } else {
             # TODO: here fix like below
             lib.sizes[bamname] / (1e9 * (maxsize - minsize))
           }
-        A <- N * exp(as.numeric(log.lambda))
+        A <- N * exp(log.lambda)
         wts <- if (subset) { fragtypes$wts } else { 1 } 
         theta <- sum(n.obs  * wts)/sum(A * wts)
-        names(theta) <- names(transcripts)
-        theta
+        lambda <- sum(wts * exp(log.lambda)) / sum(wts)
+        names(lambda) <- names(theta) <- names(transcripts)
+        list(theta=theta, lambda=lambda)
       })
       return(res.sub) # return results for this sample
     }
@@ -165,6 +167,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     # this gives list output for one bamfile
     res.sub <- lapply(model.names, function(modeltype) {
       log.lambda <- getLogLambda(fragtypes.sub, models, modeltype, fitpar, bamname)
+      log.lambda <- as.numeric(log.lambda) # necessary?
       ## pred0 <- as.numeric(exp(log.lambda))
       ## pred <- pred0/mean(pred0)*mean(fragtypes.sub$count)
       ## boxplot(pred ~ factor(cut(fragtypes.sub$count,c(-1:10 + .5,20,Inf))), main=modeltype, range=0)
@@ -175,10 +178,12 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
           # account for the triangle of fragments not in the count matrix
         lib.sizes[bamname] / (1e9 * (maxsize - minsize))
       }
-      A <- t(t(mat * N) * exp(as.numeric(log.lambda)))
-      wts <- if (subset) { fragtypes.sub$wts } else { 1 } 
+      A <- t(t(mat * N) * exp(log.lambda))
+      wts <- if (subset) { fragtypes.sub$wts } else { 1 }
       EM.res <- runEM(n.obs, A, wts, niter, optim)
-      EM.res
+      lambda <- mat %*% (wts * exp(log.lambda)) / mat %*% wts
+      names(lambda) <- names(transcripts)
+      list(theta=EM.res, lambda=lambda)
     })
     return(res.sub)
   })
