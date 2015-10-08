@@ -167,7 +167,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     # this gives list output for one bamfile
     res.sub <- lapply(model.names, function(modeltype) {
       log.lambda <- getLogLambda(fragtypes.sub, models, modeltype, fitpar, bamname)
-      log.lambda <- as.numeric(log.lambda) # necessary?
+      log.lambda <- as.numeric(log.lambda)
       ## pred0 <- as.numeric(exp(log.lambda))
       ## pred <- pred0/mean(pred0)*mean(fragtypes.sub$count)
       ## boxplot(pred ~ factor(cut(fragtypes.sub$count,c(-1:10 + .5,20,Inf))), main=modeltype, range=0)
@@ -182,6 +182,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
       wts <- if (subset) { fragtypes.sub$wts } else { 1 }
       EM.res <- runEM(n.obs, A, wts, niter, optim)
       lambda <- mat %*% (wts * exp(log.lambda)) / mat %*% wts
+      lambda <- as.numeric(lambda)
       names(lambda) <- names(transcripts)
       list(theta=EM.res, lambda=lambda)
     })
