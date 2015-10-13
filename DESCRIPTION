@@ -6,5 +6,5 @@ Maintainer: Michael Love <michaelisaiahlove@gmail.com>
 Description: Fragment sequence bias modeling and correction for RNA-seq transcript abundance estimation.
 License: GPL (>=2)
 VignetteBuilder: knitr
-Imports: Biostrings, GenomicRanges, GenomicAlignments, Rsamtools, GenomeInfoDb, speedglm, splines
+Imports: Biostrings, GenomicRanges, GenomicAlignments, Rsamtools, speedglm, splines
 Suggests: airway, BSgenome.Hsapiens.UCSC.hg19
