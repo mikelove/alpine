@@ -81,17 +81,21 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
 
     outputZero <- FALSE
     if (length(ga) == 0) {
+      numCompatible <- 0
       outputZero <- TRUE
     } else { 
       ga <- keepSeqlevels(ga, as.character(seqnames(transcripts[[1]])[1]))
       fco <- findCompatibleOverlaps(ga, transcripts)
-      #message("-- ",round(length(unique(queryHits(fco)))/length(ga),2)," compatible overlaps")
+      numCompatible <- length(unique(queryHits(fco)))
+      message("-- ",round(numCompatible/length(ga),2)," compatible overlaps")
+      #message("---- ",seqnames(generange),":",start(generange),"-",end(generange))
       # table(strand(ga)[unique(queryHits(fco))]) # are the read counts even across strand?
       # boxplot(lapply(reads, function(x) width(x)))
       # here called "reads" although they are fragments. everything is already called fragments :-/
       reads <- gaToReadsOnTx(ga, transcripts, fco)
       fraglist.temp <- matchReadsToFraglist(reads, fraglist)
       txcounts <- sapply(fraglist.temp, function(x) sum(x$count))
+      #message("---- ",paste(txcounts, collapse=" "))
       if (all(txcounts == 0)) outputZero <- TRUE
     }
 
@@ -103,7 +107,8 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
       #message("all transcripts have 0 counts")
       out <- numeric(length(nms.tx))
       names(out) <- nms.tx
-      return(lapply(model.names, function(x) out))
+      # TODO: fix this to return lambda/theta list
+      return(lapply(model.names, function(x) out)) 
     }
     
     if (subset) {
@@ -149,7 +154,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
         names(lambda) <- names(theta) <- names(transcripts)
         list(theta=theta, lambda=lambda)
       })
-      return(res.sub) # return results for this sample
+      return(c(res.sub,count=numCompatible)) # return results for this sample
     }
 
     # make incidence matrix
@@ -180,13 +185,13 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
       }
       A <- t(t(mat * N) * exp(log.lambda))
       wts <- if (subset) { fragtypes.sub$wts } else { 1 }
-      EM.res <- runEM(n.obs, A, wts, niter, optim)
+      theta <- runEM(n.obs, A, wts, niter, optim)
       lambda <- mat %*% (wts * exp(log.lambda)) / mat %*% wts
       lambda <- as.numeric(lambda)
       names(lambda) <- names(transcripts)
-      list(theta=EM.res, lambda=lambda)
+      list(theta=theta, lambda=lambda)
     })
-    return(res.sub)
+    return(c(res.sub, count=numCompatible))
   })
   names(res) <- names(bamfiles)
   res

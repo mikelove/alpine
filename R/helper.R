@@ -1,3 +1,4 @@
+nogenbank <- function(x) sub("(.*)\\(GenBank)","\\1",x)
 getYmax <- function(res) {
   max(sapply(seq_along(res), function(i) max(res[[i]]$frag.cov)))
 }
@@ -226,8 +227,5 @@ densityToMean <- function(d) {
 }
 alpineFlag <- function() scanBamFlag(isSecondaryAlignment=FALSE)
 readGAlignAlpine <- function(bamfile, generange) {
-  readGAlignmentPairs(bamfile,
-                      param=ScanBamParam(which=generange,
-                        flag=alpineFlag()))
+  readGAlignmentPairs(bamfile,param=ScanBamParam(which=generange,flag=alpineFlag()))
 }
-nogenbank <- function(x) sub("(.*)\\(GenBank)","\\1",x)
