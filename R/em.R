@@ -105,10 +105,16 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     nms.tx <- names(transcripts)
     if (outputZero) {
       #message("all transcripts have 0 counts")
-      out <- numeric(length(nms.tx))
-      names(out) <- nms.tx
-      # TODO: fix this to return lambda/theta list
-      return(lapply(model.names, function(x) out)) 
+      theta <- numeric(length(nms.tx))
+      theta <- 0
+      lambda <- numeric(length(nms.tx))
+      lambda <- NA # don't bother calculating lambda
+      names(lambda) <- names(theta) <- nms.tx
+      # for all models:
+      res.sub <- lapply(model.names, function(x) {
+                   list(theta=theta, lambda=lambda)
+                 })
+      return(c(res.sub,count=0)) # return results for this sample
     }
     
     if (subset) {
