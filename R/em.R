@@ -87,7 +87,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
       ga <- keepSeqlevels(ga, as.character(seqnames(transcripts[[1]])[1]))
       fco <- findCompatibleOverlaps(ga, transcripts)
       numCompatible <- length(unique(queryHits(fco)))
-      message("-- ",round(numCompatible/length(ga),2)," compatible overlaps")
+      #message("-- ",round(numCompatible/length(ga),2)," compatible overlaps")
       #message("---- ",seqnames(generange),":",start(generange),"-",end(generange))
       # table(strand(ga)[unique(queryHits(fco))]) # are the read counts even across strand?
       # boxplot(lapply(reads, function(x) width(x)))
@@ -106,7 +106,6 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     if (outputZero) {
       #message("all transcripts have 0 counts")
       theta <- numeric(length(nms.tx))
-      theta <- 0
       lambda <- numeric(length(nms.tx))
       lambda <- NA # don't bother calculating lambda
       names(lambda) <- names(theta) <- nms.tx
