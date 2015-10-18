@@ -1,44 +1,8 @@
-nogenbank <- function(x) sub("(.*)\\(GenBank)","\\1",x)
-getYmax <- function(res) {
-  max(sapply(seq_along(res), function(i) max(res[[i]]$frag.cov)))
-}
-plotCovOne <- function(res, i=1, m="GC", xlab="", ylab="", log=FALSE, ...) {
-  transform <- if (log) {
-    function(x) log10(x + 1)
-  } else {
-    I
-  }
-  ymax <- transform(getYmax(res[i]))
-  plot(transform(as.numeric(res[[i]]$frag.cov)), type="l", ylim=c(0,ymax),
-       xlab=xlab, ylab=ylab, col=cond[i], lwd=3, ...)
-  lines(transform(as.numeric(res[[i]][["pred.cov"]][[m]])), col=rgb(0,0,0,.7),lwd=3)
-}
-plotCov <- function(res, m="GC", cond, xlab="", ylab="", log=FALSE, lwd=3, ...) {
-  for (i in seq_along(res)) {
-    transform <- if (log) {
-      function(x) log10(x + 1)
-    } else {
-      I
-    }
-    #ymax <- transform(getYmax(res))
-    plot(transform(as.numeric(res[[i]]$frag.cov)), type="l", # ylim=c(0,ymax),
-         xlab=xlab, ylab=ylab, col=cond[i], lwd=lwd, ...)
-    lines(transform(as.numeric(res[[i]][["pred.cov"]][[m]])), col=rgb(0,0,0,.7),lwd=lwd)
-  }
-}
-varExplainedPos <- function(res, m="GC", errorfun) {
-  do.call(rbind,lapply(seq_along(res), function(i) {
-    y <- as.numeric(res[[i]]$frag.cov)
-    fit <- as.numeric(res[[i]][["pred.cov"]][[m]])
-    y <- c(y, rep(0, res[[i]]$l - length(y)))
-    fit <- c(fit, rep(0, res[[i]]$l - length(fit)))
-    mu <- mean(y)
-    null <- errorfun(y, mu)
-    residual <- errorfun(y, fit)
-    reduction <- if (null == 0) NA else (null - residual)/null
-    data.frame(mu=mu, null=null, reduction=reduction)
-  }))
-}
+# plot for fragment GC bias over multiple samples
+# This takes the natural spline estimated coefficients from the Poisson regression
+# and generates a smooth function of log fragment rate over fragment GC.
+# This is similar to the plot you would get with, e.g. plot.gam()
+# after having fit a generalized additive model.
 plotGC <- function(fitpar, knots=c(.4,.5,.6), bk=c(0,1), col, lty, m="GC") {
   n <- length(knots)
   coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[m]][1:(n+2)])
@@ -61,27 +25,8 @@ plotGC <- function(fitpar, knots=c(.4,.5,.6), bk=c(0,1), col, lty, m="GC") {
     lines(z, logpred[,i], col=col[i], lwd=2, lty=lty[i])
   }
 }
-plotRelPos <- function(fitpar, knots, bk, col, lty, m="GC") {
-  n <- length(knots)
-  # assuming same number of knots for GC and for relpos
-  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[m]][c(1,(3+n):(3+2*n))])
-  z <- seq(from=0,to=1,length=101)
-  x <- model.matrix(~ ns(z, knots=knots, Boundary.knots=bk))
-  logpred <- x %*% coefmat
-  logpred <- scale(logpred, scale=FALSE)
-  plot(0,0,type="n",xlim=c(0,1),ylim=c(min(logpred),max(logpred)),
-       ylab="log fragment rate", xlab="5' -- position in transcript -- 3'",
-       main="relative position bias")
-  if (missing(col)) {
-    col <- rep("black", ncol(logpred))
-  }
-  if (missing(lty)) {
-    lty <- rep(1, ncol(logpred))
-  }
-  for (i in 1:ncol(logpred)) {
-    lines(z, logpred[,i], col=col[i], lwd=2, lty=lty[i])
-  }
-}
+
+# plots for VLMM (read start sequence bias) for a single sample
 plotOrder0 <- function(order0, ...) {
   dna.letters <- c("A","C","G","T")
   mat <- log(order0$obs/order0$expect)
@@ -123,6 +68,72 @@ plotOrder2 <- function(order2, pos2) {
   plot(0,0,type="n",xaxt="n",yaxt="n",xlab="",ylab="")
   alpha <- alphafun(dna.letters, order-1)
   legend("center",alpha,pch=rep(1:4,each=4),col=dna.cols,cex=2,title="prev")
+}
+
+
+###
+
+nogenbank <- function(x) sub("(.*)\\(GenBank)","\\1",x)
+getYmax <- function(res) {
+  max(sapply(seq_along(res), function(i) max(res[[i]]$frag.cov)))
+}
+plotCovOne <- function(res, i=1, m="GC", xlab="", ylab="", log=FALSE, ...) {
+  transform <- if (log) {
+    function(x) log10(x + 1)
+  } else {
+    I
+  }
+  ymax <- transform(getYmax(res[i]))
+  plot(transform(as.numeric(res[[i]]$frag.cov)), type="l", ylim=c(0,ymax),
+       xlab=xlab, ylab=ylab, col=cond[i], lwd=3, ...)
+  lines(transform(as.numeric(res[[i]][["pred.cov"]][[m]])), col=rgb(0,0,0,.7),lwd=3)
+}
+plotCov <- function(res, m="GC", cond, xlab="", ylab="", log=FALSE, lwd=3, ...) {
+  for (i in seq_along(res)) {
+    transform <- if (log) {
+      function(x) log10(x + 1)
+    } else {
+      I
+    }
+    #ymax <- transform(getYmax(res))
+    plot(transform(as.numeric(res[[i]]$frag.cov)), type="l", # ylim=c(0,ymax),
+         xlab=xlab, ylab=ylab, col=cond[i], lwd=lwd, ...)
+    lines(transform(as.numeric(res[[i]][["pred.cov"]][[m]])), col=rgb(0,0,0,.7),lwd=lwd)
+  }
+}
+varExplainedPos <- function(res, m="GC", errorfun) {
+  do.call(rbind,lapply(seq_along(res), function(i) {
+    y <- as.numeric(res[[i]]$frag.cov)
+    fit <- as.numeric(res[[i]][["pred.cov"]][[m]])
+    y <- c(y, rep(0, res[[i]]$l - length(y)))
+    fit <- c(fit, rep(0, res[[i]]$l - length(fit)))
+    mu <- mean(y)
+    null <- errorfun(y, mu)
+    residual <- errorfun(y, fit)
+    reduction <- if (null == 0) NA else (null - residual)/null
+    data.frame(mu=mu, null=null, reduction=reduction)
+  }))
+}
+plotRelPos <- function(fitpar, knots, bk, col, lty, m="GC") {
+  n <- length(knots)
+  # assuming same number of knots for GC and for relpos
+  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[m]][c(1,(3+n):(3+2*n))])
+  z <- seq(from=0,to=1,length=101)
+  x <- model.matrix(~ ns(z, knots=knots, Boundary.knots=bk))
+  logpred <- x %*% coefmat
+  logpred <- scale(logpred, scale=FALSE)
+  plot(0,0,type="n",xlim=c(0,1),ylim=c(min(logpred),max(logpred)),
+       ylab="log fragment rate", xlab="5' -- position in transcript -- 3'",
+       main="relative position bias")
+  if (missing(col)) {
+    col <- rep("black", ncol(logpred))
+  }
+  if (missing(lty)) {
+    lty <- rep(1, ncol(logpred))
+  }
+  for (i in 1:ncol(logpred)) {
+    lines(z, logpred[,i], col=col[i], lwd=2, lty=lty[i])
+  }
 }
 getCountMatrix <- function(gene, bamfile, genome=Hsapiens) {
   fragtypes <- buildFragtypesFromExons(gene, genome)
