@@ -106,8 +106,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     if (outputZero) {
       #message("all transcripts have 0 counts")
       theta <- numeric(length(nms.tx))
-      lambda <- numeric(length(nms.tx))
-      lambda <- NA # don't bother calculating lambda
+      lambda <- rep(NA,length(nms.tx)) # don't bother calculating lambda
       names(lambda) <- names(theta) <- nms.tx
       # for all models:
       res.sub <- lapply(model.names, function(x) {
