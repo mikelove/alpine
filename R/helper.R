@@ -1,3 +1,26 @@
+extractRes <- function(res, model, what, nsamp) {
+  do.call(rbind, lapply(res, function(x) {
+    if (is.null(x)) {
+      if (what == "count") return(rep(0, nsamp))
+      return(rep(NA, nsamp)) # the whole gene gets a single row of NA
+    }
+    if (what == "count") {
+      return(sapply(x, `[[`, what))
+    } else {
+      res.list <- lapply(x, function(y) y[[model]][[what]])
+      return(do.call(cbind, res.list))
+    }
+  }))
+}
+extract <- function(res, model, nsamp, lib.sizes=1e6) {
+  fpkm <- extractRes(res, model, "theta", nsamp)
+  lambda <- extractRes(res, model, "lambda", nsamp)
+  count <- extractRes(res, model, "count", nsamp)
+  lambdaBar <- colMeans(lambda, na.rm=TRUE)
+  colSumsCount <- colSums(count)
+  multFactor <-  lambdaBar * lib.sizes / colSumsCount
+  sweep(fpkm, 2, multFactor, `*`)
+}
 # plot for fragment GC bias over multiple samples
 # This takes the natural spline estimated coefficients from the Poisson regression
 # and generates a smooth function of log fragment rate over fragment GC.
