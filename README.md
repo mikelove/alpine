@@ -2,6 +2,8 @@
 
 ![alpine](http://mike-love.net/img/alpine.jpg)
 
+(the [Sassolungo](https://en.wikipedia.org/wiki/Langkofel) mountain in the Dolomites)
+
 This is an R/Bioconductor package for modeling and correcting fragment
 sequence bias for RNA-seq transcript abundance estimation. There is a
 minimal example in `vignettes/alpine.Rmd`.
