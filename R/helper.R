@@ -1,3 +1,18 @@
+clusterGenes <- function(ebg, txdf) {
+  fo <- findOverlaps(ebg, ignore.strand=TRUE)
+  fo <- fo[queryHits(fo) < subjectHits(fo)]
+  mat <- as.matrix(fo)
+  library(graph)
+  library(RBGL)
+  graph <- ftM2graphNEL(mat, edgemode="undirected")
+  components <- connectedComp(graph)
+  message("found ",length(components), " clusters from ",length(ebg)," genes")
+  components <- lapply(components, function(x) names(ebg)[as.numeric(x)])
+  for (cluster in components) {
+    txdf$GENEID[txdf$GENEID %in% cluster] <- paste0(cluster[1],"_cluster")
+  }
+  txdf
+}
 extractRes <- function(res, model, what, nsamp) {
   do.call(rbind, lapply(res, function(x) {
     if (is.null(x)) {
@@ -48,7 +63,6 @@ plotGC <- function(fitpar, knots=c(.4,.5,.6), bk=c(0,1), col, lty, m="GC") {
     lines(z, logpred[,i], col=col[i], lwd=2, lty=lty[i])
   }
 }
-
 # plots for VLMM (read start sequence bias) for a single sample
 plotOrder0 <- function(order0, ...) {
   dna.letters <- c("A","C","G","T")
