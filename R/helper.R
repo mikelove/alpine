@@ -2,8 +2,6 @@ clusterGenes <- function(ebg, txdf) {
   fo <- findOverlaps(ebg, ignore.strand=TRUE)
   fo <- fo[queryHits(fo) < subjectHits(fo)]
   mat <- as.matrix(fo)
-  library(graph)
-  library(RBGL)
   graph <- ftM2graphNEL(mat, edgemode="undirected")
   components <- connectedComp(graph)
   message("found ",length(components), " clusters from ",length(ebg)," genes")
