@@ -11,7 +11,8 @@ minimal example in `vignettes/alpine.Rmd`.
 The code is still in development. Expect changes in the user-facing 
 functions in particular, where a wrapper function will replace the 
 lower-level bias modeling and abundance estimating functions in the 
-current vignette.
+current vignette. It is currently designed for unstranded RNA-seq
+data, and future work will allow support for stranded data.
 
 A manuscript explaining the methods and the background behind fragment 
 sequence bias is posted to [bioRxiv](http://biorxiv.org/content/early/2015/08/28/025767).

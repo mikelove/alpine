@@ -1,4 +1,47 @@
-clusterGenes <- function(ebg, txdf) {
+splitGenesAcrossChroms <- function(ebg, txdf) {
+  split.chroms <- sapply(split(txdf$TXCHROM, txdf$GENEID), function(x) !all(x == x[1]))
+  message("found ",sum(split.chroms),
+          " genes split over chroms out of ",length(split.chroms))
+  split.chroms <- names(split.chroms)[split.chroms]
+  new.genes <- GRangesList()
+  for (gid in split.chroms) {
+    chroms <- unique(txdf$TXCHROM[txdf$GENEID == gid])
+    exs <- ebg[[gid]]
+    for (i in seq_along(chroms)) {
+      # cl = chromosome split
+      new.name <- paste0(gid,"_cs",i)
+      txdf$GENEID[txdf$GENEID == gid & txdf$TXCHROM == chroms[i]] <- new.name
+      new.genes[[new.name]] <- exs[seqnames(exs) == chroms[i]]
+    }
+    ebg[[gid]] <- NULL
+  }
+  ebg <- c(ebg, new.genes)
+  list(ebg=ebg, txdf=txdf)
+}
+splitLongGenes <- function(ebg, ebt, txdf, long=1e6) {
+  strand(ebg) <- "*"
+  r <- unlist(range(ebg))
+  w <- width(r)
+  stopifnot(length(w) == length(ebg))
+  long.genes <- names(ebg)[w > long]
+  message("found ",length(long.genes),
+          " long genes (1e",log10(long)," bp) out of ",length(ebg))
+  new.genes <- GRangesList()
+  for (gid in long.genes) {
+    # ls = long split
+    new.names <- paste0(gid,"_ls",seq_len(sum(txdf$GENEID == gid)))
+    ebg[[gid]] <- NULL
+    txdf$GENEID[txdf$GENEID == gid] <- new.names
+    for (new.gene in new.names) {
+      gr <- ebt[[txdf$TXNAME[txdf$GENEID == new.gene]]]
+      mcols(gr)$exon_rank <- NULL
+      new.genes[[new.gene]] <- gr
+    }
+  }
+  ebg <- c(ebg, new.genes)
+  list(ebg=ebg, txdf=txdf)
+}
+mergeGenes <- function(ebg, txdf) {
   fo <- findOverlaps(ebg, ignore.strand=TRUE)
   fo <- fo[queryHits(fo) < subjectHits(fo)]
   mat <- as.matrix(fo)
@@ -7,7 +50,7 @@ clusterGenes <- function(ebg, txdf) {
   message("found ",length(components), " clusters from ",length(ebg)," genes")
   components <- lapply(components, function(x) names(ebg)[as.numeric(x)])
   for (cluster in components) {
-    txdf$GENEID[txdf$GENEID %in% cluster] <- paste0(cluster[1],"_cluster")
+    txdf$GENEID[txdf$GENEID %in% cluster] <- paste0(cluster[1],"_mrg")
   }
   txdf
 }
