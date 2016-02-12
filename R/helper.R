@@ -147,6 +147,27 @@ plotOrder2 <- function(order2, pos2) {
   alpha <- alphafun(dna.letters, order-1)
   legend("center",alpha,pch=rep(1:4,each=4),col=dna.cols,cex=2,title="prev")
 }
+plotRelPos <- function(fitpar, knots=c(.25,.5,.75), bk=c(0,1), col, lty, m="GC") {
+  n <- length(knots)
+  # assuming same number of knots for GC and for relpos
+  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[m]][c(1,(3+n):(3+2*n))])
+  z <- seq(from=0,to=1,length=101)
+  x <- model.matrix(~ ns(z, knots=knots, Boundary.knots=bk))
+  logpred <- x %*% coefmat
+  logpred <- scale(logpred, scale=FALSE)
+  plot(0,0,type="n",xlim=c(0,1),ylim=c(min(logpred),max(logpred)),
+       ylab="log fragment rate", xlab="5' -- position in transcript -- 3'",
+       main="relative position bias")
+  if (missing(col)) {
+    col <- rep("black", ncol(logpred))
+  }
+  if (missing(lty)) {
+    lty <- rep(1, ncol(logpred))
+  }
+  for (i in 1:ncol(logpred)) {
+    lines(z, logpred[,i], col=col[i], lwd=2, lty=lty[i])
+  }
+}
 
 
 ###
@@ -191,27 +212,6 @@ varExplainedPos <- function(res, m="GC", errorfun) {
     reduction <- if (null == 0) NA else (null - residual)/null
     data.frame(mu=mu, null=null, reduction=reduction)
   }))
-}
-plotRelPos <- function(fitpar, knots, bk, col, lty, m="GC") {
-  n <- length(knots)
-  # assuming same number of knots for GC and for relpos
-  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[m]][c(1,(3+n):(3+2*n))])
-  z <- seq(from=0,to=1,length=101)
-  x <- model.matrix(~ ns(z, knots=knots, Boundary.knots=bk))
-  logpred <- x %*% coefmat
-  logpred <- scale(logpred, scale=FALSE)
-  plot(0,0,type="n",xlim=c(0,1),ylim=c(min(logpred),max(logpred)),
-       ylab="log fragment rate", xlab="5' -- position in transcript -- 3'",
-       main="relative position bias")
-  if (missing(col)) {
-    col <- rep("black", ncol(logpred))
-  }
-  if (missing(lty)) {
-    lty <- rep(1, ncol(logpred))
-  }
-  for (i in 1:ncol(logpred)) {
-    lines(z, logpred[,i], col=col[i], lwd=2, lty=lty[i])
-  }
 }
 getCountMatrix <- function(gene, bamfile, genome=Hsapiens) {
   fragtypes <- buildFragtypesFromExons(gene, genome)

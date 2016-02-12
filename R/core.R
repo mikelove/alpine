@@ -29,7 +29,7 @@ buildFragtypesFromExons <- function(exons, genome, readlength,
   stopifnot(is(exons,"GRanges"))
   stopifnot(is(genome,"BSgenome"))
   stopifnot(is.numeric(minsize) & is.numeric(maxsize) & is.numeric(readlength))
-  stopifnot(sum(width(exons)) > maxsize)
+  stopifnot(sum(width(exons)) >= maxsize)
   stopifnot(all(c("exon_rank","exon_id") %in% names(mcols(exons))))
   map <- mapTxToGenome(exons)
   l <- nrow(map)

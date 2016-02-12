@@ -48,13 +48,14 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   stopifnot(!is.null(names(transcripts)))
   stopifnot(all(file.exists(paste0(bamfiles, ".bai"))))
   if (!is.null(lib.sizes)) stopifnot(all(names(bamfiles) %in% names(lib.sizes)))
-  if (!singleiso) {
-    gene.fco <- findOverlaps(transcripts, ignoreSelf=TRUE)
-    stopifnot(length(gene.fco) > 0)
-  }
   w <- sum(width(transcripts))
-  # TODO: come up with a better output here
-  if (any(w <= minsize)) return(NULL)
+
+  # TODO: give better output here
+  if (min(w) <= minsize + 1) return(NULL)
+
+  if (min(w) <= maxsize) {
+    maxsize <- min(w)
+  }
   
   # TODO: come up with a check on whether models is compatible with fitpar
   
