@@ -69,6 +69,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   })
   # message("building fragment types: ",round(unname(st[3]))," seconds")
   names(fraglist) <- names(transcripts)
+
   res <- lapply(seq_along(bamfiles), function(i) {
     bamfile <- bamfiles[i]
     bamname <- names(bamfile)

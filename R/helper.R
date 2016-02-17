@@ -223,6 +223,12 @@ densityToMean <- function(d) {
   delta * sum(d$x * d$y)
 }
 alpineFlag <- function() scanBamFlag(isSecondaryAlignment=FALSE)
-readGAlignAlpine <- function(bamfile, generange) {
-  readGAlignmentPairs(bamfile,param=ScanBamParam(which=generange,flag=alpineFlag()))
+readGAlignAlpine <- function(bamfile, generange, manual=TRUE) {
+  if (manual) {
+    param <- ScanBamParam(which=generange, what=c("flag","mrnm","mpos"), flag=alpineFlag())
+    gal <- readGAlignments(bamfile, use.names=TRUE, param=param)
+    makeGAlignmentPairs(gal)
+  } else {
+    readGAlignmentPairs(bamfile,param=ScanBamParam(which=generange,flag=alpineFlag()))
+  }
 }
