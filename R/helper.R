@@ -78,49 +78,9 @@ extract <- function(res, model, nsamp, lib.sizes=1e6) {
   sweep(fpkm, 2, multFactor, `*`)
 }
 
-###
 
-nogenbank <- function(x) sub("(.*)\\(GenBank)","\\1",x)
-getYmax <- function(res) {
-  max(sapply(seq_along(res), function(i) max(res[[i]]$frag.cov)))
-}
-plotCovOne <- function(res, i=1, m="GC", xlab="", ylab="", log=FALSE, ...) {
-  transform <- if (log) {
-    function(x) log10(x + 1)
-  } else {
-    I
-  }
-  ymax <- transform(getYmax(res[i]))
-  plot(transform(as.numeric(res[[i]]$frag.cov)), type="l", ylim=c(0,ymax),
-       xlab=xlab, ylab=ylab, col=cond[i], lwd=3, ...)
-  lines(transform(as.numeric(res[[i]][["pred.cov"]][[m]])), col=rgb(0,0,0,.7),lwd=3)
-}
-plotCov <- function(res, m="GC", cond, xlab="", ylab="", log=FALSE, lwd=3, ...) {
-  for (i in seq_along(res)) {
-    transform <- if (log) {
-      function(x) log10(x + 1)
-    } else {
-      I
-    }
-    #ymax <- transform(getYmax(res))
-    plot(transform(as.numeric(res[[i]]$frag.cov)), type="l", # ylim=c(0,ymax),
-         xlab=xlab, ylab=ylab, col=cond[i], lwd=lwd, ...)
-    lines(transform(as.numeric(res[[i]][["pred.cov"]][[m]])), col=rgb(0,0,0,.7),lwd=lwd)
-  }
-}
-varExplainedPos <- function(res, m="GC", errorfun) {
-  do.call(rbind,lapply(seq_along(res), function(i) {
-    y <- as.numeric(res[[i]]$frag.cov)
-    fit <- as.numeric(res[[i]][["pred.cov"]][[m]])
-    y <- c(y, rep(0, res[[i]]$l - length(y)))
-    fit <- c(fit, rep(0, res[[i]]$l - length(fit)))
-    mu <- mean(y)
-    null <- errorfun(y, mu)
-    residual <- errorfun(y, fit)
-    reduction <- if (null == 0) NA else (null - residual)/null
-    data.frame(mu=mu, null=null, reduction=reduction)
-  }))
-}
+### miscellaneous helper functions ###
+
 getCountMatrix <- function(gene, bamfile, genome=Hsapiens) {
   fragtypes <- buildFragtypesFromExons(gene, genome)
   l <- sum(width(gene))
@@ -196,31 +156,6 @@ getReadlength <- function(bamfiles) {
     qwidth(readGAlignments(BamFile(file, yieldSize=1)))
   }
   sapply(bamfiles, getRL1)
-}
-bamCovToGRanges <- function(bamfiles, gr, lib.sizes, n=1000) {
-  locs <- round(seq(from=1,to=width(gr),length=n))
-  covmat <- sapply(seq_along(bamfiles), function(i) {
-                     bf <- bamfiles[i]
-                     cov <- coverage(bf, param=ScanBamParam(which=gr))[gr][[1]]
-                     as.numeric(cov[locs]) * 1e6 / lib.sizes[i]
-                   })
-  gr.out <- GRanges(seqnames(gr), IRanges(locs + start(gr), width=1))
-  mcols(gr.out) <- covmat
-  gr.out
-}
-getGCOverGrid <- function(genome, gr, n=1000) {
-  firstbp <- start(gr)
-  dna <- getSeq(genome, gr)[[1]]
-  j <- round(seq(from=1, to=length(dna)-1, length=n+1))
-  start <- j[-(n+1)]
-  end <- j[-1] + 1
-  v <- Views(dna, start=start, end=end)
-  gc <- as.numeric(letterFrequency(v, letters="GC", as.prob=TRUE))
-  list(gc=gc, start=start, end=end)
-}
-densityToMean <- function(d) {
-  delta <- d$x[2] - d$x[1]
-  delta * sum(d$x * d$y)
 }
 alpineFlag <- function() scanBamFlag(isSecondaryAlignment=FALSE)
 readGAlignAlpine <- function(bamfile, generange, manual=TRUE) {
