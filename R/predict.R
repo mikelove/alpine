@@ -51,6 +51,7 @@ predictOneGene <- function(gene, bamfiles, fitpar, genome=Hsapiens,
     not.first.or.last.bp <- !(fragtypes.temp$start == 1 | fragtypes.temp$end == l)
     fragtypes.temp <- fragtypes.temp[not.first.or.last.bp,]
 
+    ir <- IRanges(fragtypes.temp$start, fragtypes.temp$end)
     res[[bamname]]$l <- l
     res[[bamname]]$frag.cov <- frag.cov
     res[[bamname]]$pred.cov <- list()
