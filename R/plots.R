@@ -3,7 +3,7 @@
 # and generates a smooth function of log fragment rate over fragment GC.
 # This is similar to the plot you would get with, e.g. plot.gam()
 # after having fit a generalized additive model.
-plotGC <- function(fitpar, knots=c(.4,.5,.6), bk=c(0,1), col, lty, m="GC", ylim) {
+plotGC <- function(fitpar, col, lty, m, ylim, knots=c(.4,.5,.6), bk=c(0,1)) {
   n <- length(knots)
   coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[m]][1:(n+2)])
   genecoefs <- lapply(fitpar, function(elem) elem[["coefs"]][[m]][ grep("gene", names(elem[["coefs"]][[m]])) ])
@@ -71,7 +71,7 @@ plotOrder2 <- function(order2, pos2) {
   alpha <- alphafun(dna.letters, order-1)
   legend("center",alpha,pch=rep(1:4,each=4),col=dna.cols,cex=2,title="prev")
 }
-plotRelPos <- function(fitpar, knots=c(.25,.5,.75), bk=c(0,1), col, lty, m="GC", ylim) {
+plotRelPos <- function(fitpar, col, lty, m, ylim, knots=c(.25,.5,.75), bk=c(0,1)) {
   n <- length(knots)
   # assuming same number of knots for GC and for relpos
   coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[m]][c(1,(3+n):(3+2*n))])
