@@ -65,7 +65,7 @@ plotFragLen <- function(fitpar, col, lty) {
        xlab="fragment length", ylab="density", main="fragment length distribution",
        col=col[1], lty=lty[1])
   for (i in seq_along(fitpar)[-1]) {
-    lines(fitpar[[i]]$fraglen.density, col=col[i], lty=lty[i])
+    lines(fitpar[[i]]$fraglen.density, col=col[i], lty=lty[i], lwd=2)
   }
 }
 
