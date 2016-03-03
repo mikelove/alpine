@@ -63,7 +63,7 @@ plotFragLen <- function(fitpar, col, lty) {
   ymax <- max(sapply(fitpar, function(x) max(x$fraglen.density$y)))
   plot(fitpar[[1]]$fraglen.density, ylim=c(0,ymax*1.1),
        xlab="fragment length", ylab="density", main="fragment length distribution",
-       col=col[1], lty=lty[1])
+       col=col[1], lty=lty[1], lwd=2)
   for (i in seq_along(fitpar)[-1]) {
     lines(fitpar[[i]]$fraglen.density, col=col[i], lty=lty[i], lwd=2)
   }
