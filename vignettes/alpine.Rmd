@@ -98,7 +98,7 @@ in this case because the paucity of reads and genes in the example dataset.
 
 ```{r}
 plot(fitpar[[1]]$fraglen.density)
-plotGC(fitpar, m="GC")
+plotGC(fitpar, model="GC")
 fitpar[[1]]$summary
 ```
 
