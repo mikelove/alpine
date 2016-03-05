@@ -167,3 +167,10 @@ readGAlignAlpine <- function(bamfile, generange, manual=TRUE) {
     readGAlignmentPairs(bamfile,param=ScanBamParam(which=generange,flag=alpineFlag()))
   }
 }
+normalizeDESeq <- function(mat, cutoff) {
+  mat <- mat[rowMeans(mat) > cutoff,,drop=FALSE]
+  loggeomeans <- rowMeans(log(mat))
+  logratio <- (log(mat) - loggeomeans)[is.finite(loggeomeans),,drop=FALSE]
+  sf <- exp(apply(logratio, 2, median, na.rm=TRUE))
+  sweep(mat, 2, sf, "/")
+}
