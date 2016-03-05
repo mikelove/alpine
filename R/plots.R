@@ -1,12 +1,11 @@
 # plot for fragment GC bias over multiple samples
 # This takes the natural spline estimated coefficients from the Poisson regression
 # and generates a smooth function of log fragment rate over fragment GC.
-# This is similar to the plot you would get with, e.g. plot.gam()
-# after having fit a generalized additive model.
-plotGC <- function(fitpar, col, lty, m, ylim, knots=c(.4,.5,.6), bk=c(0,1)) {
+plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) {
   n <- length(knots)
-  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[m]][1:(n+2)])
-  genecoefs <- lapply(fitpar, function(elem) elem[["coefs"]][[m]][ grep("gene", names(elem[["coefs"]][[m]])) ])
+  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[model]][1:(n+2)])
+  genecoefs <- lapply(fitpar, function(elem)
+    elem[["coefs"]][[model]][ grep("gene", names(elem[["coefs"]][[model]])) ])
   # new intercept: the average of the intercept + gene coefficients
   coefmat[1,] <- coefmat[1,] + sapply(genecoefs, mean)
   z <- seq(from=.2,to=.8,length=101)
@@ -17,7 +16,7 @@ plotGC <- function(fitpar, col, lty, m, ylim, knots=c(.4,.5,.6), bk=c(0,1)) {
   }
   plot(0,0,type="n",xlim=c(.2,.8),ylim=ylim,
        ylab="log fragment rate", xlab="fragment GC content",
-       main="fragment sequence effect")
+       main="fragment sequence bias")
   if (missing(col)) {
     col <- rep("black", ncol(logpred))
   }
@@ -28,6 +27,48 @@ plotGC <- function(fitpar, col, lty, m, ylim, knots=c(.4,.5,.6), bk=c(0,1)) {
     lines(z, logpred[,i], col=col[i], lwd=2, lty=lty[i])
   }
 }
+
+plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(0,1)) {
+  n <- length(knots)
+  # assuming same number of knots for GC and for relpos
+  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[model]][c(1,(3+n):(3+2*n))])
+  z <- seq(from=0,to=1,length=101)
+  x <- model.matrix(~ ns(z, knots=knots, Boundary.knots=bk))
+  logpred <- x %*% coefmat
+  logpred <- scale(logpred, scale=FALSE)
+  if (missing(ylim)) {
+    ylim <- c(min(logpred),max(logpred))
+  }
+  plot(0,0,type="n",xlim=c(0,1),ylim=ylim,
+       ylab="log fragment rate", xlab="5' -- position in transcript -- 3'",
+       main="relative position bias")
+  if (missing(col)) {
+    col <- rep("black", ncol(logpred))
+  }
+  if (missing(lty)) {
+    lty <- rep(1, ncol(logpred))
+  }
+  for (i in 1:ncol(logpred)) {
+    lines(z, logpred[,i], col=col[i], lwd=2, lty=lty[i])
+  }
+}
+
+plotFragLen <- function(fitpar, col, lty) {
+  if (missing(col)) {
+    col <- rep("black", length(fitpar))
+  }
+  if (missing(lty)) {
+    lty <- rep(1, length(fitpar))
+  }
+  ymax <- max(sapply(fitpar, function(x) max(x$fraglen.density$y)))
+  plot(fitpar[[1]]$fraglen.density, ylim=c(0,ymax*1.1),
+       xlab="fragment length", ylab="density", main="fragment length distribution",
+       col=col[1], lty=lty[1], lwd=2)
+  for (i in seq_along(fitpar)[-1]) {
+    lines(fitpar[[i]]$fraglen.density, col=col[i], lty=lty[i], lwd=2)
+  }
+}
+
 # plots for VLMM (read start sequence bias) for a single sample
 plotOrder0 <- function(order0, ...) {
   dna.letters <- c("A","C","G","T")
@@ -70,28 +111,4 @@ plotOrder2 <- function(order2, pos2) {
   plot(0,0,type="n",xaxt="n",yaxt="n",xlab="",ylab="")
   alpha <- alphafun(dna.letters, order-1)
   legend("center",alpha,pch=rep(1:4,each=4),col=dna.cols,cex=2,title="prev")
-}
-plotRelPos <- function(fitpar, col, lty, m, ylim, knots=c(.25,.5,.75), bk=c(0,1)) {
-  n <- length(knots)
-  # assuming same number of knots for GC and for relpos
-  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[m]][c(1,(3+n):(3+2*n))])
-  z <- seq(from=0,to=1,length=101)
-  x <- model.matrix(~ ns(z, knots=knots, Boundary.knots=bk))
-  logpred <- x %*% coefmat
-  logpred <- scale(logpred, scale=FALSE)
-  if (missing(ylim)) {
-    ylim <- c(min(logpred),max(logpred))
-  }
-  plot(0,0,type="n",xlim=c(0,1),ylim=ylim,
-       ylab="log fragment rate", xlab="5' -- position in transcript -- 3'",
-       main="relative position bias")
-  if (missing(col)) {
-    col <- rep("black", ncol(logpred))
-  }
-  if (missing(lty)) {
-    lty <- rep(1, ncol(logpred))
-  }
-  for (i in 1:ncol(logpred)) {
-    lines(z, logpred[,i], col=col[i], lwd=2, lty=lty[i])
-  }
 }
