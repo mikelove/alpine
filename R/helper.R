@@ -168,9 +168,9 @@ readGAlignAlpine <- function(bamfile, generange, manual=TRUE) {
   }
 }
 normalizeDESeq <- function(mat, cutoff) {
-  mat <- mat[rowMeans(mat) > cutoff,,drop=FALSE]
-  loggeomeans <- rowMeans(log(mat))
-  logratio <- (log(mat) - loggeomeans)[is.finite(loggeomeans),,drop=FALSE]
+  mat2 <- mat[rowMeans(mat) > cutoff,,drop=FALSE]
+  loggeomeans <- rowMeans(log(mat2))
+  logratio <- (log(mat2) - loggeomeans)[is.finite(loggeomeans),,drop=FALSE]
   sf <- exp(apply(logratio, 2, median, na.rm=TRUE))
   sweep(mat, 2, sf, "/")
 }
