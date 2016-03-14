@@ -73,8 +73,10 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   res <- lapply(seq_along(bamfiles), function(i) {
     bamfile <- bamfiles[i]
     bamname <- names(bamfile)
-    generange <- range(unlist(range(transcripts)))
-    strand(generange) <- "*" # not necessary
+    txrange <- unlist(range(transcripts))
+    strand(txrange) <- "*"
+    generange <- range(txrange)
+    
     #message("align reads to txs")
     suppressWarnings({
       ga <- readGAlignAlpine(bamfile, generange)
