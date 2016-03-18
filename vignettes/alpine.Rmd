@@ -49,7 +49,8 @@ txdf <- select(txdb, columns=c("TXNAME","TXID"), keys=geneids, keytype="GENEID")
 tab <- table(txdf$GENEID)
 single.tx.genes <- names(tab)[tab == 1]
 single.txs <- sort(txdf$TXID[txdf$GENEID %in% single.tx.genes])
-# this dataset is too small, so we pick one tx per gene (not recommended)
+# this dataset is too small, so we pick one tx per gene (not recommended).
+# we will soon update the vignette to use better example data
 txs <- sort(sapply(split(txdf$TXID, txdf$GENEID), `[`, 1))
 ebt <- exonsBy(txdb, "tx")
 ebt <- ebt[txs]
@@ -66,14 +67,14 @@ assay(so)
 
 An example of fitting the bias model. Here, we don't have enough data
 to properly fit the model because these BAM files are too small of a subset.
-We demonstrate the functions nevertheless and plan to create a small
+We demonstrate the functions and plan to create a small
 demonstration dataset in the meantime. Robust fitting of these bias
-parameters requires 50 or more medium to highly expressed genes.
+parameters is best with ~100 medium to highly expressed genes.
 
 ```{r}
 library(alpine)
 library(BSgenome.Hsapiens.UCSC.hg19)
-seqlevelsStyle(Hsapiens) <- "NCBI" # because the BAMs are NCBI-style
+seqlevelsStyle(Hsapiens) <- "NCBI" # because these BAMs are NCBI-style
 genenames <- names(ebt)
 names(genenames) <- genenames
 # list of fragment types for each single-isoform gene
@@ -82,10 +83,39 @@ fragtypes <- lapply(genenames, function(gene) {
                readlength=63, minsize=100, maxsize=300)
              })
 indexBam(bamfiles[1])
-# here, we can include any combination or functions of bias terms
-models <- list("GC"=list(formula="count~ns(gc,knots=gc.knots,Boundary.knots=gc.bk) + gene",
-                 offset=c("fraglen")))
-# fits one sample at a time
+```
+
+The definition of bias models is extremely flexible in *alpine*.
+These are defined in a list structure, where each element is a list
+with elements `formula` and `offset`. `offset` can be set to `NULL`.
+Any kind of R formula is allowed here, which uses information stored
+in the elements contained in `fragtypes`. 
+The allowable offsets are `fraglen` and/or `vlmm` which
+are listed as a character vector. Here we fit a bias model
+using fragment length, fragment GC content, and a term for
+differences in expression across the genes (`+ gene`).
+
+```{r}
+models <- list("GC"=list(formula="count ~ ns(gc,knots=gc.knots,Boundary.knots=gc.bk) + gene",
+                         offset=c("fraglen")))
+```
+
+Below is an example of full model which is used in the *alpine* paper, but
+which we do not fit here. The knots and boundary knots for GC content
+and relative position splines are currently fixed internally, and should be
+referred to using the following calls:
+
+```{r, eval=FALSE}
+  "all" = list(formula = "count ~ ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  GC40.80 + GC40.90 + GC20.80 + GC20.90 +
+  gene",
+  offset=c("fraglen","vlmm"))
+```
+
+The following command then fits bias parameters one sample at a time:
+
+```{r}
 fitpar <- fitModelOverGenes(ebt, bamfiles[1], fragtypes, genome=Hsapiens,
                             models=models,
                             readlength=63, minsize=100, maxsize=300)
