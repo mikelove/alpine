@@ -116,8 +116,10 @@ referred to using the following calls:
 The following command then fits bias parameters one sample at a time:
 
 ```{r}
-fitpar <- fitModelOverGenes(ebt, bamfiles[1], fragtypes, genome=Hsapiens,
-                            models=models,
+fitpar <- fitModelOverGenes(genes=ebt,
+                            bamfile=bamfiles[1],
+                            fragtypes=fragtypes,
+                            genome=Hsapiens, models=models,
                             readlength=63, minsize=100, maxsize=300)
 fitpar <- list(fitpar) # typically fitpar is a list over samples
 names(fitpar) <- names(bamfiles)[1]
@@ -129,7 +131,7 @@ in this case because the paucity of reads and genes in the example dataset.
 ```{r}
 plotFragLen(fitpar)
 plotGC(fitpar, model="GC")
-fitpar[[1]]$summary
+print(fitpar[[1]]$summary$GC, row.names=FALSE)
 ```
 
 Estimate transcript abundance, first pick a multiple isoform gene.
@@ -154,7 +156,7 @@ geneids <- txdf$GENEID[txdf$TXID %in% txs2]
 ```{r}
 models <- list("null"=list(formula=NULL, offset=NULL),
                "GC"=list(formula="count~ns(gc,knots=gc.knots,Boundary.knots=gc.bk) + 0",
-                 offset=c("fraglen")))
+                         offset=c("fraglen")))
 ```
 
 ```{r}
@@ -168,9 +170,9 @@ res <- lapply(geneids, function(geneid) {
          estimateTheta(transcripts=ebt, bamfiles=bamfiles[1],
                        fitpar=fitpar, genome=Hsapiens,
                        models=models, readlength=63,
+                       minsize=100, maxsize=300,
                        subset=TRUE, zerotopos=20, niter=100,
-                       lib.sizes=lib.sizes,
-                       minsize=100, maxsize=300)
+                       lib.sizes=lib.sizes)
          })
 ```
 

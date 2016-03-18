@@ -9,6 +9,7 @@ License: GPL (>=2)
 VignetteBuilder: knitr
 Imports:
     Biostrings,
+    IRanges,
     GenomicRanges,
     GenomicAlignments,
     Rsamtools,
