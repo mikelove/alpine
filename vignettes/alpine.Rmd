@@ -97,7 +97,7 @@ Visually exploring the bias parameters. These are not robustly fit
 in this case because the paucity of reads and genes in the example dataset.
 
 ```{r}
-plot(fitpar[[1]]$fraglen.density)
+plotFragLen(fitpar)
 plotGC(fitpar, model="GC")
 fitpar[[1]]$summary
 ```
