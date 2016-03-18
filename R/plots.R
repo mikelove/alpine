@@ -1,6 +1,16 @@
-# plot for fragment GC bias over multiple samples
-# This takes the natural spline estimated coefficients from the Poisson regression
-# and generates a smooth function of log fragment rate over fragment GC.
+#' Plot the fragment GC bias over samples
+#' 
+#' Plots smooth curves of the log fragment rate over fragment GC content.
+#'
+#' @param fitpar a list of the output of \link{fitModelOverGenes} over samples
+#' @param model the name of one of the models 
+#' @param col a vector of colors
+#' @param lty a vector of line types
+#' @param ylim the y limits for the plot
+#' @param knots the knots for the spline
+#' @param bk the boundary knots for the spline
+#'
+#' @export
 plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) {
   n <- length(knots)
   coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[model]][1:(n+2)])
@@ -28,6 +38,19 @@ plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) 
   }
 }
 
+#' Plot relative position bias over samples
+#'
+#' Plots the smooth curves of log fragment rate over relative position.
+#' 
+#' @param fitpar a list of the output of \link{fitModelOverGenes} over samples
+#' @param model the name of one of the models 
+#' @param col a vector of colors
+#' @param lty a vector of line types
+#' @param ylim the y limits for the plot
+#' @param knots the knots for the spline
+#' @param bk the boundary knots for the spline
+#' 
+#' @export
 plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(0,1)) {
   n <- length(knots)
   # assuming same number of knots for GC and for relpos
@@ -53,6 +76,15 @@ plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(
   }
 }
 
+#' Plot fragment length distribution over samples
+#'
+#' Plots the fragment length distribution.
+#' 
+#' @param fitpar a list of the output of \link{fitModelOverGenes} over samples
+#' @param col a vector of colors
+#' @param lty a vector of line types
+#'
+#' @export
 plotFragLen <- function(fitpar, col, lty) {
   if (missing(col)) {
     col <- rep("black", length(fitpar))
@@ -69,19 +101,44 @@ plotFragLen <- function(fitpar, col, lty) {
   }
 }
 
-# plots for VLMM (read start sequence bias) for a single sample
+#' Plot parameters of the variable length Markov model (VLMM) for read starts
+#'
+#' This function plots portions of the Cufflinks VLMM for read start bias.
+#' As the variable lenght Markov model has different dependencies for different
+#' positions (see Roberts et al, 2011), it is difficult
+#' to show all the 744 parameters simultaneously. Instead this function
+#' offers to show the 0-order terms for all positions, or the 1st and 2nd
+#' order terms for selected positions within the read start sequence.
+#'
+#' @references
+#'
+#' Roberts et al, "Improving RNA-Seq expression estimates by correcting for fragment bias"
+#' Genome Biology (2011) doi:101186/gb-2011-12-3-r22
+#' 
+#' @param order0 the "order0" element of the list named "vlmm.fivep" or "vlmm.threep"
+#' within the list that is the output of \link{fitModelOverGenes}
+#' @param order1 as for "order0" but "order1"
+#' @param pos1 the position of the 1st order VLMM to plot
+#' @param order2 as for "order0" but "order2"
+#' @param pos2 the position of the 2nd order VLMM to plot
+#' @param ... parameters passed to \code{plot}
+#'
+#' @export
 plotOrder0 <- function(order0, ...) {
   dna.letters <- c("A","C","G","T")
   mat <- log(order0$obs/order0$expect)
   xpos <- -8:12
   dna.cols <- c("green3","blue3","orange3","red3")
-  plot(0,0,xlim=c(-8,12),ylim=c(-0.3,0.3),type="n",xlab="position",ylab="log(observed / expected)",...)
+  plot(0,0,xlim=c(-8,12),ylim=c(-0.3,0.3),type="n",xlab="position",ylab="log(observed / expected)", ...)
   for (i in 1:4) {
     points(xpos, mat[i,], col=dna.cols[i], type="b", lwd=2)
   }
   abline(v=0, h=0, col=rgb(0,0,0,.3))
   legend("topright",dna.letters,pch=1,lty=1,col=dna.cols,bg="white")
 }
+
+#' @describeIn plotOrder0 Plot first order parameters for a position
+#' @export
 plotOrder1 <- function(order1, pos1) {
   order <- 1
   npos <- length(pos1)
@@ -97,6 +154,9 @@ plotOrder1 <- function(order1, pos1) {
   alpha <- alphafun(dna.letters, order-1)
   legend("center",alpha,pch=1,col=dna.cols,cex=2,title="prev")
 }
+
+#' @describeIn plotOrder0 Plot second order parameters for a position
+#' @export
 plotOrder2 <- function(order2, pos2) {
   order <- 2
   npos <- length(pos2)

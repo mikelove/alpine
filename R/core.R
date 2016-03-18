@@ -1,36 +1,93 @@
-## core functions
-startLeft <- function(x) {
-  first.plus <- as.logical(strand(first(x)) == "+")
-  ifelse(first.plus, start(first(x)), start(last(x)))
-}
-endRight <- function(x) {
-  first.plus <- as.logical(strand(first(x)) == "+")
-  ifelse(first.plus, end(last(x)), end(first(x)))
-}
-mapTxToGenome <- function(exons) {
-  strand <- as.character(strand(exons)[1])
-  stopifnot(all(exons$exon_rank == seq_along(exons)))
-  bases <- if (strand == "+") {
-    do.call(c,lapply(exons, function(exon) start(exon):end(exon)))
-  } else if (strand == "-") {
-    do.call(c,lapply(exons, function(exon) end(exon):start(exon)))    
-  }
-  data.frame(tx=seq_along(bases),
-             genome=bases,
-             exon_rank=rep(exons$exon_rank, width(exons)))
-}
-genomeToTx <- function(genome, map) map$tx[match(genome, map$genome)]
-txToGenome <- function(tx, map) map$genome[match(tx, map$tx)]
-txToExon <- function(tx, map) map$exon_rank[match(tx, map$tx)]
-# npre = 8 and npost = 12 describe the number of bp needed for the VLMM (Roberts et al 2011)
+#' alpine: bias corrected transcript abundance estimation
+#'
+#' alpine is a package for estimating and visualizing many forms of sample-specific
+#' biases that can arise in RNA-seq, including fragment length
+#' distribution, positional bias on the transcript, read
+#' start bias (random hexamer priming), and fragment GC content
+#' (amplification). It also offers bias-corrected estimates of
+#' transcript abundance (FPKM). It is currently designed for
+#' un-stranded paired-end RNA-seq data, but will be extended in the
+#' future to support strand-specific data.
+#'
+#' See the vignette for a detailed workflow.
+#' 
+#' The main functions in this package are:
+#' \enumerate{
+#' \item \link{buildFragtypesFromExons} - build out features for fragment types from exons of a single gene (GRanges)
+#' \item \link{fitModelOverGenes} - fit the bias parameters over a set of ~100 medium to highly expressed single isoform genes (GRangesList)
+#' \item \link{estimateTheta} - given a set of genome alignments (BAM files) and a set of isoforms of a gene (GRangesList), estimate the transcript abundances for these isoforms (FPKM) for various bias models
+#' \item \link{extract} - gives a list of output from \code{estimateTheta}, compile an FPKM matrix across transcripts and samples
+#' }
+#'
+#' Some helper functions for preparing gene objects:
+#' \enumerate{
+#' \item \link{splitGenesAcrossChroms} - split apart "genes" where isoforms are on different chromosomes
+#' \item \link{splitLongGenes} - split apart "genes" which cover a suspiciously large range, e.g. 1 Mb
+#' \item \link{mergeGenes} - merge overlapping isoforms into new "genes"
+#' }
+#' 
+#' The plotting functions are:
+#' \enumerate{
+#' \item \link{plotGC} - plot the fragment GC bias curves
+#' \item \link{plotFragLen} - plot the framgent length distributions
+#' \item \link{plotRelPos} - plot the positional bias (5' to 3')
+#' \item \link{plotOrder0}, \link{plotOrder1}, \link{plotOrder2} - plot the read start bias
+#' }
+#'
+#' @references
+#'
+#' Michael I Love, John B Hogenesch, Rafael A Irizarry:
+#' Modeling of RNA-seq fragment sequence bias reduces
+#' systematic errors in transcript abundance estimation
+#' Posted to bioRxiv August 2015, \url{http://biorxiv.org/content/early/2015/08/28/025767}
+#'
+#' @author Michael Love
+#'
+#' @docType package
+#' @name alpine-package
+#' @aliases alpine-package
+#' @keywords package
+NULL
+
+#' Build fragment types from exons
+#'
+#' This is a core function used to construct a table of features used for
+#' bias modeling, with one row for every potential fragment that could
+#' arise from a transcript. The output of this function is used by
+#' \link{fitModelOverGenes}, and this function is used inside \link{estimateTheta}
+#' in order to model the bias affecting different fragments across isoforms
+#' of a gene.
+#' 
+#' @param exons a GRanges object with the exons for a single transcript
+#' @param genome a BSgenome object, for example \code{Hsapiens}, after
+#' loading the package \code{BSgenome.Hsapiens.UCSC.hg19}
+#' @param readlength the length of the reads. This doesn't necessarily
+#' have to be exact (+/- 1 bp would be fine), but it should be close.
+#' @param minsize the minimum fragment length to model. The interval between
+#' \code{minsize} and \code{maxsize} should contain the central 95-99 percent
+#' of the fragment length distribution
+#' @param maxsize the maximum fragment length to model
+#' @param gc logical, whether to estimate the fragment GC content
+#' @param gc.str logical, whether to look for stretches of very high GC within fragments
+#' @param vlmm logical, whether to estimate the Cufflinks variable length
+#' Markov model for read starts
+#'
+#' @return a DataFrame with bias features for all potential fragments
+#' 
+#' @export
 buildFragtypesFromExons <- function(exons, genome, readlength,
-                                    minsize, maxsize, npre=8, npost=12,
+                                    minsize, maxsize, 
                                     gc=TRUE, gc.str=TRUE, vlmm=TRUE) {
   stopifnot(is(exons,"GRanges"))
   stopifnot(is(genome,"BSgenome"))
   stopifnot(is.numeric(minsize) & is.numeric(maxsize) & is.numeric(readlength))
   stopifnot(sum(width(exons)) >= maxsize)
   stopifnot(all(c("exon_rank","exon_id") %in% names(mcols(exons))))
+
+  # these parameters must be fixed, as dictated by fitVLMM()
+  npre <- 8
+  npost <- 12
+  
   map <- mapTxToGenome(exons)
   l <- nrow(map)
   strand <- as.character(strand(exons)[1])
@@ -86,6 +143,32 @@ buildFragtypesFromExons <- function(exons, genome, readlength,
   #message("nrow fragtypes: ",nrow(fragtypes))
   fragtypes
 }
+
+######### unexported core functions #########
+
+startLeft <- function(x) {
+  first.plus <- as.logical(strand(first(x)) == "+")
+  ifelse(first.plus, start(first(x)), start(last(x)))
+}
+endRight <- function(x) {
+  first.plus <- as.logical(strand(first(x)) == "+")
+  ifelse(first.plus, end(last(x)), end(first(x)))
+}
+mapTxToGenome <- function(exons) {
+  strand <- as.character(strand(exons)[1])
+  stopifnot(all(exons$exon_rank == seq_along(exons)))
+  bases <- if (strand == "+") {
+    do.call(c,lapply(exons, function(exon) start(exon):end(exon)))
+  } else if (strand == "-") {
+    do.call(c,lapply(exons, function(exon) end(exon):start(exon)))    
+  }
+  data.frame(tx=seq_along(bases),
+             genome=bases,
+             exon_rank=rep(exons$exon_rank, width(exons)))
+}
+genomeToTx <- function(genome, map) map$tx[match(genome, map$genome)]
+txToGenome <- function(tx, map) map$genome[match(tx, map$tx)]
+txToExon <- function(tx, map) map$exon_rank[match(tx, map$tx)]
 gaToReadsOnTx <- function(ga, grl, fco=NULL) {
   reads <- list()
   for (i in seq_along(grl)) {

@@ -1,41 +1,41 @@
-incidenceMat <- function(x, y, numeric=TRUE) {
-  # borrowed from Wolfgang Huber
-  ux = unique(x)
-  uy = unique(y)
-  im = matrix(FALSE, nrow=length(ux), ncol=length(uy), dimnames=list(ux, uy))
-  im[ cbind(x, y) ] = TRUE
-  if (numeric) {
-    mode(im) <- "numeric"
-  }
-  return(im)
-}
-runEM <- function(n.obs, A, wts=1, niter=20, optim=FALSE) {
-  J <- ncol(A)
-  ntx <- nrow(A)
-  log.like <- function(theta.hat) {
-    sum(wts * dpois(n.obs, colSums(A * theta.hat), log=TRUE))
-  }
-  theta.hat <- rep(1, ntx)
-  theta.0 <- rep(1, ntx)
-  n.obs.sub <- n.obs[n.obs > 0]
-  A.sub <- A[,n.obs > 0,drop=FALSE]
-  rowSumsA <- rowSums(t(t(A) * wts))
-  if (!optim) {
-    for (tt in 1:niter) {
-      n.hat <- t(t(theta.hat * A.sub) * n.obs.sub / colSums(theta.hat * A.sub))
-      theta.hat <- rowSums(n.hat) / rowSumsA
-    }
-  } else {
-    theta.hat <- optim(theta.hat, log.like,
-                       lower=rep(1e-6,ntx), upper=rep(1e6,ntx),
-                       control=list(fnscale=-1), method="L-BFGS-B")$par
-  }
-  theta.hat
-}
+#' Estimate bias-corrected transcript abundances (FPKM) 
+#'
+#' This function takes the fitted bias parameters from \link{fitModelOverGenes}
+#' and uses this information to derive bias corrected estimates of
+#' transcript abundance for a gene (with one or more isoforms)
+#' across multiple samples.
+#' 
+#' @param transcripts a GRangesList of the exons for multiple isoforms of a gene.
+#' For a single-isoform gene, just wrap the exons in \code{GRangesList()}
+#' @param bamfiles a named vector pointing to the indexed BAM files
+#' @param fitpar the output of \link{fitModelOverGenes}
+#' @param genome a BSGenome object
+#' @param models a list of character strings or formula describing the bias models, see vignette
+#' @param readlength the read length
+#' @param minsize the minimum fragment length to model
+#' @param maxsize the maximum fragment length to model
+#' @param subset logical, whether to downsample the non-observed fragments. Default is TRUE
+#' @param zerotopos the rate of downsampling, see \link{fitModelOverGenes}.
+#' Here it is recommended to use a higher value than for fitting the bias parameters.
+#' Default is 20.
+#' @param niter the number of EM iterations. Default is 100.
+#' @param lib.sizes a named vector of library sizes to use in calculating the FPKM.
+#' If NULL (the default) a value of average coverage will be calculated from
+#' the observed fragments. Better is to provide a named vector with 1e6 for all samples.
+#' @param optim logical, whether to use numerical optimization instead of the EM.
+#' Default is FALSE.
+#'
+#' @return a list of lists. For each sample, a list with elements:
+#' theta, lambda and count. theta gives the FPKM estimates for the
+#' isoforms in \code{transcripts}. lambda gives the average bias term
+#' for the isoforms, and count gives the number of fragments which are
+#' compatible with any of the isoforms in \code{transcripts}
+#'
+#' @export
 estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
-                          models, readlength,
-                          subset=FALSE, zerotopos, niter, 
-                          lib.sizes=NULL, optim=FALSE, minsize, maxsize) {
+                          models, readlength, minsize, maxsize,
+                          subset=TRUE, zerotopos=20, niter=100, 
+                          lib.sizes=NULL, optim=FALSE) {
   stopifnot(is(transcripts, "GRangesList"))
   stopifnot(length(transcripts) >= 1)
   singleiso <- length(transcripts) == 1
@@ -203,4 +203,41 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   })
   names(res) <- names(bamfiles)
   res
+}
+
+######### unexported EM functions #########
+
+incidenceMat <- function(x, y, numeric=TRUE) {
+  # borrowed from Wolfgang Huber
+  ux = unique(x)
+  uy = unique(y)
+  im = matrix(FALSE, nrow=length(ux), ncol=length(uy), dimnames=list(ux, uy))
+  im[ cbind(x, y) ] = TRUE
+  if (numeric) {
+    mode(im) <- "numeric"
+  }
+  return(im)
+}
+runEM <- function(n.obs, A, wts=1, niter=20, optim=FALSE) {
+  J <- ncol(A)
+  ntx <- nrow(A)
+  log.like <- function(theta.hat) {
+    sum(wts * dpois(n.obs, colSums(A * theta.hat), log=TRUE))
+  }
+  theta.hat <- rep(1, ntx)
+  theta.0 <- rep(1, ntx)
+  n.obs.sub <- n.obs[n.obs > 0]
+  A.sub <- A[,n.obs > 0,drop=FALSE]
+  rowSumsA <- rowSums(t(t(A) * wts))
+  if (!optim) {
+    for (tt in 1:niter) {
+      n.hat <- t(t(theta.hat * A.sub) * n.obs.sub / colSums(theta.hat * A.sub))
+      theta.hat <- rowSums(n.hat) / rowSumsA
+    }
+  } else {
+    theta.hat <- optim(theta.hat, log.like,
+                       lower=rep(1e-6,ntx), upper=rep(1e6,ntx),
+                       control=list(fnscale=-1), method="L-BFGS-B")$par
+  }
+  theta.hat
 }

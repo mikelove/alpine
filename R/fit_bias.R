@@ -1,6 +1,32 @@
+#' Fit bias model over single-isoform genes
+#'
+#' This function estimates bias parameters for a single sample
+#' over a set of single-isoform
+#' genes. ~100 medium to highly expressed genes should be sufficient to
+#' estimate the bias parameters robustly.
+#' 
+#' @param genes a GRangesList with the exons of different genes
+#' @param bamfile a character string pointing to an indexed BAM file
+#' @param fragtypes the output of \link{buildFragtypesFromExons}. must contain
+#' the potential fragment types for the genes named in \code{genes}
+#' @param genome a BSGenome object
+#' @param models a list of character strings or formula describing the bias models, see vignette
+#' @param readlength the read length
+#' @param minsize the minimum fragment length to model
+#' @param maxsize the maximum fragment length to model
+#' @param zerotopos the ratio of zero counts (unobserved fragments) to positive counts
+#' (observed fragments) that should be used in the Poisson GLM. The default value is 2.
+#' The unobserved fragment types are then downsampled to match this ratio, and
+#' up-weighted in the Poisson GLM.
+#' @param speedglm logical, whether to use speedglm to estimate the coefficients.
+#' Default is TRUE.
+#'
+#' @return
+#'
+#' @export
 fitModelOverGenes <- function(genes, bamfile, fragtypes, genome,
-                              models, readlength, zerotopos=2, 
-                              speedglm=TRUE, minsize, maxsize) {
+                              models, readlength, minsize, maxsize,
+                              zerotopos=2, speedglm=TRUE) {
   stopifnot(file.exists(bamfile))
   stopifnot(file.exists(paste0(as.character(bamfile),".bai")))
   stopifnot(is(genes, "GRangesList"))

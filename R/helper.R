@@ -1,3 +1,52 @@
+#' Extract results from estimateTheta across genes
+#'
+#' This function extracts estimates for a given model from a list
+#' over many genes, returning a matrix with dimensions:
+#' number of transcript x number of samples.
+#' Here, the count of compatible fragments aligning to the
+#' genes is used to estimate the FPKM, dividing out the previously
+#' used estimate \code{lib.sizes}.
+#' 
+#' @param res a list where each element is the output of \link{estimateTheta}
+#' @param model the name of a model, corresponds to names of \code{models}
+#' used in \link{fitModelOverGenes}
+#' @param nsamp the number of samples, corresponds to length of \code{bamfiles}
+#' in \link{estimateTheta}
+#' @param lib.sizes the vector of library sizes passed to \link{estimateTheta}.
+#' not needed if \code{divideOut=FALSE}
+#' @param divideOut logical, whether to divide out the initial estimate of
+#' library size and to instead use the count of compatible fragments for
+#' genes calculated by \link{estimateTheta}. Default is TRUE
+#' 
+#' @return a matrix of FPKM values across transcripts and samples
+#'
+#' @export
+extract <- function(res, model, nsamp, lib.sizes=1e6, divideOut=TRUE) {
+  fpkm <- extractRes(res, model, "theta", nsamp)
+  lambda <- extractRes(res, model, "lambda", nsamp)
+  count <- extractRes(res, model, "count", nsamp)
+  lambdaBar <- colMeans(lambda, na.rm=TRUE)
+  colSumsCount <- colSums(count)
+  multFactor <- if (divideOut) {
+    lambdaBar * lib.sizes / colSumsCount
+  } else {
+    lambdaBar
+  }
+  sweep(fpkm, 2, multFactor, `*`)
+}
+
+#' Split genes that have isoforms across chromosomes
+#'
+#' This function simply splits apart genes which have isoforms across multiple
+#' chromosomes. New "genes" are created with the suffix "_cs" and a number.
+#' 
+#' @param ebg an exons-by-genes GRangesList, created with \code{exonsBy}
+#' @param txdf a data.frame created by running \code{select} on a TxDb object.
+#' Must have columns TXCHROM and GENEID
+#'
+#' @return a list of manipulated \code{ebg} and \code{txdf}
+#'
+#' @export
 splitGenesAcrossChroms <- function(ebg, txdf) {
   split.chroms <- sapply(split(txdf$TXCHROM, txdf$GENEID), function(x) !all(x == x[1]))
   message("found ",sum(split.chroms),
@@ -18,6 +67,25 @@ splitGenesAcrossChroms <- function(ebg, txdf) {
   ebg <- c(ebg, new.genes)
   list(ebg=ebg, txdf=txdf)
 }
+
+#' Split very long genes
+#'
+#' This function splits genes which have a very long range (e.g. 1 Mb),
+#' and new "genes" are formed where each isoform is its own "gene",
+#' with the suffix "_ls" and a number.
+#' It makes sense to turn each isoform into its own gene only if this
+#' function is followed by \link{mergeGenes}.
+#' 
+#' @param ebg an exons-by-genes GRangesList, created with \code{exonsBy}
+#' @param ebt an exons-by-tx GRangesList, created with \code{exonsBy}
+#' @param txdf a data.frame created by running \code{select} on a TxDb object.
+#' Must have columns GENEID and TXNAME, where TXNAME corresponds to the
+#' names of \code{ebt}. Note: this requires renaming \code{ebt}.
+#' @param long a numeric value such that ranges longer than this are "long"
+#'
+#' @return a list of manipulated \code{ebg} and \code{txdf}
+#'
+#' @export
 splitLongGenes <- function(ebg, ebt, txdf, long=1e6) {
   strand(ebg) <- "*"
   r <- unlist(range(ebg))
@@ -41,8 +109,26 @@ splitLongGenes <- function(ebg, ebt, txdf, long=1e6) {
   ebg <- c(ebg, new.genes)
   list(ebg=ebg, txdf=txdf)
 }
-mergeGenes <- function(ebg, txdf) {
-  fo <- findOverlaps(ebg, ignore.strand=TRUE)
+
+#' Merge overlapping "genes" into gene clusters
+#'
+#' This function looks for overlapping exons in \code{ebg}.
+#' The overlapping "genes" are used to form a graph.
+#' Any connected components in the graph (sets of "genes"
+#' which can be reached from each other through overlap relations)
+#' are connected into a new gene cluster, which is given the
+#' suffix "_mrg" and using one of the original gene names.
+#' 
+#' @param ebg an exons-by-genes GRangesList, created with \code{exonsBy}
+#' @param txdf a data.frame created by running \code{select} on a TxDb object.
+#' Must have a column GENEID.
+#' @param ignore.strand Default is TRUE.
+#'
+#' @return a manipulated \code{txdf}.
+#'
+#' @export
+mergeGenes <- function(ebg, txdf, ignore.strand=TRUE) {
+  fo <- findOverlaps(ebg, ignore.strand=ignore.strand)
   fo <- fo[queryHits(fo) < subjectHits(fo)]
   mat <- as.matrix(fo)
   graph <- ftM2graphNEL(mat, edgemode="undirected")
@@ -54,6 +140,9 @@ mergeGenes <- function(ebg, txdf) {
   }
   txdf
 }
+
+######### unexported helper functions #########
+
 extractRes <- function(res, model, what, nsamp) {
   do.call(rbind, lapply(res, function(x) {
     if (is.null(x)) {
@@ -68,19 +157,6 @@ extractRes <- function(res, model, what, nsamp) {
     }
   }))
 }
-extract <- function(res, model, nsamp, lib.sizes=1e6) {
-  fpkm <- extractRes(res, model, "theta", nsamp)
-  lambda <- extractRes(res, model, "lambda", nsamp)
-  count <- extractRes(res, model, "count", nsamp)
-  lambdaBar <- colMeans(lambda, na.rm=TRUE)
-  colSumsCount <- colSums(count)
-  multFactor <-  lambdaBar * lib.sizes / colSumsCount
-  sweep(fpkm, 2, multFactor, `*`)
-}
-
-
-### miscellaneous helper functions ###
-
 getCountMatrix <- function(gene, bamfile, genome=Hsapiens) {
   fragtypes <- buildFragtypesFromExons(gene, genome)
   l <- sum(width(gene))

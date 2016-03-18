@@ -1,4 +1,10 @@
-# VLMM functions
+# Functions for estimating a variable length Markov model (VLMM).
+# Here we implement the VLMM used in Cufflinks to estimate read start
+# biases. The method is described in:
+#
+# Roberts et al, "Improving RNA-Seq expression estimates by correcting for fragment bias"
+# Genome Biology (2011) doi:101186/gb-2011-12-3-r22
+
 alphafun <- function(x, order) {
   if (order == 0) {
     return(x)
