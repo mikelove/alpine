@@ -11,7 +11,8 @@ minimal example in `vignettes/alpine.Rmd`.
 The code is still in development. Expect changes in the user-facing 
 functions in particular, where a wrapper function will replace the 
 lower-level bias modeling and abundance estimation steps in the
-current vignette.
+current vignette. It has been developed under R 3.2 and Bioc 3.2,
+and supports the development branch that will become R 3.3 and Bioc 3.3
 
 `alpine` is currently designed for un-stranded paired-end RNA-seq
 data, and future work will allow support for strand-specific data.
