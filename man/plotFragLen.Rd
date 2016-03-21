@@ -7,7 +7,7 @@
 plotFragLen(fitpar, col, lty)
 }
 \arguments{
-\item{fitpar}{a list of the output of \link{fitModelOverGenes} over samples}
+\item{fitpar}{a list of the output of \link{fitBiasModels} over samples}
 
 \item{col}{a vector of colors}
 

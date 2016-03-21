@@ -1,6 +1,6 @@
 #' Estimate bias-corrected transcript abundances (FPKM) 
 #'
-#' This function takes the fitted bias parameters from \link{fitModelOverGenes}
+#' This function takes the fitted bias parameters from \link{fitBiasModels}
 #' and uses this information to derive bias corrected estimates of
 #' transcript abundance for a gene (with one or more isoforms)
 #' across multiple samples.
@@ -8,14 +8,14 @@
 #' @param transcripts a GRangesList of the exons for multiple isoforms of a gene.
 #' For a single-isoform gene, just wrap the exons in \code{GRangesList()}
 #' @param bamfiles a named vector pointing to the indexed BAM files
-#' @param fitpar the output of \link{fitModelOverGenes}
+#' @param fitpar the output of \link{fitBiasModels}
 #' @param genome a BSGenome object
 #' @param models a list of character strings or formula describing the bias models, see vignette
 #' @param readlength the read length
 #' @param minsize the minimum fragment length to model
 #' @param maxsize the maximum fragment length to model
 #' @param subset logical, whether to downsample the non-observed fragments. Default is TRUE
-#' @param zerotopos the rate of downsampling, see \link{fitModelOverGenes}.
+#' @param zerotopos the rate of downsampling, see \link{fitBiasModels}.
 #' Here it is recommended to use a higher value than for fitting the bias parameters.
 #' Default is 20.
 #' @param niter the number of EM iterations. Default is 100.

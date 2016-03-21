@@ -14,7 +14,7 @@ plotOrder2(order2, pos2)
 }
 \arguments{
 \item{order0}{the "order0" element of the list named "vlmm.fivep" or "vlmm.threep"
-within the list that is the output of \link{fitModelOverGenes}}
+within the list that is the output of \link{fitBiasModels}}
 
 \item{...}{parameters passed to \code{plot}}
 

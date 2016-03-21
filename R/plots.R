@@ -2,7 +2,7 @@
 #' 
 #' Plots smooth curves of the log fragment rate over fragment GC content.
 #'
-#' @param fitpar a list of the output of \link{fitModelOverGenes} over samples
+#' @param fitpar a list of the output of \link{fitBiasModels} over samples
 #' @param model the name of one of the models 
 #' @param col a vector of colors
 #' @param lty a vector of line types
@@ -42,7 +42,7 @@ plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) 
 #'
 #' Plots the smooth curves of log fragment rate over relative position.
 #' 
-#' @param fitpar a list of the output of \link{fitModelOverGenes} over samples
+#' @param fitpar a list of the output of \link{fitBiasModels} over samples
 #' @param model the name of one of the models 
 #' @param col a vector of colors
 #' @param lty a vector of line types
@@ -80,7 +80,7 @@ plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(
 #'
 #' Plots the fragment length distribution.
 #' 
-#' @param fitpar a list of the output of \link{fitModelOverGenes} over samples
+#' @param fitpar a list of the output of \link{fitBiasModels} over samples
 #' @param col a vector of colors
 #' @param lty a vector of line types
 #'
@@ -116,7 +116,7 @@ plotFragLen <- function(fitpar, col, lty) {
 #' Genome Biology (2011) doi:101186/gb-2011-12-3-r22
 #' 
 #' @param order0 the "order0" element of the list named "vlmm.fivep" or "vlmm.threep"
-#' within the list that is the output of \link{fitModelOverGenes}
+#' within the list that is the output of \link{fitBiasModels}
 #' @param order1 as for "order0" but "order1"
 #' @param pos1 the position of the 1st order VLMM to plot
 #' @param order2 as for "order0" but "order2"

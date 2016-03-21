@@ -1,9 +1,9 @@
-#' Fit bias model over single-isoform genes
+#' Fit bias models over single-isoform genes
 #'
-#' This function estimates bias parameters for a single sample
-#' over a set of single-isoform
+#' This function estimates parameters for one or more bias models
+#' for a single sample over a set of single-isoform
 #' genes. ~100 medium to highly expressed genes should be sufficient to
-#' estimate the bias parameters robustly.
+#' estimate the parameters robustly.
 #' 
 #' @param genes a GRangesList with the exons of different genes
 #' @param bamfile a character string pointing to an indexed BAM file
@@ -24,7 +24,7 @@
 #' @return
 #'
 #' @export
-fitModelOverGenes <- function(genes, bamfile, fragtypes, genome,
+fitBiasModels <- function(genes, bamfile, fragtypes, genome,
                               models, readlength, minsize, maxsize,
                               zerotopos=2, speedglm=TRUE) {
   stopifnot(file.exists(bamfile))

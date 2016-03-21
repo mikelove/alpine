@@ -8,7 +8,7 @@ plotGC(fitpar, model, col, lty, ylim, knots = c(0.4, 0.5, 0.6), bk = c(0,
   1))
 }
 \arguments{
-\item{fitpar}{a list of the output of \link{fitModelOverGenes} over samples}
+\item{fitpar}{a list of the output of \link{fitBiasModels} over samples}
 
 \item{model}{the name of one of the models}
 

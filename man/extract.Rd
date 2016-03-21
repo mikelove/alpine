@@ -10,7 +10,7 @@ extract(res, model, nsamp, lib.sizes = 1e+06, divideOut = TRUE)
 \item{res}{a list where each element is the output of \link{estimateTheta}}
 
 \item{model}{the name of a model, corresponds to names of \code{models}
-used in \link{fitModelOverGenes}}
+used in \link{fitBiasModels}}
 
 \item{nsamp}{the number of samples, corresponds to length of \code{bamfiles}
 in \link{estimateTheta}}

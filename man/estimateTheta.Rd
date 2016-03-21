@@ -14,7 +14,7 @@ For a single-isoform gene, just wrap the exons in \code{GRangesList()}}
 
 \item{bamfiles}{a named vector pointing to the indexed BAM files}
 
-\item{fitpar}{the output of \link{fitModelOverGenes}}
+\item{fitpar}{the output of \link{fitBiasModels}}
 
 \item{genome}{a BSGenome object}
 
@@ -28,7 +28,7 @@ For a single-isoform gene, just wrap the exons in \code{GRangesList()}}
 
 \item{subset}{logical, whether to downsample the non-observed fragments. Default is TRUE}
 
-\item{zerotopos}{the rate of downsampling, see \link{fitModelOverGenes}.
+\item{zerotopos}{the rate of downsampling, see \link{fitBiasModels}.
 Here it is recommended to use a higher value than for fitting the bias parameters.
 Default is 20.}
 
@@ -49,7 +49,7 @@ for the isoforms, and count gives the number of fragments which are
 compatible with any of the isoforms in \code{transcripts}
 }
 \description{
-This function takes the fitted bias parameters from \link{fitModelOverGenes}
+This function takes the fitted bias parameters from \link{fitBiasModels}
 and uses this information to derive bias corrected estimates of
 transcript abundance for a gene (with one or more isoforms)
 across multiple samples.

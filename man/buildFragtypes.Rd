@@ -36,7 +36,7 @@ a DataFrame with bias features for all potential fragments
 This is a core function used to construct a table of features used for
 bias modeling, with one row for every potential fragment that could
 arise from a transcript. The output of this function is used by
-\link{fitModelOverGenes}, and this function is used inside \link{estimateTheta}
+\link{fitBiasModels}, and this function is used inside \link{estimateTheta}
 in order to model the bias affecting different fragments across isoforms
 of a gene.
 }

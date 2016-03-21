@@ -3,7 +3,7 @@
 export(buildFragtypes)
 export(estimateTheta)
 export(extract)
-export(fitModelOverGenes)
+export(fitBiasModels)
 export(mergeGenes)
 export(plotFragLen)
 export(plotGC)

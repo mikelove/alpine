@@ -9,7 +9,7 @@
 #' 
 #' @param res a list where each element is the output of \link{estimateTheta}
 #' @param model the name of a model, corresponds to names of \code{models}
-#' used in \link{fitModelOverGenes}
+#' used in \link{fitBiasModels}
 #' @param nsamp the number of samples, corresponds to length of \code{bamfiles}
 #' in \link{estimateTheta}
 #' @param lib.sizes the vector of library sizes passed to \link{estimateTheta}.

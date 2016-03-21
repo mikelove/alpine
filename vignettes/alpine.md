@@ -220,7 +220,7 @@ The following command then fits bias parameters one sample at a time:
 
 
 ```r
-fitpar <- fitModelOverGenes(genes=ebt,
+fitpar <- fitBiasModels(genes=ebt,
                             bamfile=bamfiles[1],
                             fragtypes=fragtypes,
                             genome=Hsapiens, models=models,
