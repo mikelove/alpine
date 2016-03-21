@@ -7,7 +7,7 @@ predictOneGene <- function(gene, bamfiles, fitpar, genome=Hsapiens,
   if (is.null(names(bamfiles))) {
     names(bamfiles) <- seq_along(bamfiles)
   }
-  fragtypes <- buildFragtypesFromExons(gene, genome, readlength=readlength,
+  fragtypes <- buildFragtypes(gene, genome, readlength=readlength,
                                        minsize=minsize, maxsize=maxsize)
   res <- list()
   for (bamname in names(bamfiles)) {

@@ -12,7 +12,7 @@ fitModelOverGenes(genes, bamfile, fragtypes, genome, models, readlength,
 
 \item{bamfile}{a character string pointing to an indexed BAM file}
 
-\item{fragtypes}{the output of \link{buildFragtypesFromExons}. must contain
+\item{fragtypes}{the output of \link{buildFragtypes}. must contain
 the potential fragment types for the genes named in \code{genes}}
 
 \item{genome}{a BSGenome object}

@@ -7,7 +7,7 @@
 #' 
 #' @param genes a GRangesList with the exons of different genes
 #' @param bamfile a character string pointing to an indexed BAM file
-#' @param fragtypes the output of \link{buildFragtypesFromExons}. must contain
+#' @param fragtypes the output of \link{buildFragtypes}. must contain
 #' the potential fragment types for the genes named in \code{genes}
 #' @param genome a BSGenome object
 #' @param models a list of character strings or formula describing the bias models, see vignette

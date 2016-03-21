@@ -175,7 +175,7 @@ genenames <- names(ebt)
 names(genenames) <- genenames
 # list of fragment types for each single-isoform gene
 fragtypes <- lapply(genenames, function(gene) {
-               buildFragtypesFromExons(ebt[[gene]], genome=Hsapiens,
+               buildFragtypes(ebt[[gene]], genome=Hsapiens,
                readlength=63, minsize=100, maxsize=300)
              })
 indexBam(bamfiles[1])

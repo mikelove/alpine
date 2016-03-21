@@ -158,7 +158,7 @@ extractRes <- function(res, model, what, nsamp) {
   }))
 }
 getCountMatrix <- function(gene, bamfile, genome=Hsapiens) {
-  fragtypes <- buildFragtypesFromExons(gene, genome)
+  fragtypes <- buildFragtypes(gene, genome)
   l <- sum(width(gene))
   generange <- range(gene)
   strand(generange) <- "*" # not necessary

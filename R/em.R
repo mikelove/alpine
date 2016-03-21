@@ -62,7 +62,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   # this is a list of fragment types for each transcript
   st <- system.time({ 
     fraglist <- lapply(seq_along(transcripts), function(i) {
-      out <- buildFragtypesFromExons(transcripts[[i]], genome, readlength, minsize, maxsize)
+      out <- buildFragtypes(transcripts[[i]], genome, readlength, minsize, maxsize)
       out$tx <- names(transcripts)[i]
       out
     })

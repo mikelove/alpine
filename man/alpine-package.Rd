@@ -19,7 +19,7 @@ See the vignette for a detailed workflow.
 
 The main functions in this package are:
 \enumerate{
-\item \link{buildFragtypesFromExons} - build out features for fragment types from exons of a single gene (GRanges)
+\item \link{buildFragtypes} - build out features for fragment types from exons of a single gene (GRanges)
 \item \link{fitModelOverGenes} - fit the bias parameters over a set of ~100 medium to highly expressed single isoform genes (GRangesList)
 \item \link{estimateTheta} - given a set of genome alignments (BAM files) and a set of isoforms of a gene (GRangesList), estimate the transcript abundances for these isoforms (FPKM) for various bias models
 \item \link{extract} - given a list of output from \code{estimateTheta}, compile an FPKM matrix across transcripts and samples
