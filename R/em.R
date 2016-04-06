@@ -170,11 +170,16 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     mat <- incidenceMat(fragtypes$tx, fragtypes$genomic.id)
     # make sure the rows are in correct order
     stopifnot(all(rownames(mat) == names(transcripts)))
-    # NOTE: duplicated weights and bias are not the same for each tx
-    # but the bias will often be identical for read start bias,
-    # very close for fragment length and fragment GC content
+
+    # NOTE: duplicated weights and bias are not the same for each tx.
+    # The bias will often be identical for read start bias,
+    # and very close for fragment length and fragment GC content given long reads.
+    # It will not be so similar for relative position bias.
+    # Zhonghui Xu points out: why not do the extra bookkeeping and
+    # have the proper lambda-hat_ij fill out the A matrix.
     fragtypes.sub <- fragtypes[!duplicated(fragtypes$genomic.id),,drop=FALSE]
     stopifnot(all(fragtypes.sub$genomic.id == colnames(mat)))
+
     #message("run EM for models: ",paste(names(models), collapse=", "))
     n.obs <- fragtypes.sub$count
     
