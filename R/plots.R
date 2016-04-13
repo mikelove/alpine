@@ -172,3 +172,16 @@ plotOrder2 <- function(order2, pos2) {
   alpha <- alphafun(dna.letters, order-1)
   legend("center",alpha,pch=rep(1:4,each=4),col=dna.cols,cex=2,title="prev")
 }
+
+#' Simple segments plot for GRangesList
+#' 
+#' Simple segments plot for GRangesList
+#'
+#' @param grl GRangesList object
+#'
+#' @export
+plotGRL <- function(grl) {
+  df <- as.data.frame(grl)
+  plot(df$start, df$group, type="n", xlab="position", ylab="group")
+  segments(df$start, df$group, df$end, df$group, lwd=3)
+}
