@@ -213,26 +213,36 @@ matchReadsToFraglist <- function(reads, fraglist) {
   fraglist
 }
 subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=20000) {
-  ntx <- length(fraglist)
-  fraglist.sub <- list()
-  for (tx.idx in seq_len(ntx)) {
-    count <- fraglist[[tx.idx]]$count
-    sumpos <- sum(count > 0)
-    sumzero <- sum(count == 0)
-    # how many zeros to subset?
-    # some multiple of the #pos, or a preset minimum value
-    multzero <- max(round(zerotopos*sumpos), minzero)
-    # max out at a certain amount, and then sample equal to #pos
-    multzero <- if (multzero > maxmult) max(maxmult, sumpos) else multzero
-    # and not more than the #zero
-    (numzero <- min(sumzero, multzero))
-    idx <- c(which(count > 0), sample(which(count == 0), numzero, replace=FALSE))
-    # subset the rows
-    fraglist.sub[[tx.idx]] <- fraglist[[tx.idx]][idx,]
-    # add weights
-    fraglist.sub[[tx.idx]]$wts <- c(rep(1,sumpos), rep(sumzero/numzero,numzero))
-  }  
-  fragtypes <- do.call(rbind, fraglist.sub)
+  fragtypes <- do.call(rbind, fraglist)
+  fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
+                                 fragtypes$gread2start,"-",fragtypes$gend)
+  
+  count <- fragtypes$count
+  sumpos <- sum(count > 0)
+  sumzero <- sum(count == 0)
+  # how many zeros to subset?
+  # some multiple of the #pos, or a preset minimum value
+  multzero <- max(round(zerotopos*sumpos), minzero)
+  # max out at a certain amount, and then sample equal to #pos
+  multzero <- if (multzero > maxmult) max(maxmult, sumpos) else multzero
+  # and not more than the #zero
+  numzero <- min(sumzero, multzero)
+
+  # TODO....
+  
+  idx <- c(which(count > 0), sample(which(count == 0), numzero, replace=FALSE))
+  wts <- c(rep(1,sumpos), rep(sumzero/numzero,numzero))
+
+  keep.ids <- unique(fragtypes$genomic.id[idx])
+  
+  # take all nonzero counts, and some zero counts
+  # also for the zero counts, take the fragment (as ID-ed by genomic.id)
+  # from all transcripts
+    
+  # subset the rows
+  fragtypes <- fragtypes[idx,]
+  # add weights
+  fragtypes$
   fragtypes
 }
 matchToDensity <- function(x, d) {

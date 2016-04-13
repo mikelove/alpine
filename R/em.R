@@ -123,10 +123,11 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
       #message("subset and weight fragment types")
       fragtypes <- subsetAndWeightFraglist(fraglist.temp, zerotopos)
     } else {
-      fragtypes <- do.call(rbind, fraglist.temp)
+        fragtypes <- do.call(rbind, fraglist.temp)
+        # this is done in subsetAndWeightFraglist()
+        fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
+                                       fragtypes$gread2start,"-",fragtypes$gend)
     }
-    fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
-                                   fragtypes$gread2start,"-",fragtypes$gend)
 
     # message("fragment bias")
     ## -- fragment bias --
