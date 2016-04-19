@@ -220,6 +220,7 @@ subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=2
   count <- fragtypes$count
   sumpos <- sum(count > 0)
   sumzero <- sum(count == 0)
+
   # how many zeros to subset?
   # some multiple of the #pos, or a preset minimum value
   multzero <- max(round(zerotopos*sumpos), minzero)
@@ -229,6 +230,8 @@ subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=2
   numzero <- min(sumzero, multzero)
 
   # TODO....
+
+  # the weight is just based on the final incidence matrix
   
   idx <- c(which(count > 0), sample(which(count == 0), numzero, replace=FALSE))
   wts <- c(rep(1,sumpos), rep(sumzero/numzero,numzero))
