@@ -149,7 +149,6 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
       # this gives list output for one bamfile
       res.sub <- lapply(model.names, function(modeltype) {
         log.lambda <- getLogLambda(fragtypes, models, modeltype, fitpar, bamname)
-        log.lambda <- as.numeric(log.lambda)
         N <- if (is.null(lib.sizes)) {
           mean(n.obs)
         } else {
@@ -183,13 +182,13 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     # this gives list output for one bamfile
     res.sub <- lapply(model.names, function(modeltype) {
 
-      # todo: this needs to be done per transcript
-                        
-      log.lambda <- getLogLambda(fragtypes.sub, models, modeltype, fitpar, bamname)
-      log.lambda <- as.numeric(log.lambda)
+      # this vector goes over 'fragtypes' rows, so includes duplicates
+      log.lambda <- getLogLambda(fragtypes, models, modeltype, fitpar, bamname)
+
       ## pred0 <- as.numeric(exp(log.lambda))
       ## pred <- pred0/mean(pred0)*mean(fragtypes.sub$count)
-      ## boxplot(pred ~ factor(cut(fragtypes.sub$count,c(-1:10 + .5,20,Inf))), main=modeltype, range=0)
+      ## boxplot(pred ~ factor(cut(fragtypes.sub$count,c(-1:10 + .5,20,Inf))),
+      ##         main=modeltype, range=0)
       N <- if (is.null(lib.sizes)) {
         mean(n.obs)
       } else {
@@ -197,9 +196,19 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
           # account for the triangle of fragments not in the count matrix
         lib.sizes[bamname] / (1e9 * (maxsize - minsize))
       }
-      A <- t(t(mat * N) * exp(log.lambda))
+      
+      # transcript-specific bias terms
+      A <- mat * N
+      for (tx in names(transcripts)) {
+        tx.id <- fragtypes$genomic.id[fragtypes$tx == tx]
+        tx.idx <- match(tx.id, colnames(A))
+        A[tx, tx.idx] <- A[tx, tx.idx] * exp(log.lambda[fragtypes$tx == tx])
+      }
       wts <- if (subset) { fragtypes.sub$wts } else { 1 }
       theta <- runEM(n.obs, A, wts, niter, optim)
+
+      # TODO fix this....
+      
       lambda <- mat %*% (wts * exp(log.lambda)) / mat %*% wts
       lambda <- as.numeric(lambda)
       names(lambda) <- names(transcripts)

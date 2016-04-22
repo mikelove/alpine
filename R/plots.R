@@ -178,10 +178,11 @@ plotOrder2 <- function(order2, pos2) {
 #' Simple segments plot for GRangesList
 #'
 #' @param grl GRangesList object
+#' @param ... passed to plot
 #'
 #' @export
-plotGRL <- function(grl) {
+plotGRL <- function(grl, ...) {
   df <- as.data.frame(grl)
-  plot(df$start, df$group, type="n", xlab="position", ylab="group")
+  plot(df$start, df$group, type="n", xlab="position", ylab="group", ...)
   segments(df$start, df$group, df$end, df$group, lwd=3)
 }

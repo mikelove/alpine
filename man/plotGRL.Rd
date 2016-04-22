@@ -4,10 +4,12 @@
 \alias{plotGRL}
 \title{Simple segments plot for GRangesList}
 \usage{
-plotGRL(grl)
+plotGRL(grl, ...)
 }
 \arguments{
 \item{grl}{GRangesList object}
+
+\item{...}{passed to plot}
 }
 \description{
 Simple segments plot for GRangesList
