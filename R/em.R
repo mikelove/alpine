@@ -121,15 +121,12 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     
     if (subset) {
       #message("subset and weight fragment types")
-
-      # TODO ...
-      
       fragtypes <- subsetAndWeightFraglist(fraglist.temp, zerotopos)
     } else {
-        fragtypes <- do.call(rbind, fraglist.temp)
-        # this is also done in subsetAndWeightFraglist()
-        fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
-                                       fragtypes$gread2start,"-",fragtypes$gend)
+      fragtypes <- do.call(rbind, fraglist.temp)
+      # this is also done in subsetAndWeightFraglist()
+      fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
+                                     fragtypes$gread2start,"-",fragtypes$gend)
     }
 
     # message("fragment bias")
@@ -172,15 +169,10 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     # make incidence matrix
     # duplicate genomic ID across tx will be a single column 
     mat <- incidenceMat(fragtypes$tx, fragtypes$genomic.id)
+
     # make sure the rows are in correct order
     stopifnot(all(rownames(mat) == names(transcripts)))
 
-    # NOTE: duplicated weights and bias are not the same for each tx.
-    # The bias will often be identical for read start bias,
-    # and very close for fragment length and fragment GC content given long reads.
-    # It will not be so similar for relative position bias.
-    # Zhonghui Xu points out: why not do the extra bookkeeping and
-    # have the proper lambda-hat_ij fill out the A matrix.
     fragtypes.sub <- fragtypes[!duplicated(fragtypes$genomic.id),,drop=FALSE]
     stopifnot(all(fragtypes.sub$genomic.id == colnames(mat)))
 
@@ -190,6 +182,9 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     # run EM for different models
     # this gives list output for one bamfile
     res.sub <- lapply(model.names, function(modeltype) {
+
+      # todo: this needs to be done per transcript
+                        
       log.lambda <- getLogLambda(fragtypes.sub, models, modeltype, fitpar, bamname)
       log.lambda <- as.numeric(log.lambda)
       ## pred0 <- as.numeric(exp(log.lambda))

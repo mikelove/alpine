@@ -212,40 +212,43 @@ matchReadsToFraglist <- function(reads, fraglist) {
   }
   fraglist
 }
-subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=20000) {
+subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=100000) {
   fragtypes <- do.call(rbind, fraglist)
   fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
                                  fragtypes$gread2start,"-",fragtypes$gend)
+
+  # want to know the count of unique fragments
+  # (we don't worry about ambiguous IDs, which are rare)
+  fragtypes.sub <- fragtypes[!duplicated(fragtypes$genomic.id),,drop=FALSE]
   
-  count <- fragtypes$count
+  count <- fragtypes.sub$count
   sumpos <- sum(count > 0)
   sumzero <- sum(count == 0)
 
-  # how many zeros to subset?
-  # some multiple of the #pos, or a preset minimum value
+  ## how many zeros to sample?
+
+  # a multiple 'zerotopos' of the number of positive counts
+  # or a preset minimum value 'minzero'
   multzero <- max(round(zerotopos*sumpos), minzero)
-  # max out at a certain amount, and then sample equal to #pos
+  
+  # if this multiple is more than 'maxmult', we have plenty of zero,
+  # so then sample either 'maxmult' or the number of positive counts,
+  # whichever is larger
   multzero <- if (multzero > maxmult) max(maxmult, sumpos) else multzero
-  # and not more than the #zero
+
+  # of course, we cannot sample more than the total number of zero
+  # 'numzero' is then the number of zero we will sample
   numzero <- min(sumzero, multzero)
 
-  # TODO....
-
-  # the weight is just based on the final incidence matrix
-  
+  # down-sample and calculate weight
   idx <- c(which(count > 0), sample(which(count == 0), numzero, replace=FALSE))
-  wts <- c(rep(1,sumpos), rep(sumzero/numzero,numzero))
-
-  keep.ids <- unique(fragtypes$genomic.id[idx])
+  fragtypes.sub <- fragtypes.sub[idx,,drop=FALSE]
+  zero.wt <- sumzero/numzero
   
-  # take all nonzero counts, and some zero counts
-  # also for the zero counts, take the fragment (as ID-ed by genomic.id)
-  # from all transcripts
-    
-  # subset the rows
-  fragtypes <- fragtypes[idx,]
-  # add weights
-  fragtypes$
+  # return fragtypes, but with duplicate rows for selected fragments
+  fragtypes <- fragtypes[fragtypes$genomic.id %in% fragtypes.sub$genomic.id,,drop=FALSE]
+  fragtypes$wts <- rep(1, nrow(fragtypes))
+  fragtypes$wts[fragtypes$count == 0] <- zero.wt
   fragtypes
 }
 matchToDensity <- function(x, d) {
