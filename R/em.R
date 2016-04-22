@@ -197,19 +197,21 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
         lib.sizes[bamname] / (1e9 * (maxsize - minsize))
       }
       
-      # transcript-specific bias terms
-      A <- mat * N
+      # transcript-specific bias
+      lambda.mat <- mat
       for (tx in names(transcripts)) {
         tx.id <- fragtypes$genomic.id[fragtypes$tx == tx]
-        tx.idx <- match(tx.id, colnames(A))
-        A[tx, tx.idx] <- A[tx, tx.idx] * exp(log.lambda[fragtypes$tx == tx])
+        tx.idx <- match(tx.id, colnames(mat))
+        lambda.mat[tx, tx.idx] <- exp(log.lambda[fragtypes$tx == tx])
       }
       wts <- if (subset) { fragtypes.sub$wts } else { 1 }
+
+      # A also includes the library size
+      A <- lambda.mat * N
       theta <- runEM(n.obs, A, wts, niter, optim)
 
-      # TODO fix this....
-      
-      lambda <- mat %*% (wts * exp(log.lambda)) / mat %*% wts
+      # the average lambda for each transcript is stashed in results
+      lambda <- lambda.mat %*% wts / mat %*% wts
       lambda <- as.numeric(lambda)
       names(lambda) <- names(transcripts)
       list(theta=theta, lambda=lambda)
