@@ -204,6 +204,8 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
         tx.idx <- match(tx.id, colnames(mat))
         lambda.mat[tx, tx.idx] <- exp(log.lambda[fragtypes$tx == tx])
       }
+
+      # TODO: fix this, causes error if subset, due to matrix mult below
       wts <- if (subset) { fragtypes.sub$wts } else { 1 }
 
       # A also includes the library size
