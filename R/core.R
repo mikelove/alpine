@@ -212,38 +212,37 @@ matchReadsToFraglist <- function(reads, fraglist) {
   }
   fraglist
 }
-subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=100000) {
-  fragtypes <- do.call(rbind, fraglist)
+
+subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=20000) {
+  ntx <- length(fraglist)
+  fraglist.sub <- list()
+  for (tx.idx in seq_len(ntx)) {
+    count <- fraglist[[tx.idx]]$count
+    sumpos <- sum(count > 0)
+    sumzero <- sum(count == 0)
+    ## how many zeros to sample?
+    # a multiple 'zerotopos' of the number of positive counts
+    # or a preset minimum value 'minzero'
+    multzero <- max(round(zerotopos*sumpos), minzero)
+    # if this multiple is more than 'maxmult', we have plenty of zero,
+    # so then sample either 'maxmult' or the number of positive counts,
+    # whichever is larger
+    if (multzero > maxmalt) {
+      multzero <- max(maxmult, sumpos)
+    }
+    # of course, we cannot sample more than the total number of zero
+    # 'numzero' is then the number of zero we will sample
+    numzero <- min(sumzero, multzero)
+    # down-sample
+    idx <- c(which(count > 0), sample(which(count == 0), numzero, replace=FALSE))
+    fraglist.sub[[tx.idx]] <- fraglist[[tx.idx]][idx,,drop=FALSE]
+  }
+  fragtypes <- do.call(rbind, fraglist.sub)
   fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
                                  fragtypes$gread2start,"-",fragtypes$gend)
 
-  # want to know the count of unique fragments
-  # (we don't worry about ambiguous IDs, which are rare)
-  fragtypes.sub <- fragtypes[!duplicated(fragtypes$genomic.id),,drop=FALSE]
-  
-  count <- fragtypes.sub$count
-  sumpos <- sum(count > 0)
-  sumzero <- sum(count == 0)
-
-  ## how many zeros to sample?
-
-  # a multiple 'zerotopos' of the number of positive counts
-  # or a preset minimum value 'minzero'
-  multzero <- max(round(zerotopos*sumpos), minzero)
-  
-  # if this multiple is more than 'maxmult', we have plenty of zero,
-  # so then sample either 'maxmult' or the number of positive counts,
-  # whichever is larger
-  multzero <- if (multzero > maxmult) max(maxmult, sumpos) else multzero
-
-  # of course, we cannot sample more than the total number of zero
-  # 'numzero' is then the number of zero we will sample
-  numzero <- min(sumzero, multzero)
-
-  # down-sample and calculate weight
-  idx <- c(which(count > 0), sample(which(count == 0), numzero, replace=FALSE))
-  fragtypes.sub <- fragtypes.sub[idx,,drop=FALSE]
-  zero.wt <- sumzero/numzero
+  ######################### TODO
+  zero.wt <- 20
   
   # return fragtypes, but with duplicate rows for selected fragments
   fragtypes <- fragtypes[fragtypes$genomic.id %in% fragtypes.sub$genomic.id,,drop=FALSE]
@@ -251,6 +250,8 @@ subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=1
   fragtypes$wts[fragtypes$count == 0] <- zero.wt
   fragtypes
 }
+
+
 matchToDensity <- function(x, d) {
   idx <- cut(x, c(-Inf, d$x, Inf))
   pdf <- c(0, d$y)
