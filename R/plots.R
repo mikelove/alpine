@@ -183,6 +183,7 @@ plotOrder2 <- function(order2, pos2) {
 #' @export
 plotGRL <- function(grl, ...) {
   df <- as.data.frame(grl)
-  plot(df$start, df$group, type="n", xlab="position", ylab="group", ...)
+  plot(0, 0, xlim=range(c(df$start,df$end)), ylim=c(1,max(df$group)),
+       type="n", xlab="position", ylab="group", ...)
   segments(df$start, df$group, df$end, df$group, lwd=3)
 }

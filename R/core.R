@@ -216,8 +216,15 @@ matchReadsToFraglist <- function(reads, fraglist) {
 subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=20000) {
   ntx <- length(fraglist)
   fraglist.sub <- list()
+  unique.zero.list <- list()
   for (tx.idx in seq_len(ntx)) {
+    # need to make a unique id for each fragment
+    fraglist[[tx.idx]]$genomic.id <- paste0(fraglist[[tx.idx]]$gstart,"-",
+                                            fraglist[[tx.idx]]$gread1end,"-",
+                                            fraglist[[tx.idx]]$gread2start,"-",
+                                            fraglist[[tx.idx]]$gend)
     count <- fraglist[[tx.idx]]$count
+    unique.zero.list[[tx.idx]] <- fraglist[[tx.idx]]$genomic.id[count == 0]
     sumpos <- sum(count > 0)
     sumzero <- sum(count == 0)
     ## how many zeros to sample?
@@ -227,7 +234,7 @@ subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=2
     # if this multiple is more than 'maxmult', we have plenty of zero,
     # so then sample either 'maxmult' or the number of positive counts,
     # whichever is larger
-    if (multzero > maxmalt) {
+    if (multzero > maxmult) {
       multzero <- max(maxmult, sumpos)
     }
     # of course, we cannot sample more than the total number of zero
@@ -238,19 +245,26 @@ subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=2
     fraglist.sub[[tx.idx]] <- fraglist[[tx.idx]][idx,,drop=FALSE]
   }
   fragtypes <- do.call(rbind, fraglist.sub)
-  fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
-                                 fragtypes$gread2start,"-",fragtypes$gend)
-
-  ######################### TODO
-  zero.wt <- 20
+  all.genomic.ids <- unique(fragtypes$genomic.id)
   
+  # once again, this time grab all fragments that were selected for any transcripts
+  fraglist.sub <- list()
+  for (tx.idx in seq_len(ntx)) {
+    idx <- fraglist[[tx.idx]]$genomic.id %in% all.genomic.ids
+    fraglist.sub[[tx.idx]] <- fraglist[[tx.idx]][idx,,drop=FALSE]
+  }
+  fragtypes <- do.call(rbind, fraglist.sub)
+
+  # the zero weight is the number of unique zero count fragtypes in the original fraglist
+  # divided by the current (down-sampled) number of zero count fragtypes
+  unique.zero <- unique(do.call(c, unique.zero.list))
+  zero.wt <- length(unique.zero) / sum(fragtypes$count == 0)
+
   # return fragtypes, but with duplicate rows for selected fragments
-  fragtypes <- fragtypes[fragtypes$genomic.id %in% fragtypes.sub$genomic.id,,drop=FALSE]
   fragtypes$wts <- rep(1, nrow(fragtypes))
   fragtypes$wts[fragtypes$count == 0] <- zero.wt
   fragtypes
 }
-
 
 matchToDensity <- function(x, d) {
   idx <- cut(x, c(-Inf, d$x, Inf))
@@ -281,6 +295,7 @@ getLogLambda <- function(fragtypes, models, modeltype, fitpar, bamname) {
     offset <- offset + fragtypes$fivep.bias + fragtypes$threep.bias
   }
   if (!is.null(f)) {
+    stopifnot(modeltype %in% names(fitpar[[bamname]][["coefs"]]))
     gc.knots <- seq(from=.4, to=.6, length=3)
     gc.bk <- c(0,1)
     relpos.knots <- seq(from=.25, to=.75, length=3)
