@@ -46,6 +46,7 @@
 #' @importFrom IRanges match %in%
 #' @importFrom splines ns
 #' @importFrom speedglm speedglm.wfit
+#' @importFrom stringr str_c
 #' 
 #' @docType package
 #' @name alpine-package
@@ -219,10 +220,10 @@ subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=2
   unique.zero.list <- list()
   for (tx.idx in seq_len(ntx)) {
     # need to make a unique id for each fragment
-    fraglist[[tx.idx]]$genomic.id <- paste0(fraglist[[tx.idx]]$gstart,"-",
-                                            fraglist[[tx.idx]]$gread1end,"-",
-                                            fraglist[[tx.idx]]$gread2start,"-",
-                                            fraglist[[tx.idx]]$gend)
+    fraglist[[tx.idx]]$genomic.id <- str_c(fraglist[[tx.idx]]$gstart,"-",
+                                           fraglist[[tx.idx]]$gread1end,"-",
+                                           fraglist[[tx.idx]]$gread2start,"-",
+                                           fraglist[[tx.idx]]$gend)
     count <- fraglist[[tx.idx]]$count
     unique.zero.list[[tx.idx]] <- fraglist[[tx.idx]]$genomic.id[count == 0]
     sumpos <- sum(count > 0)

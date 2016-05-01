@@ -60,14 +60,15 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   # TODO: come up with a check on whether models is compatible with fitpar
   
   # this is a list of fragment types for each transcript
-  st <- system.time({ 
+  st <- system.time({
     fraglist <- lapply(seq_along(transcripts), function(i) {
       out <- buildFragtypes(transcripts[[i]], genome, readlength, minsize, maxsize)
       out$tx <- names(transcripts)[i]
       out
     })
   })
-  # message("building fragment types: ",round(unname(st[3]))," seconds")
+
+  #message("building fragment types: ",round(unname(st[3]),1)," seconds")
   names(fraglist) <- names(transcripts)
 
   res <- lapply(seq_along(bamfiles), function(i) {
@@ -120,8 +121,10 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     }
     
     if (subset) {
-      #message("subset and weight fragment types")
-      fragtypes <- subsetAndWeightFraglist(fraglist.temp, zerotopos)
+      st <- system.time({
+        fragtypes <- subsetAndWeightFraglist(fraglist.temp, zerotopos)
+      })
+     #message("subset and weight fragment types: ", round(unname(st[3]),1), " seconds")
     } else {
       fragtypes <- do.call(rbind, fraglist.temp)
       # this is also done in subsetAndWeightFraglist()

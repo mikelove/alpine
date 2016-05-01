@@ -16,7 +16,8 @@ Imports:
     speedglm,
     splines,
     graph,
-    RBGL
+    RBGL,
+    stringr
 Suggests:
     airway,
     BSgenome.Hsapiens.UCSC.hg19
