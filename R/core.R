@@ -258,8 +258,9 @@ subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=2
 
   # the zero weight is the number of unique zero count fragtypes in the original fraglist
   # divided by the current (down-sampled) number of zero count fragtypes
-  unique.zero <- unique(do.call(c, unique.zero.list))
-  zero.wt <- length(unique.zero) / sum(fragtypes$count == 0)
+  unique.zero.orig <- length(unique(do.call(c, unique.zero.list)))
+  unique.zero.down <- length(unique(fragtypes$genomic.id[fragtypes$count == 0]))
+  zero.wt <- unique.zero.orig / unique.zero.down
 
   # return fragtypes, but with duplicate rows for selected fragments
   fragtypes$wts <- rep(1, nrow(fragtypes))
