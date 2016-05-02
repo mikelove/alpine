@@ -36,6 +36,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
                           models, readlength, minsize, maxsize,
                           subset=TRUE, zerotopos=20, niter=100, 
                           lib.sizes=NULL, optim=FALSE) {
+  # TODO: don't use 'transcripts' bc this is also a function name
   stopifnot(is(transcripts, "GRangesList"))
   stopifnot(length(transcripts) >= 1)
   singleiso <- length(transcripts) == 1
@@ -50,6 +51,9 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   if (!is.null(lib.sizes)) stopifnot(all(names(bamfiles) %in% names(lib.sizes)))
   w <- sum(width(transcripts))
 
+  # is VLMM one of the offsets for any model
+  any.vlmm <- any(sapply(models, function(m) "vlmm" %in% m$offset))
+
   # TODO: give better output here
   if (min(w) <= minsize + 1) return(NULL)
 
@@ -61,8 +65,10 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   
   # this is a list of fragment types for each transcript
   st <- system.time({
+    # TODO: could also save time by only doing GC stretches if necessary
     fraglist <- lapply(seq_along(transcripts), function(i) {
-      out <- buildFragtypes(transcripts[[i]], genome, readlength, minsize, maxsize)
+      out <- buildFragtypes(transcripts[[i]], genome, readlength,
+                            minsize, maxsize, vlmm=any.vlmm)
       out$tx <- names(transcripts)[i]
       out
     })
@@ -137,7 +143,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     fraglen.density <- fitpar[[bamname]][["fraglen.density"]]
     fragtypes$logdfraglen <- log(matchToDensity(fragtypes$fraglen, fraglen.density))
 
-    if (any(sapply(models, function(m) "vlmm" %in% m$offset))) {
+    if (any.vlmm) {
       stopifnot( "vlmm.fivep" %in% names(fitpar[[bamname]]) )
       # message("priming bias")
       ## -- random hexamer priming bias with VLMM --
@@ -208,15 +214,18 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
         lambda.mat[tx, tx.idx] <- exp(log.lambda[fragtypes$tx == tx])
       }
 
-      # TODO: fix this, causes error if subset, due to matrix mult below
       wts <- if (subset) { fragtypes.sub$wts } else { 1 }
 
       # A also includes the library size
       A <- lambda.mat * N
       theta <- runEM(n.obs, A, wts, niter, optim)
 
-      # the average lambda for each transcript is stashed in results
-      lambda <- lambda.mat %*% wts / mat %*% wts
+      # the average lambda for each transcript is stored in results
+      lambda <- if (subset) {
+        lambda.mat %*% wts / mat %*% wts
+      } else {
+        rowSums(lambda.mat) / rowSums(mat)
+      }
       lambda <- as.numeric(lambda)
       names(lambda) <- names(transcripts)
       list(theta=theta, lambda=lambda)

@@ -203,13 +203,17 @@ gaToReadsOnTx <- function(ga, grl, fco=NULL) {
 }
 matchReadsToFraglist <- function(reads, fraglist) {
   for (tx.idx in seq_along(fraglist)) {
-    unique.reads <- unique(reads[[tx.idx]])
-    readtab <- table(match(reads[[tx.idx]], unique.reads))
+    uniq.reads <- unique(reads[[tx.idx]])
+    readtab <- table(match(reads[[tx.idx]], uniq.reads))
     fraglist[[tx.idx]]$count <- 0
-    reads.in.fraglist <- unique.reads %in% fraglist[[tx.idx]]$id
-    unique.reads <- unique.reads[reads.in.fraglist]
-    readtab <- readtab[reads.in.fraglist]    
-    fraglist[[tx.idx]][match(unique.reads, fraglist[[tx.idx]]$id),"count"] <- as.numeric(readtab)
+    # this can be slow (up to 1 min) when fraglist has many millions of rows
+    match.uniq <- match(uniq.reads, fraglist[[tx.idx]]$id)
+    reads.in.fraglist <- !is.na(match.uniq)
+    # uniq.reads <- uniq.reads[reads.in.fraglist] # not needed
+    readtab <- readtab[reads.in.fraglist]
+    # the map between {uniq.reads that are in fraglist} and {rows of fraglist}
+    match.uniq.non.na <- match.uniq[!is.na(match.uniq)]
+    fraglist[[tx.idx]][match.uniq.non.na,"count"] <- as.numeric(readtab)
   }
   fraglist
 }
