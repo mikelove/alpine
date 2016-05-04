@@ -124,10 +124,9 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
       fragtypes <- subsetAndWeightFraglist(fraglist.temp, zerotopos)
     } else {
       fragtypes <- do.call(rbind, fraglist.temp)
-      # this is also done in subsetAndWeightFraglist()
-      fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
-                                     fragtypes$gread2start,"-",fragtypes$gend)
     }
+    fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
+                                   fragtypes$gread2start,"-",fragtypes$gend)
 
     # message("fragment bias")
     ## -- fragment bias --
@@ -149,6 +148,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
       # this gives list output for one bamfile
       res.sub <- lapply(model.names, function(modeltype) {
         log.lambda <- getLogLambda(fragtypes, models, modeltype, fitpar, bamname)
+        log.lambda <- as.numeric(log.lambda)
         N <- if (is.null(lib.sizes)) {
           mean(n.obs)
         } else {
@@ -168,10 +168,15 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     # make incidence matrix
     # duplicate genomic ID across tx will be a single column 
     mat <- incidenceMat(fragtypes$tx, fragtypes$genomic.id)
-
     # make sure the rows are in correct order
     stopifnot(all(rownames(mat) == names(transcripts)))
 
+    # NOTE: duplicated weights and bias are not the same for each tx.
+    # The bias will often be identical for read start bias,
+    # and very close for fragment length and fragment GC content given long reads.
+    # It will not be so similar for relative position bias.
+    # Zhonghui Xu points out: why not do the extra bookkeeping and
+    # have the proper lambda-hat_ij fill out the A matrix.
     fragtypes.sub <- fragtypes[!duplicated(fragtypes$genomic.id),,drop=FALSE]
     stopifnot(all(fragtypes.sub$genomic.id == colnames(mat)))
 
@@ -181,14 +186,11 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     # run EM for different models
     # this gives list output for one bamfile
     res.sub <- lapply(model.names, function(modeltype) {
-
-      # this vector goes over 'fragtypes' rows, so includes duplicates
-      log.lambda <- getLogLambda(fragtypes, models, modeltype, fitpar, bamname)
-
+      log.lambda <- getLogLambda(fragtypes.sub, models, modeltype, fitpar, bamname)
+      log.lambda <- as.numeric(log.lambda)
       ## pred0 <- as.numeric(exp(log.lambda))
       ## pred <- pred0/mean(pred0)*mean(fragtypes.sub$count)
-      ## boxplot(pred ~ factor(cut(fragtypes.sub$count,c(-1:10 + .5,20,Inf))),
-      ##         main=modeltype, range=0)
+      ## boxplot(pred ~ factor(cut(fragtypes.sub$count,c(-1:10 + .5,20,Inf))), main=modeltype, range=0)
       N <- if (is.null(lib.sizes)) {
         mean(n.obs)
       } else {
@@ -196,22 +198,10 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
           # account for the triangle of fragments not in the count matrix
         lib.sizes[bamname] / (1e9 * (maxsize - minsize))
       }
-      
-      # transcript-specific bias
-      lambda.mat <- mat
-      for (tx in names(transcripts)) {
-        tx.id <- fragtypes$genomic.id[fragtypes$tx == tx]
-        tx.idx <- match(tx.id, colnames(mat))
-        lambda.mat[tx, tx.idx] <- exp(log.lambda[fragtypes$tx == tx])
-      }
+      A <- t(t(mat * N) * exp(log.lambda))
       wts <- if (subset) { fragtypes.sub$wts } else { 1 }
-
-      # A also includes the library size
-      A <- lambda.mat * N
       theta <- runEM(n.obs, A, wts, niter, optim)
-
-      # the average lambda for each transcript is stashed in results
-      lambda <- lambda.mat %*% wts / mat %*% wts
+      lambda <- mat %*% (wts * exp(log.lambda)) / mat %*% wts
       lambda <- as.numeric(lambda)
       names(lambda) <- names(transcripts)
       list(theta=theta, lambda=lambda)
