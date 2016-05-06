@@ -1,6 +1,6 @@
 Package: alpine
 Title: alpine
-Version: 0.1.3
+Version: 0.1.4
 Author: Michael Love
 Maintainer: Michael Love <michaelisaiahlove@gmail.com>
 Description: Fragment sequence bias modeling and correction for RNA-seq
@@ -16,7 +16,8 @@ Imports:
     speedglm,
     splines,
     graph,
-    RBGL
+    RBGL,
+    stringr
 Suggests:
     airway,
     BSgenome.Hsapiens.UCSC.hg19

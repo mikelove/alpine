@@ -5,8 +5,8 @@
 \title{Estimate bias-corrected transcript abundances (FPKM)}
 \usage{
 estimateTheta(transcripts, bamfiles, fitpar, genome, models, readlength,
-  minsize, maxsize, subset = TRUE, zerotopos = 20, niter = 100,
-  lib.sizes = NULL, optim = FALSE)
+  minsize, maxsize, subset = TRUE, niter = 100, lib.sizes = NULL,
+  optim = FALSE)
 }
 \arguments{
 \item{transcripts}{a GRangesList of the exons for multiple isoforms of a gene.
@@ -27,10 +27,6 @@ For a single-isoform gene, just wrap the exons in \code{GRangesList()}}
 \item{maxsize}{the maximum fragment length to model}
 
 \item{subset}{logical, whether to downsample the non-observed fragments. Default is TRUE}
-
-\item{zerotopos}{the rate of downsampling, see \link{fitBiasModels}.
-Here it is recommended to use a higher value than for fitting the bias parameters.
-Default is 20.}
 
 \item{niter}{the number of EM iterations. Default is 100.}
 
