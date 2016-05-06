@@ -15,9 +15,6 @@
 #' @param minsize the minimum fragment length to model
 #' @param maxsize the maximum fragment length to model
 #' @param subset logical, whether to downsample the non-observed fragments. Default is TRUE
-#' @param zerotopos the rate of downsampling, see \link{fitBiasModels}.
-#' Here it is recommended to use a higher value than for fitting the bias parameters.
-#' Default is 20.
 #' @param niter the number of EM iterations. Default is 100.
 #' @param lib.sizes a named vector of library sizes to use in calculating the FPKM.
 #' If NULL (the default) a value of average coverage will be calculated from
@@ -34,7 +31,7 @@
 #' @export
 estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
                           models, readlength, minsize, maxsize,
-                          subset=TRUE, zerotopos=20, niter=100, 
+                          subset=TRUE, niter=100, 
                           lib.sizes=NULL, optim=FALSE) {
   # TODO: don't use 'transcripts' bc this is also a function name
   stopifnot(is(transcripts, "GRangesList"))
@@ -128,7 +125,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     
     if (subset) {
       st <- system.time({
-        fragtypes <- subsetAndWeightFraglist(fraglist.temp, zerotopos)
+        fragtypes <- subsetAndWeightFraglist(fraglist.temp)
       })
      #message("subset and weight fragment types: ", round(unname(st[3]),1), " seconds")
     } else {
@@ -217,7 +214,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
       wts <- if (subset) { fragtypes.sub$wts } else { 1 }
 
       # A also includes the library size
-      A <- lambda.mat * N
+      A <- N * lambda.mat 
       theta <- runEM(n.obs, A, wts, niter, optim)
 
       # the average lambda for each transcript is stored in results

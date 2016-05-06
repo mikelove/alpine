@@ -218,54 +218,33 @@ matchReadsToFraglist <- function(reads, fraglist) {
   fraglist
 }
 
-subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=20000) {
-  ntx <- length(fraglist)
-  fraglist.sub <- list()
+subsetAndWeightFraglist <- function(fraglist, downsample=20, minzero=2000) {
   unique.zero.list <- list()
-  for (tx.idx in seq_len(ntx)) {
+  for (tx in seq_len(length(fraglist))) {
     # need to make a unique id for each fragment
-    fraglist[[tx.idx]]$genomic.id <- str_c(fraglist[[tx.idx]]$gstart,"-",
-                                           fraglist[[tx.idx]]$gread1end,"-",
-                                           fraglist[[tx.idx]]$gread2start,"-",
-                                           fraglist[[tx.idx]]$gend)
-    count <- fraglist[[tx.idx]]$count
-    unique.zero.list[[tx.idx]] <- fraglist[[tx.idx]]$genomic.id[count == 0]
-    sumpos <- sum(count > 0)
-    sumzero <- sum(count == 0)
-    ## how many zeros to sample?
-    # a multiple 'zerotopos' of the number of positive counts
-    # or a preset minimum value 'minzero'
-    multzero <- max(round(zerotopos*sumpos), minzero)
-    # if this multiple is more than 'maxmult', we have plenty of zero,
-    # so then sample either 'maxmult' or the number of positive counts,
-    # whichever is larger
-    if (multzero > maxmult) {
-      multzero <- max(maxmult, sumpos)
-    }
-    # of course, we cannot sample more than the total number of zero
-    # 'numzero' is then the number of zero we will sample
-    numzero <- min(sumzero, multzero)
-    # down-sample
-    idx <- c(which(count > 0), sample(which(count == 0), numzero, replace=FALSE))
-    fraglist.sub[[tx.idx]] <- fraglist[[tx.idx]][idx,,drop=FALSE]
+    fraglist[[tx]]$genomic.id <- str_c(fraglist[[tx]]$gstart,"-",
+                                       fraglist[[tx]]$gread1end,"-",
+                                       fraglist[[tx]]$gread2start,"-",
+                                       fraglist[[tx]]$gend)
+    unique.zero.list[[tx]] <- fraglist[[tx]]$genomic.id[fraglist[[tx]]$count == 0]
   }
-  fragtypes <- do.call(rbind, fraglist.sub)
-  all.genomic.ids <- unique(fragtypes$genomic.id)
-  
-  # once again, this time grab all fragments that were selected for any transcripts
+  unique.zero <- unique(do.call(c, unique.zero.list))
+  sumzero <- length(unique.zero)
+  numzero <- round(sumzero / downsample)
+  numzero <- max(numzero, minzero)
+  numzero <- min(numzero, sumzero)
+  unique.ids <- sample(unique.zero, numzero, replace=FALSE)
+  # once again, this time grab all fragments with positive count or in our list of zeros
   fraglist.sub <- list()
-  for (tx.idx in seq_len(ntx)) {
-    idx <- fraglist[[tx.idx]]$genomic.id %in% all.genomic.ids
-    fraglist.sub[[tx.idx]] <- fraglist[[tx.idx]][idx,,drop=FALSE]
+  for (tx in seq_len(length(fraglist))) {
+    idx.pos <- which(fraglist[[tx]]$count > 0)
+    idx.zero <- which(fraglist[[tx]]$genomic.id %in% unique.ids)
+    fraglist.sub[[tx]] <- fraglist[[tx]][c(idx.pos,idx.zero),,drop=FALSE]
   }
   fragtypes <- do.call(rbind, fraglist.sub)
-
   # the zero weight is the number of unique zero count fragtypes in the original fraglist
   # divided by the current (down-sampled) number of zero count fragtypes
-  unique.zero.orig <- length(unique(do.call(c, unique.zero.list)))
-  unique.zero.down <- length(unique(fragtypes$genomic.id[fragtypes$count == 0]))
-  zero.wt <- unique.zero.orig / unique.zero.down
-
+  zero.wt <- sumzero / numzero
   # return fragtypes, but with duplicate rows for selected fragments
   fragtypes$wts <- rep(1, nrow(fragtypes))
   fragtypes$wts[fragtypes$count == 0] <- zero.wt

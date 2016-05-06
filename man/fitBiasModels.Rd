@@ -5,7 +5,7 @@
 \title{Fit bias models over single-isoform genes}
 \usage{
 fitBiasModels(genes, bamfile, fragtypes, genome, models, readlength, minsize,
-  maxsize, zerotopos = 2, speedglm = TRUE)
+  maxsize, speedglm = TRUE)
 }
 \arguments{
 \item{genes}{a GRangesList with the exons of different genes}
@@ -24,11 +24,6 @@ the potential fragment types for the genes named in \code{genes}}
 \item{minsize}{the minimum fragment length to model}
 
 \item{maxsize}{the maximum fragment length to model}
-
-\item{zerotopos}{the ratio of zero counts (unobserved fragments) to positive counts
-(observed fragments) that should be used in the Poisson GLM. The default value is 2.
-The unobserved fragment types are then downsampled to match this ratio, and
-up-weighted in the Poisson GLM.}
 
 \item{speedglm}{logical, whether to use speedglm to estimate the coefficients.
 Default is TRUE.}
