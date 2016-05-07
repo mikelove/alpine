@@ -171,7 +171,7 @@ res <- lapply(geneids, function(geneid) {
                        fitpar=fitpar, genome=Hsapiens,
                        models=models, readlength=63,
                        minsize=100, maxsize=300,
-                       subset=TRUE, zerotopos=20, niter=100,
+                       subset=TRUE, niter=100,
                        lib.sizes=lib.sizes)
          })
 ```
