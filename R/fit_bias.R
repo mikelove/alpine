@@ -111,9 +111,10 @@ fitBiasModels <- function(genes, bamfile, fragtypes, genome,
   }
 
   if (any(sapply(models, function(m) "vlmm" %in% m$offset))) {
-    ## -- random hexamer priming bias with VLMM --  
-    fivep <- fragtypes.sub$fivep[fragtypes.sub$fivep.test]
-    threep <- fragtypes.sub$threep[fragtypes.sub$threep.test]
+    ## -- random hexamer priming bias with VLMM --
+    pos.count <- fragtypes.sub$count > 0
+    fivep <- fragtypes.sub$fivep[fragtypes.sub$fivep.test & pos.count]
+    threep <- fragtypes.sub$threep[fragtypes.sub$threep.test & pos.count]
     vlmm.fivep <- fitVLMM(fivep, gene.seqs)
     vlmm.threep <- fitVLMM(threep, gene.seqs)
     ## par(mfrow=c(2,1))
