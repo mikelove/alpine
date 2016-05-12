@@ -80,7 +80,9 @@ fitBiasModels <- function(genes, bamfile, fragtypes, genome,
     fraglist.temp[[1]] <- fraglist.temp[[1]][not.first.or.last.bp,]
     if (sum(fraglist.temp[[1]]$count) < 20) next
     # randomly downsample and up-weight
-    fragtypes.sub.list[[gene.name]] <- subsetAndWeightFraglist(fraglist.temp)
+    fragtypes.sub.list[[gene.name]] <- subsetAndWeightFraglist(fraglist.temp,
+                                                               downsample=200,
+                                                               minzero=700)
   }
   if (length(fragtypes.sub.list) == 0) stop("not enough reads to model: ",bamfile)
   # collapse the list over genes into a
