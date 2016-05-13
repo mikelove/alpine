@@ -129,10 +129,11 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
       })
      #message("subset and weight fragment types: ", round(unname(st[3]),1), " seconds")
     } else {
-      fragtypes <- do.call(rbind, fraglist.temp)
+        fragtypes <- do.call(rbind, fraglist.temp)
+        # this is done in subsetAndWeightFraglist()
+        fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
+                                       fragtypes$gread2start,"-",fragtypes$gend)
     }
-    fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
-                                   fragtypes$gread2start,"-",fragtypes$gend)
 
     # message("fragment bias")
     ## -- fragment bias --
@@ -192,17 +193,16 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     # run EM for different models
     # this gives list output for one bamfile
     res.sub <- lapply(model.names, function(modeltype) {
-      log.lambda <- getLogLambda(fragtypes.sub, models, modeltype, fitpar, bamname)
-      log.lambda <- as.numeric(log.lambda)
+      log.lambda <- getLogLambda(fragtypes, models, modeltype, fitpar, bamname)
       ## pred0 <- as.numeric(exp(log.lambda))
       ## pred <- pred0/mean(pred0)*mean(fragtypes.sub$count)
       ## boxplot(pred ~ factor(cut(fragtypes.sub$count,c(-1:10 + .5,20,Inf))), main=modeltype, range=0)
-      N <- if (is.null(lib.sizes)) {
-        mean(n.obs)
+      if (is.null(lib.sizes)) {
+        N <- mean(n.obs)
       } else {
-          # TODO: in addition to the interval of considered lengths L
-          # account for the triangle of fragments not in the count matrix
-        lib.sizes[bamname] / (1e9 * (maxsize - minsize))
+        # TODO: in addition to the interval of considered lengths L
+        # account for the triangle of fragments not in the count matrix
+        N <- lib.sizes[bamname] / (1e9 * (maxsize - minsize))
       }
       
       # transcript-specific bias
