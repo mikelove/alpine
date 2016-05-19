@@ -129,7 +129,7 @@ plotOrder0 <- function(order0, ...) {
   mat <- log(order0$obs/order0$expect)
   xpos <- -8:12
   dna.cols <- c("green3","blue3","orange3","red3")
-  plot(0,0,xlim=c(-8,12),ylim=c(-0.3,0.3),type="n",xlab="position",ylab="log(observed / expected)", ...)
+  plot(0,0,xlim=c(-8,12),type="n",xlab="position",ylab="log(observed / expected)", ...)
   for (i in 1:4) {
     points(xpos, mat[i,], col=dna.cols[i], type="b", lwd=2)
   }
