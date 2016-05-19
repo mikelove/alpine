@@ -14,7 +14,7 @@
 #' The main functions in this package are:
 #' \enumerate{
 #' \item \link{buildFragtypes} - build out features for fragment types from exons of a single gene (GRanges)
-#' \item \link{fitBiasModels} - fit parameters for one or more bias models over a set of ~100 medium to highly expressed single isoform genes (GRangesList)
+#' \item \link{fitBiasModels} - fit the bias parameters over a set of ~100 medium to highly expressed single isoform genes (GRangesList)
 #' \item \link{estimateTheta} - given a set of genome alignments (BAM files) and a set of isoforms of a gene (GRangesList), estimate the transcript abundances for these isoforms (FPKM) for various bias models
 #' \item \link{extract} - given a list of output from \code{estimateTheta}, compile an FPKM matrix across transcripts and samples
 #' }
@@ -46,7 +46,6 @@
 #' @importFrom IRanges match %in%
 #' @importFrom splines ns
 #' @importFrom speedglm speedglm.wfit
-#' @importFrom stringr str_c
 #' 
 #' @docType package
 #' @name alpine-package
@@ -81,8 +80,8 @@ NULL
 #' 
 #' @export
 buildFragtypes <- function(exons, genome, readlength,
-                                    minsize, maxsize, 
-                                    gc=TRUE, gc.str=TRUE, vlmm=TRUE) {
+                           minsize, maxsize, 
+                           gc=TRUE, gc.str=TRUE, vlmm=TRUE) {
   stopifnot(is(exons,"GRanges"))
   stopifnot(is(genome,"BSgenome"))
   stopifnot(is.numeric(minsize) & is.numeric(maxsize) & is.numeric(readlength))
@@ -203,54 +202,39 @@ gaToReadsOnTx <- function(ga, grl, fco=NULL) {
 }
 matchReadsToFraglist <- function(reads, fraglist) {
   for (tx.idx in seq_along(fraglist)) {
-    uniq.reads <- unique(reads[[tx.idx]])
-    readtab <- table(match(reads[[tx.idx]], uniq.reads))
+    unique.reads <- unique(reads[[tx.idx]])
+    readtab <- table(match(reads[[tx.idx]], unique.reads))
     fraglist[[tx.idx]]$count <- 0
-    # this can be slow (up to 1 min) when fraglist has many millions of rows
-    match.uniq <- match(uniq.reads, fraglist[[tx.idx]]$id)
-    reads.in.fraglist <- !is.na(match.uniq)
-    # uniq.reads <- uniq.reads[reads.in.fraglist] # not needed
-    readtab <- readtab[reads.in.fraglist]
-    # the map between {uniq.reads that are in fraglist} and {rows of fraglist}
-    match.uniq.non.na <- match.uniq[!is.na(match.uniq)]
-    fraglist[[tx.idx]][match.uniq.non.na,"count"] <- as.numeric(readtab)
+    reads.in.fraglist <- unique.reads %in% fraglist[[tx.idx]]$id
+    unique.reads <- unique.reads[reads.in.fraglist]
+    readtab <- readtab[reads.in.fraglist]    
+    fraglist[[tx.idx]][match(unique.reads, fraglist[[tx.idx]]$id),"count"] <- as.numeric(readtab)
   }
   fraglist
 }
-
-subsetAndWeightFraglist <- function(fraglist, downsample=20, minzero=2000) {
-  unique.zero.list <- list()
-  for (tx in seq_len(length(fraglist))) {
-    # need to make a unique id for each fragment
-    fraglist[[tx]]$genomic.id <- str_c(fraglist[[tx]]$gstart,"-",
-                                       fraglist[[tx]]$gread1end,"-",
-                                       fraglist[[tx]]$gread2start,"-",
-                                       fraglist[[tx]]$gend)
-    unique.zero.list[[tx]] <- fraglist[[tx]]$genomic.id[fraglist[[tx]]$count == 0]
-  }
-  unique.zero <- unique(do.call(c, unique.zero.list))
-  sumzero <- length(unique.zero)
-  numzero <- round(sumzero / downsample)
-  numzero <- max(numzero, minzero)
-  numzero <- min(numzero, sumzero)
-  unique.ids <- sample(unique.zero, numzero, replace=FALSE)
-  # once again, this time grab all fragments with positive count or in our list of zeros
+subsetAndWeightFraglist <- function(fraglist, zerotopos, minzero=2000, maxmult=20000) {
+  ntx <- length(fraglist)
   fraglist.sub <- list()
-  for (tx in seq_len(length(fraglist))) {
-    idx.pos <- which(fraglist[[tx]]$count > 0)
-    idx.zero <- which(fraglist[[tx]]$genomic.id %in% unique.ids)
-    fraglist.sub[[tx]] <- fraglist[[tx]][c(idx.pos,idx.zero),,drop=FALSE]
-  }
+  for (tx.idx in seq_len(ntx)) {
+    count <- fraglist[[tx.idx]]$count
+    sumpos <- sum(count > 0)
+    sumzero <- sum(count == 0)
+    # how many zeros to subset?
+    # some multiple of the #pos, or a preset minimum value
+    multzero <- max(round(zerotopos*sumpos), minzero)
+    # max out at a certain amount, and then sample equal to #pos
+    multzero <- if (multzero > maxmult) max(maxmult, sumpos) else multzero
+    # and not more than the #zero
+    (numzero <- min(sumzero, multzero))
+    idx <- c(which(count > 0), sample(which(count == 0), numzero, replace=FALSE))
+    # subset the rows
+    fraglist.sub[[tx.idx]] <- fraglist[[tx.idx]][idx,]
+    # add weights
+    fraglist.sub[[tx.idx]]$wts <- c(rep(1,sumpos), rep(sumzero/numzero,numzero))
+  }  
   fragtypes <- do.call(rbind, fraglist.sub)
-  # the zero weight is the number of unique zero count fragtypes in the original fraglist
-  # divided by the current (down-sampled) number of zero count fragtypes
-  zero.wt <- sumzero / numzero
-  # return fragtypes, but with duplicate rows for selected fragments
-  fragtypes$wts <- rep(1, nrow(fragtypes))
-  fragtypes$wts[fragtypes$count == 0] <- zero.wt
   fragtypes
 }
-
 matchToDensity <- function(x, d) {
   idx <- cut(x, c(-Inf, d$x, Inf))
   pdf <- c(0, d$y)
@@ -280,7 +264,6 @@ getLogLambda <- function(fragtypes, models, modeltype, fitpar, bamname) {
     offset <- offset + fragtypes$fivep.bias + fragtypes$threep.bias
   }
   if (!is.null(f)) {
-    stopifnot(modeltype %in% names(fitpar[[bamname]][["coefs"]]))
     gc.knots <- seq(from=.4, to=.6, length=3)
     gc.bk <- c(0,1)
     relpos.knots <- seq(from=.25, to=.75, length=3)

@@ -1,9 +1,9 @@
 #' Fit bias models over single-isoform genes
 #'
-#' This function estimates parameters for one or more bias models
-#' for a single sample over a set of single-isoform
+#' This function estimates bias parameters for a single sample
+#' over a set of single-isoform
 #' genes. ~100 medium to highly expressed genes should be sufficient to
-#' estimate the parameters robustly.
+#' estimate the bias parameters robustly.
 #' 
 #' @param genes a GRangesList with the exons of different genes
 #' @param bamfile a character string pointing to an indexed BAM file
@@ -14,6 +14,10 @@
 #' @param readlength the read length
 #' @param minsize the minimum fragment length to model
 #' @param maxsize the maximum fragment length to model
+#' @param zerotopos the ratio of zero counts (unobserved fragments) to positive counts
+#' (observed fragments) that should be used in the Poisson GLM. The default value is 2.
+#' The unobserved fragment types are then downsampled to match this ratio, and
+#' up-weighted in the Poisson GLM.
 #' @param speedglm logical, whether to use speedglm to estimate the coefficients.
 #' Default is TRUE.
 #'
@@ -22,7 +26,7 @@
 #' @export
 fitBiasModels <- function(genes, bamfile, fragtypes, genome,
                           models, readlength, minsize, maxsize,
-                          speedglm=TRUE) {
+                          zerotopos=2, speedglm=TRUE) {
   stopifnot(file.exists(bamfile))
   stopifnot(file.exists(paste0(as.character(bamfile),".bai")))
   stopifnot(is(genes, "GRangesList"))
@@ -79,10 +83,9 @@ fitBiasModels <- function(genes, bamfile, fragtypes, genome,
     not.first.or.last.bp <- !(fraglist.temp[[1]]$start == 1 | fraglist.temp[[1]]$end == l)
     fraglist.temp[[1]] <- fraglist.temp[[1]][not.first.or.last.bp,]
     if (sum(fraglist.temp[[1]]$count) < 20) next
-    # randomly downsample and up-weight
-    fragtypes.sub.list[[gene.name]] <- subsetAndWeightFraglist(fraglist.temp,
-                                                               downsample=200,
-                                                               minzero=700)
+    # subset to include all (N) fragment locations and (N * zerotopos) zero locations
+    # now we build a list of subsetted fragtypes
+    fragtypes.sub.list[[gene.name]] <- subsetAndWeightFraglist(fraglist.temp, zerotopos)
   }
   if (length(fragtypes.sub.list) == 0) stop("not enough reads to model: ",bamfile)
   # collapse the list over genes into a

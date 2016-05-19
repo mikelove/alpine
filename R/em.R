@@ -15,6 +15,9 @@
 #' @param minsize the minimum fragment length to model
 #' @param maxsize the maximum fragment length to model
 #' @param subset logical, whether to downsample the non-observed fragments. Default is TRUE
+#' @param zerotopos the rate of downsampling, see \link{fitBiasModels}.
+#' Here it is recommended to use a higher value than for fitting the bias parameters.
+#' Default is 20.
 #' @param niter the number of EM iterations. Default is 100.
 #' @param lib.sizes a named vector of library sizes to use in calculating the FPKM.
 #' If NULL (the default) a value of average coverage will be calculated from
@@ -31,9 +34,8 @@
 #' @export
 estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
                           models, readlength, minsize, maxsize,
-                          subset=TRUE, niter=100, 
+                          subset=TRUE, zerotopos=20, niter=100, 
                           lib.sizes=NULL, optim=FALSE) {
-  # TODO: don't use 'transcripts' bc this is also a function name
   stopifnot(is(transcripts, "GRangesList"))
   stopifnot(length(transcripts) >= 1)
   singleiso <- length(transcripts) == 1
@@ -48,9 +50,6 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   if (!is.null(lib.sizes)) stopifnot(all(names(bamfiles) %in% names(lib.sizes)))
   w <- sum(width(transcripts))
 
-  # is VLMM one of the offsets for any model
-  any.vlmm <- any(sapply(models, function(m) "vlmm" %in% m$offset))
-
   # TODO: give better output here
   if (min(w) <= minsize + 1) return(NULL)
 
@@ -61,17 +60,14 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   # TODO: come up with a check on whether models is compatible with fitpar
   
   # this is a list of fragment types for each transcript
-  st <- system.time({
-    # TODO: could also save time by only doing GC stretches if necessary
+  st <- system.time({ 
     fraglist <- lapply(seq_along(transcripts), function(i) {
-      out <- buildFragtypes(transcripts[[i]], genome, readlength,
-                            minsize, maxsize, vlmm=any.vlmm)
+      out <- buildFragtypes(transcripts[[i]], genome, readlength, minsize, maxsize)
       out$tx <- names(transcripts)[i]
       out
     })
   })
-
-  #message("building fragment types: ",round(unname(st[3]),1)," seconds")
+  # message("building fragment types: ",round(unname(st[3]))," seconds")
   names(fraglist) <- names(transcripts)
 
   res <- lapply(seq_along(bamfiles), function(i) {
@@ -124,23 +120,20 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     }
     
     if (subset) {
-      st <- system.time({
-        fragtypes <- subsetAndWeightFraglist(fraglist.temp)
-      })
-     #message("subset and weight fragment types: ", round(unname(st[3]),1), " seconds")
+      #message("subset and weight fragment types")
+      fragtypes <- subsetAndWeightFraglist(fraglist.temp, zerotopos)
     } else {
-        fragtypes <- do.call(rbind, fraglist.temp)
-        # this is done in subsetAndWeightFraglist()
-        fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
-                                       fragtypes$gread2start,"-",fragtypes$gend)
+      fragtypes <- do.call(rbind, fraglist.temp)
     }
+    fragtypes$genomic.id <- paste0(fragtypes$gstart,"-",fragtypes$gread1end,"-",
+                                   fragtypes$gread2start,"-",fragtypes$gend)
 
     # message("fragment bias")
     ## -- fragment bias --
     fraglen.density <- fitpar[[bamname]][["fraglen.density"]]
     fragtypes$logdfraglen <- log(matchToDensity(fragtypes$fraglen, fraglen.density))
 
-    if (any.vlmm) {
+    if (any(sapply(models, function(m) "vlmm" %in% m$offset))) {
       stopifnot( "vlmm.fivep" %in% names(fitpar[[bamname]]) )
       # message("priming bias")
       ## -- random hexamer priming bias with VLMM --
@@ -177,55 +170,31 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     mat <- incidenceMat(fragtypes$tx, fragtypes$genomic.id)
     # make sure the rows are in correct order
     stopifnot(all(rownames(mat) == names(transcripts)))
-
-    # NOTE: duplicated weights and bias are not the same for each tx.
-    # The bias will often be identical for read start bias,
-    # and very close for fragment length and fragment GC content given long reads.
-    # It will not be so similar for relative position bias.
-    # Zhonghui Xu points out: why not do the extra bookkeeping and
-    # have the proper lambda-hat_ij fill out the A matrix.
+    # NOTE: duplicated weights are not the same for each tx
     fragtypes.sub <- fragtypes[!duplicated(fragtypes$genomic.id),,drop=FALSE]
     stopifnot(all(fragtypes.sub$genomic.id == colnames(mat)))
-
     #message("run EM for models: ",paste(names(models), collapse=", "))
     n.obs <- fragtypes.sub$count
     
     # run EM for different models
     # this gives list output for one bamfile
     res.sub <- lapply(model.names, function(modeltype) {
-      log.lambda <- getLogLambda(fragtypes, models, modeltype, fitpar, bamname)
+      log.lambda <- getLogLambda(fragtypes.sub, models, modeltype, fitpar, bamname)
+      log.lambda <- as.numeric(log.lambda)
       ## pred0 <- as.numeric(exp(log.lambda))
       ## pred <- pred0/mean(pred0)*mean(fragtypes.sub$count)
       ## boxplot(pred ~ factor(cut(fragtypes.sub$count,c(-1:10 + .5,20,Inf))), main=modeltype, range=0)
-      if (is.null(lib.sizes)) {
-        N <- mean(n.obs)
+      N <- if (is.null(lib.sizes)) {
+        mean(n.obs)
       } else {
-        # TODO: in addition to the interval of considered lengths L
-        # account for the triangle of fragments not in the count matrix
-        N <- lib.sizes[bamname] / (1e9 * (maxsize - minsize))
+          # TODO: in addition to the interval of considered lengths L
+          # account for the triangle of fragments not in the count matrix
+        lib.sizes[bamname] / (1e9 * (maxsize - minsize))
       }
-      
-      # transcript-specific bias
-      lambda.mat <- mat
-      for (tx in names(transcripts)) {
-        tx.id <- fragtypes$genomic.id[fragtypes$tx == tx]
-        tx.idx <- match(tx.id, colnames(mat))
-        lambda.mat[tx, tx.idx] <- exp(log.lambda[fragtypes$tx == tx])
-      }
-
+      A <- t(t(mat * N) * exp(log.lambda))
       wts <- if (subset) { fragtypes.sub$wts } else { 1 }
-
-      # A also includes the library size
-      A <- N * lambda.mat 
       theta <- runEM(n.obs, A, wts, niter, optim)
-
-      # the average lambda for each transcript is stored in results
-      lambda <- if (subset) {
-        lambda.mat %*% wts / mat %*% wts
-      } else {
-        rowSums(lambda.mat) / rowSums(mat)
-      }
-
+      lambda <- mat %*% (wts * exp(log.lambda)) / mat %*% wts
       lambda <- as.numeric(lambda)
       names(lambda) <- names(transcripts)
       list(theta=theta, lambda=lambda)
