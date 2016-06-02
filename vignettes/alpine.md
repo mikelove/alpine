@@ -49,8 +49,8 @@ bamfiles[1]
 ```
 
 ```
-##                                                                                            SRR1039508 
-## "/Library/Frameworks/R.framework/Versions/3.3/Resources/library/airway/extdata/SRR1039508_subset.bam"
+##                                                                          SRR1039508 
+## "/home/love/R/x86_64-pc-linux-gnu-library/3.3/airway/extdata/SRR1039508_subset.bam"
 ```
 
 These are reads from a small region.
@@ -158,18 +158,21 @@ parameters is best with ~100 medium to highly expressed genes.
 
 ```r
 library(alpine)
-library(BSgenome.Hsapiens.UCSC.hg19)
 ```
 
 ```
-## Loading required package: BSgenome
+## 
+## Attaching package: 'alpine'
 ```
 
 ```
-## Loading required package: rtracklayer
+## The following object is masked from 'package:magrittr':
+## 
+##     extract
 ```
 
 ```r
+library(BSgenome.Hsapiens.UCSC.hg19)
 seqlevelsStyle(Hsapiens) <- "NCBI" # because these BAMs are NCBI-style
 genenames <- names(ebt)
 names(genenames) <- genenames
@@ -182,8 +185,8 @@ indexBam(bamfiles[1])
 ```
 
 ```
-##                                                                                                SRR1039508 
-## "/Library/Frameworks/R.framework/Versions/3.3/Resources/library/airway/extdata/SRR1039508_subset.bam.bai"
+##                                                                              SRR1039508 
+## "/home/love/R/x86_64-pc-linux-gnu-library/3.3/airway/extdata/SRR1039508_subset.bam.bai"
 ```
 
 The definition of bias models is extremely flexible in *alpine*.
@@ -251,15 +254,15 @@ print(fitpar[[1]]$summary$GC, row.names=FALSE)
 
 ```
 ##    Estimate Std. Error  z value Pr(>|z|)
-##  -2.0060523  2.1216914  -0.9455 3.44e-01
-##   0.7404867  2.0591684   0.3596 7.19e-01
-##  -0.2549202  1.3123045  -0.1943 8.46e-01
-##   4.6249544  4.0634779   1.1382 2.55e-01
-##   5.9316885  1.5189891   3.9050 9.42e-05
-##  -1.7058758  0.1157174 -14.7417 3.48e-49
-##   0.1088755  0.1543627   0.7053 4.81e-01
-##  -0.0186513  0.0936166  -0.1992 8.42e-01
-##  -0.6162663  0.0979522  -6.2915 3.14e-10
+##   1.0580321  2.1466107   0.4929 6.22e-01
+##  -2.1352117  2.0870397  -1.0231 3.06e-01
+##  -1.8570799  1.3262210  -1.4003 1.61e-01
+##  -1.6477863  4.1221875  -0.3997 6.89e-01
+##   3.8596048  1.4719341   2.6221 8.74e-03
+##  -1.8392858  0.1132739 -16.2375 2.74e-59
+##  -0.0176678  0.1528033  -0.1156 9.08e-01
+##  -0.1002720  0.0902239  -1.1114 2.66e-01
+##  -0.7810198  0.0944971  -8.2650 1.40e-16
 ```
 
 Estimate transcript abundance, first pick a multiple isoform gene.
@@ -318,7 +321,7 @@ res[[1]]
 ## $SRR1039508$null
 ## $SRR1039508$null$theta
 ##           22           23           24           25 
-## 5.051656e+01 7.452425e+00 8.256590e-32 1.080932e+00 
+## 5.025064e+01 7.672585e+00 8.818973e-33 1.089894e+00 
 ## 
 ## $SRR1039508$null$lambda
 ## 22 23 24 25 
@@ -328,11 +331,11 @@ res[[1]]
 ## $SRR1039508$GC
 ## $SRR1039508$GC$theta
 ##           22           23           24           25 
-## 4.952758e+03 6.894653e+02 4.265782e-26 1.163922e+02 
+## 8.981551e+04 1.453431e+04 2.066851e-28 2.030395e+03 
 ## 
 ## $SRR1039508$GC$lambda
-##          22          23          24          25 
-## 0.010207977 0.010391124 0.009623262 0.009570531 
+##           22           23           24           25 
+## 0.0005589797 0.0005455596 0.0005231904 0.0005360156 
 ## 
 ## 
 ## $SRR1039508$count
@@ -351,27 +354,27 @@ mat
 
 ```
 ##      SRR1039508
-## 22 1.285411e+04
-## 23 1.789399e+03
-## 24 1.107117e-25
-## 25 3.020776e+02
-## 1  8.319942e-06
-## 2  1.768663e+05
-## 3  1.039145e+03
-## 4  3.093056e+03
-## 5  5.653784e+03
-## 6  1.628469e+04
-## 7  1.691459e+04
-## 8  9.862229e-59
-## 9  4.385137e+03
-## 10 1.771738e+04
-## 57 2.959845e+03
-## 58 3.967781e+04
-## 59 1.307408e+03
-## 60 2.238736e-30
-## 61 1.408310e-09
-## 62 1.038066e+03
-## 63 2.608835e-73
+## 22 1.255302e+04
+## 23 2.031380e+03
+## 24 2.888724e-29
+## 25 2.837770e+02
+## 1  1.871514e-05
+## 2  1.704635e+05
+## 3  1.005189e+03
+## 4  3.307687e+03
+## 5  7.589184e+03
+## 6  2.198941e+04
+## 7  1.659221e+04
+## 8  4.778679e-52
+## 9  4.259746e+03
+## 10 1.562952e+04
+## 57 2.890535e+03
+## 58 3.889832e+04
+## 59 1.367683e+03
+## 60 1.352999e-30
+## 61 3.539327e-07
+## 62 1.067396e+03
+## 63 7.617357e-72
 ```
 
 
@@ -380,39 +383,44 @@ sessionInfo()
 ```
 
 ```
-## R version 3.3.0 alpha (2016-03-17 r70348)
-## Platform: x86_64-apple-darwin13.4.0 (64-bit)
-## Running under: OS X 10.10.5 (Yosemite)
+## R version 3.3.0 (2016-05-03)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Ubuntu 16.04 LTS
 ## 
 ## locale:
-## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 ## 
 ## attached base packages:
 ## [1] stats4    parallel  stats     graphics  grDevices datasets  utils    
 ## [8] methods   base     
 ## 
 ## other attached packages:
-##  [1] BSgenome.Hsapiens.UCSC.hg19_1.4.0 BSgenome_1.39.4                  
-##  [3] rtracklayer_1.31.7                alpine_0.1.3                     
-##  [5] GenomicFeatures_1.23.25           AnnotationDbi_1.33.7             
-##  [7] GenomicAlignments_1.7.20          Rsamtools_1.23.4                 
-##  [9] Biostrings_2.39.12                XVector_0.11.7                   
-## [11] airway_0.105.0                    SummarizedExperiment_1.1.22      
-## [13] Biobase_2.31.3                    GenomicRanges_1.23.24            
-## [15] GenomeInfoDb_1.7.6                IRanges_2.5.40                   
-## [17] S4Vectors_0.9.43                  BiocGenerics_0.17.3              
-## [19] knitr_1.12.3                      testthat_0.11.0                  
-## [21] devtools_1.10.0                   BiocInstaller_1.21.3             
+##  [1] alpine_0.1.4                      BSgenome.Hsapiens.UCSC.hg19_1.4.0
+##  [3] BSgenome_1.40.0                   rtracklayer_1.32.0               
+##  [5] GenomicFeatures_1.24.2            AnnotationDbi_1.34.3             
+##  [7] GenomicAlignments_1.8.0           Rsamtools_1.24.0                 
+##  [9] Biostrings_2.40.1                 XVector_0.12.0                   
+## [11] airway_0.106.2                    SummarizedExperiment_1.2.2       
+## [13] Biobase_2.32.0                    GenomicRanges_1.24.0             
+## [15] GenomeInfoDb_1.8.1                IRanges_2.6.0                    
+## [17] S4Vectors_0.10.1                  BiocGenerics_0.18.0              
+## [19] magrittr_1.5                      knitr_1.13                       
+## [21] devtools_1.11.1                   BiocInstaller_1.22.2             
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] compiler_3.3.0      formatR_1.3         bitops_1.0-6       
-##  [4] tools_3.3.0         zlibbioc_1.17.0     biomaRt_2.27.2     
-##  [7] digest_0.6.9        evaluate_0.8.3      memoise_1.0.0      
-## [10] RSQLite_1.0.0       lattice_0.20-33     Matrix_1.2-4       
-## [13] DBI_0.3.1           speedglm_0.3-1      stringr_1.0.0      
-## [16] grid_3.3.0          XML_3.98-1.4        BiocParallel_1.5.20
-## [19] magrittr_1.5        MASS_7.3-45         splines_3.3.0      
-## [22] stringi_1.0-1       RCurl_1.95-4.8      crayon_1.3.1
+##  [1] compiler_3.3.0     formatR_1.4        bitops_1.0-6      
+##  [4] tools_3.3.0        zlibbioc_1.18.0    biomaRt_2.28.0    
+##  [7] digest_0.6.9       evaluate_0.9       memoise_1.0.0     
+## [10] RSQLite_1.0.0      lattice_0.20-33    Matrix_1.2-6      
+## [13] DBI_0.4-1          speedglm_0.3-1     withr_1.0.1       
+## [16] stringr_1.0.0      grid_3.3.0         XML_3.98-1.4      
+## [19] BiocParallel_1.6.2 splines_3.3.0      MASS_7.3-45       
+## [22] stringi_1.1.1      RCurl_1.95-4.8     markdown_0.7.7
 ```
 
 .

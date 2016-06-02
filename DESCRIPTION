@@ -7,6 +7,7 @@ Description: Fragment sequence bias modeling and correction for RNA-seq
     transcript abundance estimation.
 License: GPL (>=2)
 VignetteBuilder: knitr
+Depends: R (>= 3.3.0)
 Imports:
     Biostrings,
     IRanges,
