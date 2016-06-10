@@ -1,6 +1,6 @@
 # alpine
 
-![alpine](http://mike-love.net/img/alpine.jpg)
+![alpine](http://mikelove.nfshost.com/img/alpine.jpg)
 
 (the [Sassolungo](https://en.wikipedia.org/wiki/Langkofel) mountain in the Dolomites)
 
