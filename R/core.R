@@ -46,8 +46,9 @@
 #' @importFrom splines ns
 #' @importFrom speedglm speedglm.wfit
 #' @importFrom stringr str_c
-#' @import GenomicAlignments
-#' 
+#' @importFrom graph ftM2graphNEL
+#' @importFrom RBGL connectedComp
+#' @import Biostrings IRanges GenomicRanges GenomicAlignments Rsamtools
 #' 
 #' @docType package
 #' @name alpine-package
