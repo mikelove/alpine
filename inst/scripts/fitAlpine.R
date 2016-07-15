@@ -1,5 +1,9 @@
-metadata <- read.csv("../extdata/metadata.csv", stringsAsFactors=FALSE)
-bam.files <- paste0("out/",metadata$Title,"_galignpairs.bam")
+dir <- "~/proj/alpineData/alpineData"
+
+metadata <- read.csv(file.path(dir,"inst/extdata/metadata.csv"),
+                     stringsAsFactors=FALSE)
+bam.files <- file.path(dir,"inst/scripts/out",
+                       paste0(metadata$Title,"_galignpairs.bam"))
 names(bam.files) <- metadata$Title
 stopifnot(all(file.exists(bam.files)))
 
@@ -27,7 +31,7 @@ save(ebt, file="ebt.rda")
 }
 
 library(GenomicRanges)
-load("ebt.rda")
+load(file.path(dir,"inst/scripts","ebt.rda"))
 
 # more than 1 exon
 table(elementNROWS(ebt))
@@ -42,19 +46,20 @@ ebt <- ebt[gene.lengths > min.bp & gene.lengths < max.bp]
 length(ebt)
 
 set.seed(1)
-ebt <- ebt[sample(length(ebt),4)]
+ebt <- ebt[sample(length(ebt),10)] # better 100
 
 models <- list(
   "GC" = list(formula = "count ~ ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Bounday.knots=relpos.bk) +
   gene",
-  offset=c("fraglen"))
+  offset=c("fraglen","vlmm"))
 )
 
 library(alpine)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
 
-minsize <- 125 # better 80
-maxsize <- 175 # better 350
+minsize <- 100 # better 80
+maxsize <- 250 # better 350
 readlength <- 75 
 
 gene.names <- names(ebt)
@@ -64,9 +69,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
                                     genome=Hsapiens,
                                     readlength=readlength,
                                     minsize=minsize,
-                                    maxsize=maxsize,
-                                    gc.str=FALSE,
-                                    vlmm=FALSE)
+                                    maxsize=maxsize)
                    })
 
 fitpar <- lapply(bam.files, function(bf) {
