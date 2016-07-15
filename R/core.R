@@ -43,10 +43,11 @@
 #'
 #' @author Michael Love
 #'
-#' @importFrom IRanges match %in%
 #' @importFrom splines ns
 #' @importFrom speedglm speedglm.wfit
 #' @importFrom stringr str_c
+#' @import GenomicAlignments
+#' 
 #' 
 #' @docType package
 #' @name alpine-package
