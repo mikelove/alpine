@@ -17,11 +17,11 @@ opts_chunk$set(cache=FALSE)
 ```
 
 ```{r}
-library(alpineData)
-dir <- "~/proj/alpineData/alpineData"
-metadata <- read.csv(file.path(dir,"inst/extdata/metadata.csv"),
+library(alpine)
+dir <- system.file(package="alpine")
+metadata <- read.csv(file.path(dir,"extdata","metadata.csv"),
                      stringsAsFactors=FALSE)
-bam.files <- file.path(dir,"inst/scripts/out",
+bam.files <- file.path(dir,"extdata",
                        paste0(metadata$Title,"_galignpairs.bam"))
 names(bam.files) <- metadata$Title
 stopifnot(all(file.exists(bam.files)))
@@ -33,18 +33,20 @@ evaluated to generate a *GRangesList* of exons per single-isoform gene.
 
 ```{r, eval=FALSE}
 library(ensembldb)
-gtf.file <- "Homo_sapiens.GRCh38.84.gtf"
-txdb <- EnsDb(basename(gtf.file))
+gtf.file <- "~/proj/alpine/alpine/inst/extdata/Homo_sapiens.GRCh38.84.gtf"
+#gtf.file <- "Homo_sapiens.GRCh38.84.gtf"
+txdb <- EnsDb(gtf.file) # already an EnsDb
 txdf <- transcripts(txdb, return.type="DataFrame")
 tab <- table(txdf$gene_id)
 one.iso.genes <- names(tab)[tab == 1]
-# pre-selected genes
-selected.genes <- scan("../extdata/selected.genes.txt",what="char")
+# pre-selected genes based on medium to high counts
+# calculated using Rsubread::featureCounts
+selected.genes <- scan("~/proj/alpine/alpine/inst/extdata/selected.genes.txt",what="char")
 one.iso.txs <- txdf$tx_id[txdf$gene_id %in%
                           intersect(one.iso.genes, selected.genes)]
 ebt0 <- exonsBy(txdb, by="tx")
 ebt <- ebt0[one.iso.txs]
-save(ebt, file="ebt.rda")
+#save(ebt, file="ebt.rda")
 ```
 
 Here we pick a subset of single-isoform genes based on the
@@ -57,7 +59,7 @@ much memory.
 
 ```{r}
 library(GenomicRanges)
-load(file.path(dir,"inst/scripts","ebt.rda"))
+load(file.path(dir,"data","ebt.rda"))
 # more than 1 exon
 table(elementNROWS(ebt))
 ebt <- ebt[elementNROWS(ebt) > 1]
@@ -167,10 +169,18 @@ save(fitpar, file="fitpar.rda")
 
 # Visually exploring the bias parameters
 
+First we set a palette to distinguish between samples
+
+```{r}
+library(RColorBrewer)
+palette(brewer.pal(8,"Dark2"))
+```
+
 The fragment length distribution:
 
 ```{r}
-plotFragLen(fitpar)
+perf <- as.integer(factor(metadata$Performer))
+plotFragLen(fitpar, col=perf)
 ```
 
 The fragment GC bias curves:
@@ -242,6 +252,8 @@ res[[1]]
 These estimates are consistent within sample, but should be scaled
 given the total fragment count and the total bias observed over
 genes. The `extractAlpine` function does this:
+
+TODO summarized experiment
 
 ```{r, eval=FALSE}
 mat <- extractAlpine(res, model="all", nsamp=4)

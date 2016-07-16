@@ -20,6 +20,7 @@ Imports:
     RBGL,
     stringr
 Suggests:
-    airway,
-    BSgenome.Hsapiens.UCSC.hg19
+    alpineData,
+    BSgenome.Hsapiens.NCBI.GRCh38,
+    RColorBrewer
 RoxygenNote: 5.0.1
