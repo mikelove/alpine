@@ -26,7 +26,7 @@ stopifnot(all(file.exists(bam.files)))
 
 To fit the bias model, we need to identify single-isoform genes.
 We used the following chunk of code (here not
-evaluated to generate a *GRangesList* of exons per single-isoform gene.
+evaluated) to generate a *GRangesList* of exons per single-isoform gene.
 
 
 ```r
@@ -50,10 +50,8 @@ ebt <- ebt0[one.iso.txs]
 Here we pick a subset of single-isoform genes based on the
 number of exons, and the length. We show in comments the recommended
 parameters to use in selecting this subset of genes,
-although here we use different parameters. This choice of
-different parameters here is to ensure the building of the
-vignette takes a short period of time and does not use
-much memory.
+although here we use different parameters to ensure the building of
+the vignette takes a short period of time and does not use much memory.
 
 
 ```r
@@ -100,16 +98,15 @@ ebt <- ebt[sample(length(ebt),20)] # better 100 genes
 
 # Fitting the bias model
 
-Robust fitting of these bias
-parameters is best with ~100 medium to highly expressed genes.
-It is required to specify a minimum and maximum fragment
-size (some lower and upper quantiles of the fragment length
-distribution) and the read length. `minsize` and `maxsize`
-are recommended to be the 2.5% and 97.5% of the fragment
-length distribution. Currently
-*alpine* only supports unstranded, paired-end RNA-seq with
-fixed read length. Differences of +/- 1 bp in read length
-across samples can be ignored.
+Robust fitting of these bias parameters is best with ~100 medium to
+high count genes, e.g. mean count across samples between 200 and
+10,000.  It is required to specify a minimum and maximum fragment size
+which should be lower and upper quantiles of the fragment length
+distribution and the read length. The `minsize` and `maxsize`
+arguments are recommended to be roughly the 2.5% and 97.5% of the
+fragment length distribution. Currently *alpine* only supports
+unstranded, paired-end RNA-seq with fixed read length. Differences of
++/- 1 bp in read length across samples can be ignored.
 
 
 ```r
@@ -122,8 +119,8 @@ gene.names <- names(ebt)
 names(gene.names) <- gene.names
 ```
 
-The following function builds a list of information
-about the fragment types from each gene in our
+The following function builds a list of *DataFrames* which store
+information about the fragment types from each gene in our
 training set.
 
 
@@ -142,7 +139,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  22.572   2.882  25.952
+##  22.217   3.308  26.259
 ```
 
 ```r
@@ -184,19 +181,27 @@ head(fragtypes[[1]], 3)
 The definition of bias models is extremely flexible in *alpine*.  The
 `models` argument should be given as a list, where each element is
 model.  The model itself should be provided as a list with elements
-`formula` and `offset`. `offset` can be set to `NULL`.  The allowable
-offsets are `fraglen` and/or `vlmm` which should be listed as a
-character vector.
+`formula` and `offset`. `offset` can be set to `NULL`.
 
-Any kind of R formula can be provided to formula, making use of the
-fragment features, `gc` (0 to 1), `relpos` (0 to 1), `GC40.80`,
-`GC40.90`, `GC20.80`, `GC20.90` (all indicator variables),
-all stored in the elements contained in
-`fragtypes`. Interactions between these terms and offsets,
-e.g. `gc:fraglen` can also be fit.
-We recommend providing formula as character vectors,
-which are converted internally into formula, due to details in how R
-formula make copies of objects from the environment.
+TODO: allow setting formula to NULL?
+
+The allowable offsets are `fraglen` and/or `vlmm` which should be
+provided in a character vector.
+
+Any kind of R formula can be provided to `formula`, making use of the
+fragment features:
+
+* `gc` (fragment GC content from 0 to 1)
+* `relpos` (fragment midpoint relative position from 0 to 1)
+* `GC40.80`, `GC40.90`, `GC20.80`, `GC20.90` (indicator variables
+  indicating the presence of, e.g. a 40 bp stretch of 80% or higher GC
+  content within the fragment)
+
+These fragment features reference columns of information stored in
+`fragtypes`.  Interactions between these terms and offsets are also
+possible, e.g. `gc:fraglen`.  We recommend providing formula as
+character vectors, which are converted internally into formula, due to
+details in how R formula make copies of objects from the environment.
 
 
 ```r
@@ -212,14 +217,14 @@ models <- list(
 )
 ```
 
-Here we fit a bias model
-using fragment length, read start (VLMM),
-fragment GC content, GC runs, relative position, and a term for
-differences in expression across the genes (`+ gene`).
-The knots and boundary knots for GC content
-and relative position splines are fixed internally.
-The returned object, `fitpar`, stores the information
-as a list of fitted parameters across samples.
+Here we fit one bias model, `GC`, using fragment length, fragment GC
+content, and a term for differences in expression across the genes (`+
+gene`).  We fit another bias model, `all`, with all the terms of the
+first but additionally with read start bias (encoded by a Variable
+Length Markov Model, or VLMM).  The knots and boundary knots for GC
+content (`gc`) and relative position (`relpos`) splines are fixed
+internally.  The returned object, `fitpar`, stores the information as
+a list of fitted parameters across samples.
 
 
 ```r
@@ -239,7 +244,7 @@ fitpar <- lapply(bam.files, function(bf) {
 
 ```
 ##    user  system elapsed 
-##  97.196   7.489 105.911
+##  98.603   8.262 108.746
 ```
 
 ```r
@@ -249,10 +254,9 @@ fitpar <- lapply(bam.files, function(bf) {
 # Visually exploring the bias parameters
 
 Note that with more basepairs between `minsize` and `maxsize` and with
-more genes used for estimation, the bias parameters 
-would be more precise. As estimated here, they likely have high
-variance from too few observations (paired-end fragments) across too
-few genes.
+more genes used for estimation, the bias parameters would be more
+precise. As estimated here, they have high variance from too few
+observations (paired-end fragments) across too few genes.
 
 First we set a palette to distinguish between samples
 
@@ -270,7 +274,7 @@ perf <- as.integer(factor(metadata$Performer))
 plotFragLen(fitpar, col=perf)
 ```
 
-![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9-1.png)
+![plot of chunk fraglen](figure/fraglen-1.png)
 
 The fragment GC bias curves:
 
@@ -279,25 +283,27 @@ The fragment GC bias curves:
 plotGC(fitpar, model="all", col=perf)
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-1.png)
+![plot of chunk gccurve](figure/gccurve-1.png)
 
-A 0-order version of the VLMM (note that the
-VLMM that is used in the model includes positions
-that are 1- and 2-order, so this plot does not
-represent the final VLMM).
+A 0-order version of the VLMM (note that the VLMM that is used in the
+model includes positions that are 1- and 2-order, so this plot does
+not represent the final VLMM used in bias estimation or in estimation
+of abundances).
 
 
 ```r
 plotOrder0(fitpar[["ERR188297"]][["vlmm.fivep"]][["order0"]])
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png)
+![plot of chunk vlmm](figure/vlmm-1.png)
 
 ```r
 plotOrder0(fitpar[["ERR188297"]][["vlmm.threep"]][["order0"]])
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-2.png)
+![plot of chunk vlmm](figure/vlmm-2.png)
+
+A coefficient table for the terms in `formula`:
 
 
 ```r
@@ -344,9 +350,9 @@ dir <- system.file("data",package="alpine")
 load(file.path(dir,"estimationObjects.rda"))
 ```
 
-We specify a set of models. Any formula used here must
-be equal to ones used in a fitted model of the same
-name, except `+ gene` is replaced with `+ 0`.
+We specify a set of models. Any formula used here must be equal to
+those used in a fitted model of the same name, except `+ gene` is
+replaced with `+ 0`.
 
 
 ```r
@@ -360,7 +366,10 @@ models <- list(
 ```
 
 Here we estimate FPKM-scale abundances for multiple genes and multiple
-samples.
+samples. If `lib.sizes` is not specified, a default value of 1e6
+is used. `estimateTheta` works one gene at a time, where the
+`transcripts` argument expects a *GRangesList* of the exons for each
+transcript (multiple if the gene has multiple isoforms).
 
 
 ```r
@@ -381,11 +390,12 @@ res <- lapply(subset.genes, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  63.194   2.318  65.967
+##  65.641   2.451  68.585
 ```
 
-Each element of this list has the results for a single gene across all
-samples, all models, and all isoforms of the gene:
+Each element of this list has the abundances (`theta`) and average
+bias (`lambda`) for a single gene across all samples, all models, and all
+isoforms of the gene: 
 
 
 ```r
@@ -416,11 +426,13 @@ res[[6]][["ERR188297"]][["GC"]]
 ##       0.7089671       0.6899302       0.6952068
 ```
 
-These estimates use a default library size of 1e6, but can
-be collated and rescaled using the total number of fragments
-across all genes in `res` using the `extractAlpine` function.
-This also will scale the estimates such that the total bias observed
-over all genes is centered at 1 (log bias equal to zero).
+The `extractAlpine` function can be used to collate estimates from
+across all genes.  `extractAlpine` will scale the estimates such that
+the total bias observed over all transcripts is centered at 1.  The
+estimates produce by `estimateTheta` presume a default library size of
+1e6, but will be rescaled using the total number of fragments across
+genes when using `extractAlpine` (if this library size rescaling is
+not desired, choose `divideOut=FALSE`).
 
 
 ```r
@@ -448,9 +460,9 @@ mat
 
 If we provide a *GRangesList* which contains the exons for each
 transcript, the returned object will be a *SummarizedExperiment*.
-The *GRangesList* does not have to be in the correct order,
-the transcripts will be extracted by name to match the rows of the
-FPKM matrix.
+The *GRangesList* provided to `transcripts` does not have to be in the
+correct order, the transcripts will be extracted by name to match the
+rows of the FPKM matrix.
 
 
 ```r
@@ -476,8 +488,8 @@ se
 The matrix of FPKM values can be scaled using the median ratio method
 of DESeq with the `normalizeDESeq` function. This is a robust method
 which removes systematic differences in values across samples, and is
-more appropriate than using the total count which is highly sensitive
-to large abundance estimates from individual transcripts.
+more appropriate than using the total count which is sensitive to
+very large abundance estimates for a minority of transcripts. 
 
 
 ```r
