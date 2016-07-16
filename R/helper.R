@@ -141,6 +141,33 @@ mergeGenes <- function(ebg, txdf, ignore.strand=TRUE) {
   txdf
 }
 
+#' DESeq median ratio normalization for matrix
+#'
+#' Simple implementation of DESeq median ratio normalization
+#'
+#' @param mat a matrix of numeric values
+#' @param cutoff a numeric value to be used as the cutoff
+#' for the row means of \code{mat}. Only rows with row mean
+#' larger than \code{cutoff} are used for calculating
+#' the size factors
+#'
+#' @return a matrix with the median ratio size factors
+#' divided out
+#'
+#' @references Anders, S. and Huber, W.,
+#' Differential expression analysis for sequence count data.
+#' Genome Biology (2010) doi: 10.1186/gb-2010-11-10-r106
+#' 
+#' @export
+normalizeDESeq <- function(mat, cutoff) {
+  mat2 <- mat[rowMeans(mat) > cutoff,,drop=FALSE]
+  loggeomeans <- rowMeans(log(mat2))
+  logratio <- (log(mat2) - loggeomeans)[is.finite(loggeomeans),,drop=FALSE]
+  sf <- exp(apply(logratio, 2, median, na.rm=TRUE))
+  sweep(mat, 2, sf, "/")
+}
+
+
 ######### unexported helper functions #########
 
 extractRes <- function(res, model, what, nsamp) {
@@ -172,11 +199,4 @@ readGAlignAlpine <- function(bamfile, generange, manual=TRUE) {
   } else {
     readGAlignmentPairs(bamfile,param=ScanBamParam(which=generange,flag=alpineFlag()))
   }
-}
-normalizeDESeq <- function(mat, cutoff) {
-  mat2 <- mat[rowMeans(mat) > cutoff,,drop=FALSE]
-  loggeomeans <- rowMeans(log(mat2))
-  logratio <- (log(mat2) - loggeomeans)[is.finite(loggeomeans),,drop=FALSE]
-  sf <- exp(apply(logratio, 2, median, na.rm=TRUE))
-  sweep(mat, 2, sf, "/")
 }

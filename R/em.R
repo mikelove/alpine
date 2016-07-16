@@ -17,8 +17,7 @@
 #' @param subset logical, whether to downsample the non-observed fragments. Default is TRUE
 #' @param niter the number of EM iterations. Default is 100.
 #' @param lib.sizes a named vector of library sizes to use in calculating the FPKM.
-#' If NULL (the default) a value of average coverage will be calculated from
-#' the observed fragments. Better is to provide a named vector with 1e6 for all samples.
+#' If NULL (the default) a value of 1e6 is used for all samples.
 #' @param optim logical, whether to use numerical optimization instead of the EM.
 #' Default is FALSE.
 #'
@@ -33,19 +32,25 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
                           models, readlength, minsize, maxsize,
                           subset=TRUE, niter=100, 
                           lib.sizes=NULL, optim=FALSE) {
-  # TODO: don't use 'transcripts' bc this is also a function name
+  
   stopifnot(is(transcripts, "GRangesList"))
   stopifnot(length(transcripts) >= 1)
   singleiso <- length(transcripts) == 1
-  stopifnot(all(c("exon_rank","exon_id") %in% names(mcols(transcripts[[1]]))))
-  stopifnot(all(names(bamfiles) %in% names(fitpar)))
-  stopifnot(all(!is.null(names(bamfiles))))
-  stopifnot(all(file.exists(bamfiles)))
-  stopifnot(!is.null(fitpar))
-  stopifnot(all(names(bamfiles) %in% names(fitpar)))
   stopifnot(!is.null(names(transcripts)))
+  stopifnot(all(c("exon_rank","exon_id") %in% names(mcols(transcripts[[1]]))))
+
+  stopifnot(!is.null(fitpar))
+  stopifnot(all(!is.null(names(bamfiles))))
+  stopifnot(all(names(bamfiles) %in% names(fitpar)))
+  stopifnot(all(file.exists(bamfiles)))
+
   stopifnot(all(file.exists(paste0(bamfiles, ".bai"))))
   if (!is.null(lib.sizes)) stopifnot(all(names(bamfiles) %in% names(lib.sizes)))
+  if (is.null(lib.sizes)) {
+    lib.sizes <- rep(1e6, length(bamfiles))
+    names(lib.sizes) <- names(bamfiles)
+  }
+  
   w <- sum(width(transcripts))
 
   # is VLMM one of the offsets for any model

@@ -31,8 +31,7 @@ For a single-isoform gene, just wrap the exons in \code{GRangesList()}}
 \item{niter}{the number of EM iterations. Default is 100.}
 
 \item{lib.sizes}{a named vector of library sizes to use in calculating the FPKM.
-If NULL (the default) a value of average coverage will be calculated from
-the observed fragments. Better is to provide a named vector with 1e6 for all samples.}
+If NULL (the default) a value of 1e6 is used for all samples.}
 
 \item{optim}{logical, whether to use numerical optimization instead of the EM.
 Default is FALSE.}

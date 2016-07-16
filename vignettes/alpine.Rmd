@@ -40,14 +40,20 @@ tab <- table(txdf$gene_id)
 one.iso.genes <- names(tab)[tab == 1]
 # pre-selected genes
 selected.genes <- scan("../extdata/selected.genes.txt",what="char")
-one.iso.txs <- txdf$tx_id[txdf$gene_id %in% intersect(one.iso.genes, selected.genes)]
+one.iso.txs <- txdf$tx_id[txdf$gene_id %in%
+                          intersect(one.iso.genes, selected.genes)]
 ebt0 <- exonsBy(txdb, by="tx")
 ebt <- ebt0[one.iso.txs]
 save(ebt, file="ebt.rda")
 ```
 
 Here we pick a subset of single-isoform genes based on the
-number of exons, and the length.
+number of exons, and the length. We show in comments the recommended
+parameters to use in selecting this subset of genes,
+although here we use different parameters. This choice of
+different parameters here is to ensure the building of the
+vignette takes a short period of time and does not use
+much memory.
 
 ```{r}
 library(GenomicRanges)
@@ -56,14 +62,14 @@ load(file.path(dir,"inst/scripts","ebt.rda"))
 table(elementNROWS(ebt))
 ebt <- ebt[elementNROWS(ebt) > 1]
 # filter small genes and long genes
-min.bp <- 1000 # 800 bp
-max.bp <- 2000 # 5000 bp
+min.bp <- 1000 # better 800 bp
+max.bp <- 2000 # better 5000 bp
 gene.lengths <- sum(width(ebt))
 summary(gene.lengths)
 ebt <- ebt[gene.lengths > min.bp & gene.lengths < max.bp]
 length(ebt)
 set.seed(1)
-ebt <- ebt[sample(length(ebt),10)] # better 100
+ebt <- ebt[sample(length(ebt),10)] # better 100 genes
 ```
 
 # Fitting the bias model
@@ -71,8 +77,10 @@ ebt <- ebt[sample(length(ebt),10)] # better 100
 Robust fitting of these bias
 parameters is best with ~100 medium to highly expressed genes.
 It is required to specify a minimum and maximum fragment
-size (lower and upper quantiles of the fragment length
-distribution) and the read length. Currently
+size (some lower and upper quantiles of the fragment length
+distribution) and the read length. `minsize` and `maxsize`
+are recommended to be the 2.5% and 97.5% of the fragment
+length distribution. Currently
 *alpine* only supports unstranded, paired-end RNA-seq with
 fixed read length. Differences of +/- 1 bp in read length
 across samples can be ignored.
@@ -80,19 +88,18 @@ across samples can be ignored.
 ```{r}
 library(alpine)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
-models <- list(
-  "all" = list(formula = "count ~
-  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Bounday.knots=relpos.bk) +
-  GC40.80 + GC40.90 + GC20.80 + GC20.90 +
-  gene",
-  offset=c("fraglen","vlmm"))
-)
 minsize <- 100 # better 80 for this data
 maxsize <- 250 # better 350 for this data
 readlength <- 75 
 gene.names <- names(ebt)
 names(gene.names) <- gene.names
+```
+
+The following function builds a list of information
+about the fragment types from each gene in our
+training set.
+
+```{r}
 fragtypes <- lapply(gene.names, function(gene.name) {
                      buildFragtypes(exons=ebt[[gene.name]],
                                     genome=Hsapiens,
@@ -102,22 +109,38 @@ fragtypes <- lapply(gene.names, function(gene.name) {
                    })
 ```
 
-The definition of bias models is extremely flexible in *alpine*.
-The `models` argument should be given as a list,
-where each element is model.
-The model itself should be provided as a list
-with elements `formula` and `offset`. `offset` can be set to `NULL`.
-The allowable offsets are `fraglen` and/or `vlmm` which
-should be listed as a character vector.
+We can examine the information for a single gene:
 
-Any kind of R formula can be provided to formula,
-making use of the fragment features, `gc`, `relpos`,
-`GC40.80`, `GC40.90`, `GC20.80`, `GC20.90`, and `fraglen`,
-stored in the elements contained in `fragtypes`.
-We recommend providing formula as character vectors,
-which are converted internally into formula,
-due to details in how R formula make copies of objects
-from the environment.
+```{r}
+head(fragtypes[[1]], 3)
+```
+
+# Defining bias models
+
+The definition of bias models is extremely flexible in *alpine*.  The
+`models` argument should be given as a list, where each element is
+model.  The model itself should be provided as a list with elements
+`formula` and `offset`. `offset` can be set to `NULL`.  The allowable
+offsets are `fraglen` and/or `vlmm` which should be listed as a
+character vector.
+
+Any kind of R formula can be provided to formula, making use of the
+fragment features, `gc`, `relpos`, `GC40.80`, `GC40.90`, `GC20.80`,
+`GC20.90`, and `fraglen`, stored in the elements contained in
+`fragtypes`.  We recommend providing formula as character vectors,
+which are converted internally into formula, due to details in how R
+formula make copies of objects from the environment.
+
+```{r}
+models <- list(
+  "all" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  GC40.80 + GC40.90 + GC20.80 + GC20.90 +
+  gene",
+  offset=c("fraglen","vlmm"))
+)
+```
 
 Here we fit a bias model
 using fragment length, read start (VLMM),
@@ -125,6 +148,8 @@ fragment GC content, GC runs, relative position, and a term for
 differences in expression across the genes (`+ gene`).
 The knots and boundary knots for GC content
 and relative position splines are fixed internally.
+The returned object, `fitpar`, stores the information
+as a list of fitted parameters across samples.
 
 ```{r}
 fitpar <- lapply(bam.files, function(bf) {
@@ -137,69 +162,94 @@ fitpar <- lapply(bam.files, function(bf) {
                                  minsize=minsize,
                                  maxsize=maxsize)
                  })
-
-
 save(fitpar, file="fitpar.rda")
 ```
 
 # Visually exploring the bias parameters
 
+The fragment length distribution:
+
 ```{r}
 plotFragLen(fitpar)
 ```
+
+The fragment GC bias curves:
 
 ```{r}
 plotGC(fitpar, model="all")
 ```
 
+The relative positional bias:
+
 ```{r}
 plotRelPos(fitpar, model="all")
 ```
+
+A 0-order version of the VLMM (note that the
+VLMM that is used in the model includes positions
+that are 1- and 2-order, so this plot does not
+represent the final VLMM).
 
 ```{r}
 plotOrder0(fitpar[[1]][["vlmm.fivep"]][["order0"]])
 ```
 
 ```{r}
-print(fitpar[[1]]$summary$GC, row.names=FALSE)
+print(head(fitpar[[1]][["summary"]][["all"]]), row.names=FALSE)
 ```
 
 # Estimating transcript abundances
 
-```{r, eval=FALSE}
-models <- list("null"=list(formula=NULL, offset=NULL),
-               "GC"=list(formula="count~ns(gc,knots=gc.knots,Boundary.knots=gc.bk) + 0",
-                         offset=c("fraglen")))
+We specify a set of models. Any formula used here must
+be equal to ones used in a fitted model of the same
+name, except `+ gene` is replaced with `+ 0`.
+
+```{r}
+models <- list(
+  "null"=list(formula=NULL, offset=NULL),
+  "all"=list(formula="count~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  GC40.80 + GC40.90 + GC20.80 + GC20.90 +
+  0",
+  offset=c("fraglen","vlmm"))
+  )
 ```
 
-```{r, eval=FALSE}
-lib.sizes <- 1e6 # any value, this is corrected after counting fragments
-names(lib.sizes) <- names(bamfiles)[1]
-ebt2 <- exonsBy(txdb, "tx")
-# this estimates FPKM for multiple genes and multiple samples
-res <- lapply(geneids, function(geneid) {
-         txs <- txdf$TXID[txdf$GENEID == geneid]
-         ebt <- ebt2[txs]
-         estimateTheta(transcripts=ebt, bamfiles=bamfiles[1],
-                       fitpar=fitpar, genome=Hsapiens,
-                       models=models, readlength=63,
-                       minsize=100, maxsize=300,
-                       subset=TRUE, niter=100,
-                       lib.sizes=lib.sizes)
-         })
+Here we estimate FPKM-scale abundances for multiple genes and multiple
+samples.
+
+TODO: example using multiple isoform genes
+
+```{r eval=FALSE}
+res <- lapply(gene.names, function(gene.name) {
+         txs <- ebt[gene.name]
+         estimateTheta(transcripts=txs,
+                       bamfiles=bam.files,
+                       fitpar=fitpar,
+                       genome=Hsapiens,
+                       models=models,
+                       readlength=readlength,
+                       minsize=minsize,
+                       maxsize=maxsize)
+       })
 ```
 
 ```{r}
 res[[1]]
 ```
 
-These estimates are consistent within sample, but need to be scaled
+These estimates are consistent within sample, but should be scaled
 given the total fragment count and the total bias observed over
 genes. The `extractAlpine` function does this:
 
 ```{r, eval=FALSE}
 mat <- extractAlpine(res, model="all", nsamp=4)
 mat
+```
+
+```{r, eval=FALSE}
+normalizeDESeq(mat)
 ```
 
 ```{r}
