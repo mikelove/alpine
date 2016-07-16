@@ -1,4 +1,4 @@
-#' Extract results from estimateTheta across genes
+#' Extract results from estimateTheta run across genes
 #'
 #' This function extracts estimates for a given model from a list
 #' over many genes, returning a matrix with dimensions:
@@ -21,7 +21,7 @@
 #' @return a matrix of FPKM values across transcripts and samples
 #'
 #' @export
-extract <- function(res, model, nsamp, lib.sizes=1e6, divideOut=TRUE) {
+extractAlpine <- function(res, model, nsamp, lib.sizes=1e6, divideOut=TRUE) {
   fpkm <- extractRes(res, model, "theta", nsamp)
   lambda <- extractRes(res, model, "lambda", nsamp)
   count <- extractRes(res, model, "count", nsamp)
@@ -157,77 +157,7 @@ extractRes <- function(res, model, what, nsamp) {
     }
   }))
 }
-getCountMatrix <- function(gene, bamfile, genome=Hsapiens) {
-  fragtypes <- buildFragtypes(gene, genome)
-  l <- sum(width(gene))
-  generange <- range(gene)
-  strand(generange) <- "*" # not necessary
-  if (!as.character(seqnames(generange)) %in% seqlevels(BamFile(bamfile))) next
-  flag <- alpineFlag()
-  suppressWarnings({ ga <- readGAlignmentPairs(bamfile, param=ScanBamParam(which=generange,flag=flag)) })
-  ga <- keepSeqlevels(ga, as.character(seqnames(gene)[1]))
-  fco <- findCompatibleOverlaps(ga, GRangesList(gene))
-  reads <- gaToReadsOnTx(ga, GRangesList(gene), fco)
-  fraglist <- matchReadsToFraglist(reads, list(fragtypes))
-  fragtypes <- fraglist[[1]]
-  sp <- split(fragtypes$count, fragtypes$start)
-  lens <- sapply(sp, length)
-  maxl <- max(lens)
-  short.idx <- unname(which(lens < maxl))
-  for (i in short.idx) {
-    sp[[i]] <- c(sp[[i]], rep(0, maxl - lens[i]))
-  }
-  mat <- do.call(cbind, sp)
-  mat[nrow(mat):1,]
-}
-getFragStarts <- function(gene, bamfile, ends=FALSE, width=FALSE) {
-  stopifnot(is(gene, "GRanges"))
-  gene.grl <- GRangesList(gene)
-  genestrand <- as.character(strand(gene[1]))
-  generange <- range(gene)
-  l <- sum(width(gene))
-  strand(generange) <- "*" # not necessary
-  if (!as.character(seqnames(generange)) %in% seqlevels(BamFile(bamfile))) return(NULL)
-  flag <- alpineFlag()
-  suppressWarnings({ ga <- readGAlignmentPairs(bamfile, param=ScanBamParam(which=generange,flag=flag)) })
-  ga <- keepSeqlevels(ga, as.character(seqnames(gene)[1]))
-  if (length(ga) == 0) return(NULL)
-  reads <- gaToReadsOnTx(ga, gene.grl)[[1]]
-  if (width) {
-    return(width(reads))
-  } else if (ends) {
-    return(end(reads))
-  } else {
-    return(start(reads))
-  }
-}
-plotFragStarts <- function(gene, bamfile, genome, window=200, ends=FALSE, ...) {
-  x <- getFragStarts(gene, bamfile, ends=ends)
-  if (is.null(x)) return(NULL)
-  l <- sum(width(gene))
-  reads <- as.numeric(table(factor(x, 1:l)))
-  plot(reads, xlab="position", type="h", ...)
-  if (!missing(genome)) {
-    exon.dna <- unlist(getSeq(genome, gene))
-    gc <- letterFrequencyInSlidingView(exon.dna, view.width=window, letters="GC", as.prob=TRUE)
-    lines(seq_along(gc) + window/2, gc * max(reads), col="dodgerblue", lwd=2)
-    axis(4, 0:4/4 * max(reads), 0:4/4, col="dodgerblue")
-  }
-}
-roughSummarizeOverlaps <- function(features, bamfile) {
-  # assume paired end
-  rngs <- unlist(range(features))
-  rngs$id <- paste(seqnames(rngs), start(rngs), end(rngs), sep="-")
-  data <- countBam(bamfile, param=ScanBamParam(which=rngs))
-  data$id <- paste(data$space, data$start, data$end, sep="-")
-  data <- data[match(rngs$id, data$id),]
-  round(data$records/2)
-}
-countBamfiles <- function(bamfiles, which) {
-  # assume paired end
-  round(sapply(seq_along(bamfiles), function(i) countBam(bamfiles[i], param=ScanBamParam(which=which))$records/2))
-}
-getReadlength <- function(bamfiles) {
+getReadLength <- function(bamfiles) {
   getRL1 <- function(file) {
     qwidth(readGAlignments(BamFile(file, yieldSize=1)))
   }

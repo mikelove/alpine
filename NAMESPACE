@@ -2,7 +2,7 @@
 
 export(buildFragtypes)
 export(estimateTheta)
-export(extract)
+export(extractAlpine)
 export(fitBiasModels)
 export(mergeGenes)
 export(plotFragLen)
