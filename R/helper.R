@@ -17,11 +17,18 @@
 #' @param divideOut logical, whether to divide out the initial estimate of
 #' library size and to instead use the count of compatible fragments for
 #' genes calculated by \link{estimateTheta}. Default is TRUE
+#' @param transcripts an optional \code{GRangesList} of the exons for each
+#' transcript. If this is provided, the output will be a
+#' \code{SummarizedExperiment}. The transcripts do not need
+#' to be provided in the correct order, \code{extractAlpine} will
+#' find the correct transcript by the names in \code{res} and
+#' put them in the correct order.
 #' 
 #' @return a matrix of FPKM values across transcripts and samples
 #'
 #' @export
-extractAlpine <- function(res, model, nsamp, lib.sizes=1e6, divideOut=TRUE) {
+extractAlpine <- function(res, model, nsamp, lib.sizes=1e6,
+                          divideOut=TRUE, transcripts=NULL) {
   fpkm <- extractRes(res, model, "theta", nsamp)
   lambda <- extractRes(res, model, "lambda", nsamp)
   count <- extractRes(res, model, "count", nsamp)
@@ -32,7 +39,15 @@ extractAlpine <- function(res, model, nsamp, lib.sizes=1e6, divideOut=TRUE) {
   } else {
     lambdaBar
   }
-  sweep(fpkm, 2, multFactor, `*`)
+  mat <- sweep(fpkm, 2, multFactor, `*`)
+  if (is.null(transcripts)) {
+    return(mat)
+  } else {
+    row.ranges <- transcripts[rownames(mat)]
+    se <- SummarizedExperiment(assays=list(FPKM=mat),
+                               rowRanges=row.ranges)
+    return(se)
+  }
 }
 
 #' Split genes that have isoforms across chromosomes
