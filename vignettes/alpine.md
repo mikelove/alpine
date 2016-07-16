@@ -95,7 +95,7 @@ length(ebt)
 
 ```r
 set.seed(1)
-ebt <- ebt[sample(length(ebt),10)] # better 100 genes
+ebt <- ebt[sample(length(ebt),20)] # better 100 genes
 ```
 
 # Fitting the bias model
@@ -115,8 +115,8 @@ across samples can be ignored.
 ```r
 library(alpine)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
-minsize <- 100 # better 80 for this data
-maxsize <- 250 # better 350 for this data
+minsize <- 125 # better 80 for this data
+maxsize <- 175 # better 350 for this data
 readlength <- 75 
 gene.names <- names(ebt)
 names(gene.names) <- gene.names
@@ -134,14 +134,15 @@ fragtypes <- lapply(gene.names, function(gene.name) {
                                      genome=Hsapiens,
                                      readlength=readlength,
                                      minsize=minsize,
-                                     maxsize=maxsize)
+                                     maxsize=maxsize,
+                                     gc.str=FALSE)
                     })
 })
 ```
 
 ```
 ##    user  system elapsed 
-##  16.506   2.485  19.275
+##  22.572   2.882  25.952
 ```
 
 ```r
@@ -149,7 +150,7 @@ object.size(fragtypes)/1e6
 ```
 
 ```
-## 243.367448 bytes
+## 124.921488 bytes
 ```
 
 We can examine the information for a single gene:
@@ -160,22 +161,22 @@ head(fragtypes[[1]], 3)
 ```
 
 ```
-## DataFrame with 3 rows and 18 columns
+## DataFrame with 3 rows and 14 columns
 ##       start       end     relpos   fraglen        id fivep.test
 ##   <integer> <integer>  <numeric> <integer> <IRanges>  <logical>
-## 1         1       100 0.02676660       100  [1, 100]      FALSE
-## 2         1       101 0.02730193       101  [1, 101]      FALSE
-## 3         1       102 0.02730193       102  [1, 102]      FALSE
-##            fivep threep.test                threep        gc   GC40.90
-##   <DNAStringSet>   <logical>        <DNAStringSet> <numeric> <numeric>
-## 1  AGTTTCGGAACCC        TRUE GTGCCCGGGCTGCAGAAGCCC 0.6600000         0
-## 2  AGTTTCGGAACCC        TRUE GGTGCCCGGGCTGCAGAAGCC 0.6633663         0
-## 3  AGTTTCGGAACCC        TRUE GGGTGCCCGGGCTGCAGAAGC 0.6666667         0
-##     GC40.80   GC20.90   GC20.80    gstart      gend gread1end gread2start
-##   <numeric> <numeric> <numeric> <integer> <integer> <integer>   <integer>
-## 1         0         0         1  33567125  33567026  33567051    33567100
-## 2         0         0         1  33567125  33567025  33567051    33567099
-## 3         0         0         1  33567125  33567024  33567051    33567098
+## 1         1       125 0.03372591       125  [1, 125]      FALSE
+## 2         1       126 0.03372591       126  [1, 126]      FALSE
+## 3         1       127 0.03426124       127  [1, 127]      FALSE
+##            fivep threep.test                threep        gc    gstart
+##   <DNAStringSet>   <logical>        <DNAStringSet> <numeric> <integer>
+## 1  AGTTTCGGAACCC        TRUE GAATGTGGGGCGCCGCGGGGC 0.7200000  33567125
+## 2  AGTTTCGGAACCC        TRUE GGAATGTGGGGCGCCGCGGGG 0.7222222  33567125
+## 3  AGTTTCGGAACCC        TRUE GGGAATGTGGGGCGCCGCGGG 0.7244094  33567125
+##        gend gread1end gread2start
+##   <integer> <integer>   <integer>
+## 1  33567001  33567051    33567075
+## 2  33567000  33567051    33567074
+## 3  33566999  33567051    33567073
 ```
 
 # Defining bias models
@@ -200,9 +201,12 @@ formula make copies of objects from the environment.
 
 ```r
 models <- list(
+  "GC" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  gene",
+  offset=c("fraglen")),
   "all" = list(formula = "count ~
   ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
   gene",
   offset=c("fraglen","vlmm"))
 )
@@ -235,7 +239,7 @@ fitpar <- lapply(bam.files, function(bf) {
 
 ```
 ##    user  system elapsed 
-##  71.947   6.075  79.162
+##  97.196   7.489 105.911
 ```
 
 ```r
@@ -266,7 +270,7 @@ perf <- as.integer(factor(metadata$Performer))
 plotFragLen(fitpar, col=perf)
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png)
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9-1.png)
 
 The fragment GC bias curves:
 
@@ -275,16 +279,7 @@ The fragment GC bias curves:
 plotGC(fitpar, model="all", col=perf)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12-1.png)
-
-The relative positional bias:
-
-
-```r
-plotRelPos(fitpar, model="all", col=perf)
-```
-
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13-1.png)
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-1.png)
 
 A 0-order version of the VLMM (note that the
 VLMM that is used in the model includes positions
@@ -296,13 +291,13 @@ represent the final VLMM).
 plotOrder0(fitpar[["ERR188297"]][["vlmm.fivep"]][["order0"]])
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14-1.png)
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png)
 
 ```r
 plotOrder0(fitpar[["ERR188297"]][["vlmm.threep"]][["order0"]])
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14-2.png)
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-2.png)
 
 
 ```r
@@ -310,13 +305,13 @@ print(head(fitpar[["ERR188297"]][["summary"]][["all"]]), row.names=FALSE)
 ```
 
 ```
-##    Estimate Std. Error z value Pr(>|z|)
-##  -3.8906360  1.0396561 -3.7422 1.82e-04
-##   0.0306145  1.0036296  0.0305 9.76e-01
-##  -0.4398308  0.6376371 -0.6898 4.90e-01
-##  -3.0582911  2.0660590 -1.4803 1.39e-01
-##  -8.2226083  0.8347416 -9.8505 6.82e-23
-##   1.0157609  0.1626099  6.2466 4.19e-10
+##    Estimate Std. Error  z value Pr(>|z|)
+##  -1.2031915  0.7086573  -1.6978 8.95e-02
+##  -2.5659961  0.6719580  -3.8187 1.34e-04
+##  -1.2870085  0.4400562  -2.9246 3.45e-03
+##  -6.9804233  1.4196737  -4.9169 8.79e-07
+##  -7.7494570  0.6603703 -11.7350 8.43e-32
+##   0.8676582  0.1474220   5.8855 3.97e-09
 ```
 
 # Estimating transcript abundances
@@ -357,11 +352,10 @@ name, except `+ gene` is replaced with `+ 0`.
 ```r
 models <- list(
   "null"=list(formula=NULL, offset=NULL),
-  "all"=list(formula="count~
+  "GC"=list(formula="count~
   ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
   0",
-  offset=c("fraglen","vlmm"))
+  offset=c("fraglen"))
   )
 ```
 
@@ -387,7 +381,7 @@ res <- lapply(subset.genes, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-## 133.787   9.507 144.049
+##  63.194   2.318  65.967
 ```
 
 Each element of this list has the results for a single gene across all
@@ -395,31 +389,31 @@ samples, all models, and all isoforms of the gene:
 
 
 ```r
-res[[1]][["ERR188297"]][["all"]]
+res[[1]][["ERR188297"]][["GC"]]
 ```
 
 ```
 ## $theta
 ## ENST00000272233 
-##        8031.435 
+##        99.72616 
 ## 
 ## $lambda
 ## ENST00000272233 
-##      0.02098951
+##       0.7031507
 ```
 
 ```r
-res[[6]][["ERR188297"]][["all"]]
+res[[6]][["ERR188297"]][["GC"]]
 ```
 
 ```
 ## $theta
 ## ENST00000422252 ENST00000331479 ENST00000484235 
-##       11346.488        8434.599       28801.224 
+##       393.35253        56.37691       513.92103 
 ## 
 ## $lambda
 ## ENST00000422252 ENST00000331479 ENST00000484235 
-##      0.03337403      0.02488118      0.02529331
+##       0.7089671       0.6899302       0.6952068
 ```
 
 These estimates use a default library size of 1e6, but can
@@ -431,25 +425,25 @@ over all genes is centered at 1 (log bias equal to zero).
 
 ```r
 mat <- extractAlpine(res,
-                     model="all",
+                     model="GC",
                      nsamp=length(bam.files))
 mat
 ```
 
 ```
 ##                    ERR188297    ERR188088    ERR188204    ERR188317
-## ENST00000272233 4.408219e+04 9.764919e+04 5.823250e+04 5.485479e+04
-## ENST00000374518 4.300741e+04 3.858410e+04 4.290873e+04 4.742574e+04
-## ENST00000373758 3.123748e+04 2.805677e+04 2.894547e+04 3.306017e+04
-## ENST00000634963 3.955291e-06 2.356548e+03 1.435929e-14 1.003936e-06
-## ENST00000416247 8.893390e+03 6.891867e+03 1.028256e+04 9.450473e+03
-## ENST00000376935 5.445548e+03 5.235020e+03 2.800799e+03 8.851717e+03
-## ENST00000613913 7.015160e-04 3.271283e-04 4.402587e+02 4.326308e+02
-## ENST00000353704 7.589523e+04 9.123782e+04 7.261348e+04 6.812086e+04
-## ENST00000486056 8.040640e+03 5.844470e+03 1.882918e+01 2.552673e+03
-## ENST00000422252 6.227754e+04 8.290126e+04 1.899833e+05 1.184271e+05
-## ENST00000331479 4.629504e+04 2.709261e+04 2.945727e+04 2.707870e+04
-## ENST00000484235 1.580815e+05 1.651025e+05 1.109300e+05 1.093027e+05
+## ENST00000272233 1.391945e+04 2.903973e+04 1.765655e+04 2.151485e+04
+## ENST00000374518 2.025365e+04 1.843465e+04 2.753799e+04 2.773193e+04
+## ENST00000373758 1.130004e+04 9.953691e+03 1.598149e+04 1.391573e+04
+## ENST00000634963 6.070191e+03 1.176627e+04 4.391057e+03 2.683911e+03
+## ENST00000416247 3.434423e+03 2.981446e+03 6.555246e+03 4.614339e+03
+## ENST00000376935 2.791464e+03 3.515223e+03 8.558967e+02 4.013967e+03
+## ENST00000613913 1.989163e-07 2.658559e-06 1.499807e-04 2.050375e-05
+## ENST00000353704 2.107436e+04 2.718236e+04 2.742093e+04 3.212825e+04
+## ENST00000486056 9.771349e+03 6.092167e+03 1.012929e+03 2.699586e+03
+## ENST00000422252 5.490285e+04 3.543025e+04 1.127924e+05 9.758425e+04
+## ENST00000331479 7.868902e+03 9.909097e+03 8.542261e+03 4.968998e+03
+## ENST00000484235 7.173140e+04 6.011131e+04 3.766644e+04 4.469504e+04
 ```
 
 If we provide a *GRangesList* which contains the exons for each
@@ -461,7 +455,7 @@ FPKM matrix.
 
 ```r
 se <- extractAlpine(res,
-                    model="all",
+                    model="GC",
                     nsamp=length(bam.files),
                     transcripts=ebt.sub)
 se
@@ -554,5 +548,4 @@ sessionInfo()
 ## [35] httr_1.2.0                    roxygen2_5.0.1               
 ## [37] R6_2.1.2                      compiler_3.4.0
 ```
-
 

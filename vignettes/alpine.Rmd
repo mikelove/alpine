@@ -108,7 +108,8 @@ fragtypes <- lapply(gene.names, function(gene.name) {
                                      genome=Hsapiens,
                                      readlength=readlength,
                                      minsize=minsize,
-                                     maxsize=maxsize)
+                                     maxsize=maxsize,
+                                     gc.str=FALSE)
                     })
 })
 object.size(fragtypes)/1e6
@@ -141,9 +142,12 @@ formula make copies of objects from the environment.
 
 ```{r}
 models <- list(
+  "GC" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  gene",
+  offset=c("fraglen")),
   "all" = list(formula = "count ~
   ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
   gene",
   offset=c("fraglen","vlmm"))
 )
@@ -202,12 +206,6 @@ The fragment GC bias curves:
 plotGC(fitpar, model="all", col=perf)
 ```
 
-The relative positional bias:
-
-```{r}
-plotRelPos(fitpar, model="all", col=perf)
-```
-
 A 0-order version of the VLMM (note that the
 VLMM that is used in the model includes positions
 that are 1- and 2-order, so this plot does not
@@ -257,16 +255,16 @@ name, except `+ gene` is replaced with `+ 0`.
 ```{r}
 models <- list(
   "null"=list(formula=NULL, offset=NULL),
-  "all"=list(formula="count~
+  "GC"=list(formula="count~
   ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
   0",
-  offset=c("fraglen","vlmm"))
+  offset=c("fraglen"))
   )
 ```
 
 Here we estimate FPKM-scale abundances for multiple genes and multiple
-samples.
+samples. If `lib.sizes` is not specified, a default value of 1e6
+is used.
 
 ```{r estimateTheta}
 system.time({
@@ -288,19 +286,23 @@ Each element of this list has the results for a single gene across all
 samples, all models, and all isoforms of the gene:
 
 ```{r}
-res[[1]][["ERR188297"]][["all"]]
-res[[6]][["ERR188297"]][["all"]]
+res[[1]][["ERR188297"]][["GC"]]
+res[[6]][["ERR188297"]][["GC"]]
 ```
 
-These estimates use a default library size of 1e6, but can
-be collated and rescaled using the total number of fragments
-across all genes in `res` using the `extractAlpine` function.
-This also will scale the estimates such that the total bias observed
-over all genes is centered at 1 (log bias equal to zero).
+The `extractAlpine` function can be used to collate estimates
+from across all transcripts.
+`extractAlpine` will scale the estimates such that the
+total bias observed over all transcripts is centered at 1 (log bias
+equal to zero). 
+The estimates produce by `estimateTheta` presume a default library
+size of 1e6, but will be rescaled using the total number of fragments
+across genes when using `extractAlpine` (if this library size
+rescaling is not desired, choose `divideOut=FALSE`). 
 
 ```{r}
 mat <- extractAlpine(res,
-                     model="all",
+                     model="GC",
                      nsamp=length(bam.files))
 mat
 ```
@@ -313,7 +315,7 @@ FPKM matrix.
 
 ```{r}
 se <- extractAlpine(res,
-                    model="all",
+                    model="GC",
                     nsamp=length(bam.files),
                     transcripts=ebt.sub)
 se
@@ -332,5 +334,4 @@ norm.mat <- normalizeDESeq(mat, cutoff=0.1)
 ```{r}
 sessionInfo()
 ```
-
 
