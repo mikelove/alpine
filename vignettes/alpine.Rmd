@@ -18,7 +18,7 @@ opts_chunk$set(cache=FALSE)
 
 ```{r}
 library(alpine)
-dir <- system.file("inst/extdata",package="alpine")
+dir <- system.file("extdata",package="alpine")
 metadata <- read.csv(file.path(dir,"metadata.csv"),
                      stringsAsFactors=FALSE)
 bam.files <- file.path(dir,paste0(metadata$Title,"_galignpairs.bam"))
@@ -76,13 +76,26 @@ ebt <- ebt[sample(length(ebt),20)] # better 100 genes
 
 Robust fitting of these bias parameters is best with ~100 medium to
 high count genes, e.g. mean count across samples between 200 and
-10,000.  It is required to specify a minimum and maximum fragment size
+10,000. These counts can be identified by *featureCounts* from the
+*Rsubread* Bioconductor package, for example.
+It is required to specify a minimum and maximum fragment size
 which should be lower and upper quantiles of the fragment length
-distribution and the read length. The `minsize` and `maxsize`
+distribution. The `minsize` and `maxsize`
 arguments are recommended to be roughly the 2.5% and 97.5% of the
-fragment length distribution. Currently *alpine* only supports
-unstranded, paired-end RNA-seq with fixed read length. Differences of
-+/- 1 bp in read length across samples can be ignored.
+fragment length distribution. This can be quickly estimated using the
+helper function `getFragmentWidths`, iterating over a few
+single-isoform genes with sufficient counts:
+
+```{r}
+w <- getFragmentWidths(bam.files[1], ebt[[1]])
+c(summary(w), Number=length(w))
+quantile(w, c(.025, .975))
+```
+
+It is also required to specify the read length.  Currently *alpine*
+only supports unstranded, paired-end RNA-seq with fixed read
+length. Differences of +/- 1 bp in read length across samples can be
+ignored.
 
 ```{r}
 library(alpine)

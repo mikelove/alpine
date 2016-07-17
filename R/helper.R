@@ -182,6 +182,42 @@ normalizeDESeq <- function(mat, cutoff) {
   sweep(mat, 2, sf, "/")
 }
 
+#' Get fragment widths
+#'
+#' From a BAM file and a particular transcript (recommened
+#' to be the single isoform of a gene), this function
+#' returns estimates of the fragment widths, by mapping the
+#' fragment alignments to the transcript coordinates.
+#'
+#' @param bamfile a character string pointing to a BAM file
+#' @param tx a GRanges object of the exons of a single isoform gene
+#'
+#' @return a numeric vector of estimated fragment widths
+#'
+#' @export
+getFragmentWidths <- function(bamfile, tx) {
+  gap <- readGAlignmentPairs(bamfile, param=ScanBamParam(which=range(tx)))
+  stopifnot(length(gap) > 0)
+  fo <- findCompatibleOverlaps(gap, GRangesList(tx=tx))
+  stopifnot(length(fo) > 0)
+  gap <- gap[queryHits(fo)]
+  left <- first(gap)
+  right <- last(gap)
+  first.minus <- as.vector(strand(first(gap)) == "-")
+  left[first.minus] <- last(gap)[first.minus]
+  right[first.minus] <- first(gap)[first.minus]
+  left.tx <- start(mapToTranscripts(GRanges(seqnames(gap),
+                                            IRanges(start(left),width=1)),
+                                    GRangesList(tx=tx)))
+  right.tx <- end(mapToTranscripts(GRanges(seqnames(gap),
+                                           IRanges(end(right),width=1)),
+                                   GRangesList(tx=tx)))
+  w <- right.tx - left.tx + 1
+  if (as.character(strand(tx)[1]) == "-") {
+    w <- w * -1
+  }
+  return(w)
+}
 
 ######### unexported helper functions #########
 

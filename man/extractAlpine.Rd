@@ -4,7 +4,8 @@
 \alias{extractAlpine}
 \title{Extract results from estimateTheta run across genes}
 \usage{
-extractAlpine(res, model, nsamp, lib.sizes = 1e+06, divideOut = TRUE)
+extractAlpine(res, model, nsamp, lib.sizes = 1e+06, divideOut = TRUE,
+  transcripts = NULL)
 }
 \arguments{
 \item{res}{a list where each element is the output of \link{estimateTheta}}
@@ -21,6 +22,13 @@ not needed if \code{divideOut=FALSE}}
 \item{divideOut}{logical, whether to divide out the initial estimate of
 library size and to instead use the count of compatible fragments for
 genes calculated by \link{estimateTheta}. Default is TRUE}
+
+\item{transcripts}{an optional \code{GRangesList} of the exons for each
+transcript. If this is provided, the output will be a
+\code{SummarizedExperiment}. The transcripts do not need
+to be provided in the correct order, \code{extractAlpine} will
+find the correct transcript by the names in \code{res} and
+put them in the correct order.}
 }
 \value{
 a matrix of FPKM values across transcripts and samples

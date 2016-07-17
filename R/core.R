@@ -48,6 +48,7 @@
 #' @importFrom stringr str_c
 #' @importFrom graph ftM2graphNEL
 #' @importFrom RBGL connectedComp
+#' @importFrom GenomicFeatures mapToTranscripts
 #' @import Biostrings IRanges GenomicRanges GenomicAlignments Rsamtools
 #' 
 #' @docType package
