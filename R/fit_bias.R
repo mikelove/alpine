@@ -10,7 +10,14 @@
 #' @param fragtypes the output of \link{buildFragtypes}. must contain
 #' the potential fragment types for the genes named in \code{genes}
 #' @param genome a BSGenome object
-#' @param models a list of character strings or formula describing the bias models, see vignette
+#' @param models a list of lists: the outer list describes multiple models
+#' each element of the inner list has two elements: \code{formula} and \code{offset}.
+#' \code{formula} should be a character strings of an R formula
+#' describing the bias models, e.g. \code{"count ~ ns(gc) + gene"}.
+#' \code{offset} should be a character vector
+#' listing possible bias offsets to be used (\code{"fraglen"} or \code{"vlmm"}).
+#' Either \code{offset} or \code{formula} can be \code{NULL} for a model.
+#' See vignette for recommendations and details.
 #' @param readlength the read length
 #' @param minsize the minimum fragment length to model
 #' @param maxsize the maximum fragment length to model
@@ -41,6 +48,7 @@ fitBiasModels <- function(genes, bamfile, fragtypes, genome,
   target.fpbp <- 0.4
   fitpar.sub <- list()
   fitpar.sub[["coefs"]] <- list()
+  fitpar.sub[["summary"]] <- list()
   # create a list over genes, populated with read info from this 'bamfile'
   # so we create a new object, and preserve the original 'fragtypes' object
   fragtypes.sub.list <- list()
@@ -128,10 +136,13 @@ fitBiasModels <- function(genes, bamfile, fragtypes, genome,
     fitpar.sub[["vlmm.fivep"]] <- vlmm.fivep
     fitpar.sub[["vlmm.threep"]] <- vlmm.threep
   }
-  
+
   # allow a gene-specific intercept (although mostly handled already with downsampling)
   fragtypes.sub$gene <- factor(rep(seq_along(gene.nrows), gene.nrows))
   for (modeltype in names(models)) {
+    if (is.null(models[[modeltype]]$formula)) {
+      next
+    }
     gc.knots <- seq(from=.4, to=.6, length=3)
     gc.bk <- c(0,1)
     relpos.knots <- seq(from=.25, to=.75, length=3)

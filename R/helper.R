@@ -219,6 +219,23 @@ getFragmentWidths <- function(bamfile, tx) {
   return(w)
 }
 
+#' Get read length
+#'
+#' Gets the length of the first read in a BAM file
+#'
+#' @param bamfiles a character vector pointing to BAM files
+#'
+#' @return a numeric vector, one number per BAM file, the
+#' length of the first read in the file
+#'
+#' @export
+getReadLength <- function(bamfiles) {
+  getRL1 <- function(file) {
+    qwidth(readGAlignments(BamFile(file, yieldSize=1)))
+  }
+  sapply(bamfiles, getRL1)
+}
+
 ######### unexported helper functions #########
 
 extractRes <- function(res, model, what, nsamp) {
@@ -234,12 +251,6 @@ extractRes <- function(res, model, what, nsamp) {
       return(do.call(cbind, res.list))
     }
   }))
-}
-getReadLength <- function(bamfiles) {
-  getRL1 <- function(file) {
-    qwidth(readGAlignments(BamFile(file, yieldSize=1)))
-  }
-  sapply(bamfiles, getRL1)
 }
 alpineFlag <- function() scanBamFlag(isSecondaryAlignment=FALSE)
 readGAlignAlpine <- function(bamfile, generange, manual=TRUE) {

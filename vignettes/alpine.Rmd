@@ -92,10 +92,14 @@ c(summary(w), Number=length(w))
 quantile(w, c(.025, .975))
 ```
 
-It is also required to specify the read length.  Currently *alpine*
+It is also required to specify the read length. Currently *alpine*
 only supports unstranded, paired-end RNA-seq with fixed read
 length. Differences of +/- 1 bp in read length across samples can be
 ignored.
+
+```{r}
+getReadLength(bam.files)
+```
 
 ```{r}
 library(alpine)
@@ -136,12 +140,13 @@ head(fragtypes[[1]], 3)
 The definition of bias models is extremely flexible in *alpine*.  The
 `models` argument should be given as a list, where each element is
 model.  The model itself should be provided as a list with elements
-`formula` and `offset`. `offset` can be set to `NULL`.
-
-TODO: allow setting formula to NULL?
-
+`formula` and `offset`. Either `formula` or `offset` can be set to
+`NULL` for a given model. 
 The allowable offsets are `fraglen` and/or `vlmm` which should be
 provided in a character vector.
+Offsets are only estimated once for all models, so setting
+`formula=NULL` only makes sense if extra offsets are desired
+which were not already calculated by other models.
 
 Any kind of R formula can be provided to `formula`, making use of the
 fragment features:

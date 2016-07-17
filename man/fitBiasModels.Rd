@@ -17,7 +17,14 @@ the potential fragment types for the genes named in \code{genes}}
 
 \item{genome}{a BSGenome object}
 
-\item{models}{a list of character strings or formula describing the bias models, see vignette}
+\item{models}{a list of lists: the outer list describes multiple models
+each element of the inner list has two elements: \code{formula} and \code{offset}.
+\code{formula} should be a character strings of an R formula
+describing the bias models, e.g. \code{"count ~ ns(gc) + gene"}.
+\code{offset} should be a character vector
+listing possible bias offsets to be used (\code{"fraglen"} or \code{"vlmm"}).
+Either \code{offset} or \code{formula} can be \code{NULL} for a model.
+See vignette for recommendations and details.}
 
 \item{readlength}{the read length}
 
