@@ -59,9 +59,6 @@ the vignette takes a short period of time and does not use much memory.
 library(GenomicRanges)
 dir <- system.file("data",package="alpine")
 load(file.path(dir,"ebt.rda"))
-# more than 1 exon
-table(elementNROWS(ebt))
-ebt <- ebt[elementNROWS(ebt) > 1]
 # filter small genes and long genes
 min.bp <- 800 
 max.bp <- 5000 
@@ -69,10 +66,9 @@ gene.lengths <- sum(width(ebt))
 summary(gene.lengths)
 ebt <- ebt[gene.lengths > min.bp & gene.lengths < max.bp]
 length(ebt)
-# if there were too many, one could use the following
-# code to take a random subset of 100 genes:
-# set.seed(1)
-# ebt <- ebt[sample(length(ebt),100)]
+set.seed(1)
+# better to use ~100 genes
+ebt <- ebt[sample(length(ebt),10)] 
 ```
 
 # Fitting the bias model

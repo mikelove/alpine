@@ -57,95 +57,8 @@ the vignette takes a short period of time and does not use much memory.
 
 ```r
 library(GenomicRanges)
-```
-
-```
-## Loading required package: stats4
-```
-
-```
-## Loading required package: BiocGenerics
-```
-
-```
-## Loading required package: parallel
-```
-
-```
-## 
-## Attaching package: 'BiocGenerics'
-```
-
-```
-## The following objects are masked from 'package:parallel':
-## 
-##     clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
-##     clusterExport, clusterMap, parApply, parCapply, parLapply,
-##     parLapplyLB, parRapply, parSapply, parSapplyLB
-```
-
-```
-## The following objects are masked from 'package:stats':
-## 
-##     IQR, mad, xtabs
-```
-
-```
-## The following objects are masked from 'package:base':
-## 
-##     anyDuplicated, append, as.data.frame, cbind, colnames,
-##     do.call, duplicated, eval, evalq, Filter, Find, get, grep,
-##     grepl, intersect, is.unsorted, lapply, lengths, Map, mapply,
-##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
-##     Position, rank, rbind, Reduce, rownames, sapply, setdiff,
-##     sort, table, tapply, union, unique, unsplit, which, which.max,
-##     which.min
-```
-
-```
-## Loading required package: S4Vectors
-```
-
-```
-## 
-## Attaching package: 'S4Vectors'
-```
-
-```
-## The following object is masked from 'package:testthat':
-## 
-##     compare
-```
-
-```
-## The following objects are masked from 'package:base':
-## 
-##     colMeans, colSums, expand.grid, rowMeans, rowSums
-```
-
-```
-## Loading required package: IRanges
-```
-
-```
-## Loading required package: GenomeInfoDb
-```
-
-```r
 dir <- system.file("data",package="alpine")
 load(file.path(dir,"ebt.rda"))
-# more than 1 exon
-table(elementNROWS(ebt))
-```
-
-```
-## 
-##  1  2  3  4  7  9 11 14 
-## 16  5  3  1  2  1  1  1
-```
-
-```r
-ebt <- ebt[elementNROWS(ebt) > 1]
 # filter small genes and long genes
 min.bp <- 800 
 max.bp <- 5000 
@@ -155,7 +68,7 @@ summary(gene.lengths)
 
 ```
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##     681    1693    2841    2844    3794    6103
+##    66.0   689.8  1585.0  2147.0  3352.0  6103.0
 ```
 
 ```r
@@ -164,14 +77,13 @@ length(ebt)
 ```
 
 ```
-## [1] 12
+## [1] 19
 ```
 
 ```r
-# if there were too many, one could use the following
-# code to take a random subset of 100 genes:
-# set.seed(1)
-# ebt <- ebt[sample(length(ebt),100)]
+set.seed(1)
+# better to use ~100 genes
+ebt <- ebt[sample(length(ebt),10)] 
 ```
 
 # Fitting the bias model
@@ -191,12 +103,19 @@ single-isoform genes with sufficient counts:
 
 ```r
 w <- getFragmentWidths(bam.files[1], ebt[[12]])
+```
+
+```
+## Error in normalizeDoubleBracketSubscript(i, x, exact = exact, error.if.nomatch = FALSE): subscript is out of bounds
+```
+
+```r
 c(summary(w), Number=length(w))
 ```
 
 ```
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.  Number 
-##   105.0   156.2   181.5   193.8   220.0   357.0    84.0
+##   111.0   137.2   171.5   186.2   200.5   369.0    34.0
 ```
 
 ```r
@@ -204,8 +123,8 @@ quantile(w, c(.025, .975))
 ```
 
 ```
-##  2.5% 97.5% 
-## 126.3 351.4
+##    2.5%   97.5% 
+## 121.725 325.275
 ```
 
 It is also required to specify the read length. Currently *alpine*
@@ -227,25 +146,6 @@ getReadLength(bam.files)
 ```r
 library(alpine)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
-```
-
-```
-## Loading required package: BSgenome
-```
-
-```
-## Loading required package: Biostrings
-```
-
-```
-## Loading required package: XVector
-```
-
-```
-## Loading required package: rtracklayer
-```
-
-```r
 minsize <- 125 # better 80 for this data
 maxsize <- 175 # better 350 for this data
 readlength <- 75 
@@ -273,7 +173,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  20.640   2.285  23.283
+##  14.806   2.944  19.785
 ```
 
 ```r
@@ -281,7 +181,7 @@ object.size(fragtypes)/1e6
 ```
 
 ```
-## 134.03212 bytes
+## 117.38596 bytes
 ```
 
 We can examine the information for a single gene:
@@ -295,19 +195,19 @@ head(fragtypes[[1]], 3)
 ## DataFrame with 3 rows and 14 columns
 ##       start       end     relpos   fraglen        id fivep.test
 ##   <integer> <integer>  <numeric> <integer> <IRanges>  <logical>
-## 1         1       125 0.02948058       125  [1, 125]      FALSE
-## 2         1       126 0.02948058       126  [1, 126]      FALSE
-## 3         1       127 0.02994853       127  [1, 127]      FALSE
+## 1         1       125 0.01694004       125  [1, 125]      FALSE
+## 2         1       126 0.01694004       126  [1, 126]      FALSE
+## 3         1       127 0.01720893       127  [1, 127]      FALSE
 ##            fivep threep.test                threep        gc    gstart
 ##   <DNAStringSet>   <logical>        <DNAStringSet> <numeric> <integer>
-## 1  GCGGTGGAAAGTG        TRUE CGGTATGTCACCCGGAAGGGT 0.6720000   8435483
-## 2  GCGGTGGAAAGTG        TRUE CCGGTATGTCACCCGGAAGGG 0.6666667   8435483
-## 3  GCGGTGGAAAGTG        TRUE GCCGGTATGTCACCCGGAAGG 0.6692913   8435483
+## 1  TAGGGGCCATTCA        TRUE TGGGACTAAAAGAGCTATGTG 0.4320000  38675421
+## 2  TAGGGGCCATTCA        TRUE TTGGGACTAAAAGAGCTATGT 0.4285714  38675421
+## 3  TAGGGGCCATTCA        TRUE CTTGGGACTAAAAGAGCTATG 0.4251969  38675421
 ##        gend gread1end gread2start
 ##   <integer> <integer>   <integer>
-## 1   8435359   8435409     8435433
-## 2   8435358   8435409     8435432
-## 3   8435357   8435409     8435431
+## 1  38675297  38675347    38675371
+## 2  38675296  38675347    38675370
+## 3  38675295  38675347    38675369
 ```
 
 # Defining bias models
@@ -382,7 +282,7 @@ fitpar <- lapply(bam.files, function(bf) {
 
 ```
 ##    user  system elapsed 
-##  59.391   4.654  65.068
+##  56.217   5.305  63.894
 ```
 
 ```r
@@ -459,13 +359,13 @@ print(head(fitpar[["ERR188297"]][["summary"]][["all"]]), row.names=FALSE)
 ```
 
 ```
-##   Estimate Std. Error z value Pr(>|z|)
-##  -1.536007  0.7460959 -2.0587 3.95e-02
-##  -1.869007  0.6583485 -2.8389 4.53e-03
-##  -2.565818  0.5342309 -4.8028 1.56e-06
-##  -4.371923  1.4847172 -2.9446 3.23e-03
-##  -1.471214  1.2409109 -1.1856 2.36e-01
-##   0.147621  0.1593977  0.9261 3.54e-01
+##    Estimate Std. Error z value Pr(>|z|)
+##  -3.9083495  0.8331642 -4.6910 2.72e-06
+##   0.9625445  0.7551262  1.2747 2.02e-01
+##   0.2585230  0.5542776  0.4664 6.41e-01
+##   2.3180714  1.6119570  1.4380 1.50e-01
+##   0.9266690  0.7564718  1.2250 2.21e-01
+##   0.4677710  0.1499013  3.1205 1.81e-03
 ```
 
 # Estimating transcript abundances
@@ -539,7 +439,7 @@ res <- lapply(subset.genes, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  49.750   2.467  52.585
+##  54.388   3.438  59.924
 ```
 
 Each element of this list has the abundances (`theta`) and average
@@ -554,11 +454,11 @@ res[[1]][["ERR188297"]][["GC"]]
 ```
 ## $theta
 ## ENST00000259030 
-##        251.2504 
+##         140.446 
 ## 
 ## $lambda
 ## ENST00000259030 
-##      0.09998139
+##       0.1788614
 ```
 
 ```r
@@ -568,11 +468,11 @@ res[[6]][["ERR188297"]][["GC"]]
 ```
 ## $theta
 ## ENST00000477403 ENST00000468844 ENST00000361575 
-##     5271.903898        6.145254     2154.791734 
+##     2887.879205        3.393093     1381.706561 
 ## 
 ## $lambda
 ## ENST00000477403 ENST00000468844 ENST00000361575 
-##      0.11732124      0.09930909      0.11917503
+##       0.2097460       0.1775862       0.2065689
 ```
 
 The `extractAlpine` function can be used to collate estimates from
@@ -593,18 +493,18 @@ mat
 
 ```
 ##                    ERR188297   ERR188088   ERR188204    ERR188317
-## ENST00000259030 6.047367e+03  18820.8034  10706.6026 1.322886e+04
-## ENST00000304788 4.162637e+03   5628.2403   8453.9006 7.358105e+03
-## ENST00000295025 1.440407e+04  10491.6399  19068.5657 1.531619e+04
-## ENST00000394479 4.611907e+03    659.7249   6878.6542 3.732471e+03
-## ENST00000330871 1.747583e+04  48293.9392  12449.3262 1.445178e+04
+## ENST00000259030 5.920076e+03  18862.9931  10487.1371 1.274049e+04
+## ENST00000304788 4.213002e+03   5410.4464   7887.0129 6.909883e+03
+## ENST00000295025 1.444024e+04  10273.5296  18168.7162 1.420013e+04
+## ENST00000394479 4.647200e+03    649.9816   7546.6234 3.994584e+03
+## ENST00000330871 1.738873e+04  47403.3301  12723.6303 1.558782e+04
 ## ENST00000587578 0.000000e+00      0.0000      0.0000 0.000000e+00
-## ENST00000264254 3.556824e+04  48508.5932  52991.9229 6.221581e+04
-## ENST00000416255 1.207601e+03   1641.0362   3616.2107 1.585789e+03
-## ENST00000450127 2.532743e-29   1493.4212    538.8896 3.290684e-23
-## ENST00000477403 1.268899e+05 107869.5662 243451.8091 1.601574e+05
-## ENST00000468844 1.479106e+02    647.8461   1207.6297 1.203084e+03
-## ENST00000361575 5.186385e+04  53145.3564  70580.6691 1.729969e+05
+## ENST00000264254 3.556872e+04  48376.4663  51756.6024 6.605936e+04
+## ENST00000416255 1.123909e+03   2215.9470   4071.3331 1.991665e+03
+## ENST00000450127 3.932206e-27   1632.6309    652.1059 1.876635e-19
+## ENST00000477403 1.217298e+05 115074.6560 255090.1677 1.447597e+05
+## ENST00000468844 1.430256e+02    655.5402   1183.0995 1.195055e+03
+## ENST00000361575 5.824167e+04  59143.7913  90171.5288 1.878034e+05
 ```
 
 If we provide a *GRangesList* which contains the exons for each
@@ -696,7 +596,8 @@ sessionInfo()
 ## [25] BiocParallel_1.7.4         splines_3.4.0             
 ## [27] MASS_7.3-45                Rsamtools_1.25.0          
 ## [29] GenomicAlignments_1.9.4    SummarizedExperiment_1.3.5
-## [31] stringi_1.1.1              RCurl_1.95-4.8            
-## [33] crayon_1.3.1
+## [31] mime_0.4                   stringi_1.1.1             
+## [33] RCurl_1.95-4.8             markdown_0.7.7            
+## [35] crayon_1.3.1
 ```
 
