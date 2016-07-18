@@ -49,7 +49,7 @@
 #' @importFrom graph ftM2graphNEL
 #' @importFrom RBGL connectedComp
 #' @importFrom GenomicFeatures mapToTranscripts
-#' @import Biostrings IRanges GenomicRanges GenomicAlignments Rsamtools
+#' @import Biostrings IRanges GenomicRanges GenomicAlignments Rsamtools SummarizedExperiment
 #' 
 #' @docType package
 #' @name alpine-package

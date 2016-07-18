@@ -32,7 +32,7 @@ evaluated) to generate a *GRangesList* of exons per single-isoform gene.
 
 ```{r, eval=FALSE}
 library(ensembldb)
-gtf.file <- "~/proj/alpine/alpine/inst/extdata/Homo_sapiens.GRCh38.84.gtf"
+gtf.file <- "~/proj/alpine/Homo_sapiens.GRCh38.84.gtf"
 #gtf.file <- "Homo_sapiens.GRCh38.84.gtf"
 txdb <- EnsDb(gtf.file) # already an EnsDb
 txdf <- transcripts(txdb, return.type="DataFrame")
@@ -40,12 +40,13 @@ tab <- table(txdf$gene_id)
 one.iso.genes <- names(tab)[tab == 1]
 # pre-selected genes based on medium to high counts
 # calculated using Rsubread::featureCounts
-selected.genes <- scan("~/proj/alpine/alpine/inst/extdata/selected.genes.txt",what="char")
+selected.genes <- scan("~/proj/alpine/alpine/inst/extdata/selected.genes.txt",
+                       what="char")
 one.iso.txs <- txdf$tx_id[txdf$gene_id %in%
                           intersect(one.iso.genes, selected.genes)]
 ebt0 <- exonsBy(txdb, by="tx")
 ebt <- ebt0[one.iso.txs]
-#save(ebt, file="ebt.rda")
+#save(ebt, file="~/proj/alpine/alpine/data/ebt.rda")
 ```
 
 Here we pick a subset of single-isoform genes based on the
@@ -62,14 +63,16 @@ load(file.path(dir,"ebt.rda"))
 table(elementNROWS(ebt))
 ebt <- ebt[elementNROWS(ebt) > 1]
 # filter small genes and long genes
-min.bp <- 1000 # better 800 bp
-max.bp <- 2000 # better 5000 bp
+min.bp <- 800 
+max.bp <- 5000 
 gene.lengths <- sum(width(ebt))
 summary(gene.lengths)
 ebt <- ebt[gene.lengths > min.bp & gene.lengths < max.bp]
 length(ebt)
-set.seed(1)
-ebt <- ebt[sample(length(ebt),20)] # better 100 genes
+# if there were too many, one could use the following
+# code to take a random subset of 100 genes:
+# set.seed(1)
+# ebt <- ebt[sample(length(ebt),100)]
 ```
 
 # Fitting the bias model
@@ -87,7 +90,7 @@ helper function `getFragmentWidths`, iterating over a few
 single-isoform genes with sufficient counts:
 
 ```{r}
-w <- getFragmentWidths(bam.files[1], ebt[[1]])
+w <- getFragmentWidths(bam.files[1], ebt[[12]])
 c(summary(w), Number=length(w))
 quantile(w, c(.025, .975))
 ```
@@ -167,17 +170,20 @@ details in how R formula make copies of objects from the environment.
 models <- list(
   "GC" = list(formula = "count ~
   ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
   gene",
   offset=c("fraglen")),
   "all" = list(formula = "count ~
   ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
   gene",
   offset=c("fraglen","vlmm"))
 )
 ```
 
 Here we fit one bias model, `GC`, using fragment length, fragment GC
-content, and a term for differences in expression across the genes (`+
+content, relative position,
+and a term for differences in expression across the genes (`+
 gene`).  We fit another bias model, `all`, with all the terms of the
 first but additionally with read start bias (encoded by a Variable
 Length Markov Model, or VLMM).  The knots and boundary knots for GC
@@ -228,6 +234,13 @@ The fragment GC bias curves:
 plotGC(fitpar, model="all", col=perf)
 ```
 
+
+The relative position curves:
+
+```{r relpos}
+plotRelPos(fitpar, model="all", col=perf)
+```
+
 A 0-order version of the VLMM (note that the VLMM that is used in the
 model includes positions that are 1- and 2-order, so this plot does
 not represent the final VLMM used in bias estimation or in estimation
@@ -264,7 +277,7 @@ subset.genes <- c(sample(one.iso.genes, 2),
                   sample(three.iso.genes, 2)) 
 txdf.sub <- txdf[txdf$gene_id %in% subset.genes,]
 ebt.sub <- ebt0[txdf.sub$tx_id]
-#save(ebt.sub, txdf.sub, subset.genes, file="estimationObjects.rda")
+#save(ebt.sub, txdf.sub, subset.genes, file="~/proj/alpine/alpine/data/estimationObjects.rda")
 ```
 
 ```{r}
@@ -281,6 +294,7 @@ models <- list(
   "null"=list(formula=NULL, offset=NULL),
   "GC"=list(formula="count~
   ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
   0",
   offset=c("fraglen"))
   )

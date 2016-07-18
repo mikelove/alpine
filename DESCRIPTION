@@ -14,6 +14,7 @@ Imports:
     GenomicRanges,
     GenomicAlignments,
     Rsamtools,
+    SummarizedExperiment,
     speedglm,
     splines,
     graph,
