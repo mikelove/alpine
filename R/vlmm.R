@@ -34,12 +34,14 @@ getPositionalKmerFreqs <- function(seqs, dna.letters, order, pos, pc=1) {
 }
 getPositionalObsOverExp <- function(seqs, gene.seqs, dna.letters, order, pos) { 
   npos <- length(pos)
-  res <- sapply(pos, function(i) getPositionalKmerFreqs(seqs, dna.letters, order=order, pos=i))
+  res <- sapply(pos, function(i) getPositionalKmerFreqs(seqs,
+                                   dna.letters, order=order, pos=i))
   # 'obs' is a 3 dimensional array:
   #   1st dim: A,C,G,T the current base
   #   2nd dim: the 4^order previous bases
   #   3rd dim: the position, which is within a subset of the full VLMM order
-  obs <- array(0, dim=c(4, 4^order, npos), dimnames=list(dna.letters, alphafun(dna.letters, order-1), seq_len(npos)))  
+  obs <- array(0, dim=c(4, 4^order, npos), dimnames=
+               list(dna.letters, alphafun(dna.letters, order-1), seq_len(npos)))  
   for (i in 1:npos) {
     obs[,,i] <- res[,i]
     obs[,,i] <- sweep(obs[,,i], 2, colSums(obs[,,i]), "/")
@@ -47,7 +49,8 @@ getPositionalObsOverExp <- function(seqs, gene.seqs, dna.letters, order, pos) {
   res.gene <- getKmerFreqs(gene.seqs, dna.letters, order)
   alpha <- alphafun(dna.letters, order-1)
   # 'expect' has dims 1 and 2 from above
-  expect <- array(0, dim=c(4, 4^order), dimnames=list(dna.letters, alphafun(dna.letters, order-1)))
+  expect <- array(0, dim=c(4, 4^order),
+                  dimnames=list(dna.letters, alphafun(dna.letters, order-1)))
   for (p in alpha) {
     prob <- res.gene[grep(paste0("^",p), names(res.gene))]
     expect[,p] <- prob/sum(prob)
