@@ -10,6 +10,12 @@
 #' @param knots the knots for the spline
 #' @param bk the boundary knots for the spline
 #'
+#' @examples
+#' 
+#' data(fitpar)
+#' perf <- rep(1:2, each=2)
+#' plotGC(fitpar, "all", col=perf)
+#' 
 #' @export
 plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) {
   n <- length(knots)

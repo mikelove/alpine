@@ -25,4 +25,10 @@ plotGC(fitpar, model, col, lty, ylim, knots = c(0.4, 0.5, 0.6), bk = c(0,
 \description{
 Plots smooth curves of the log fragment rate over fragment GC content.
 }
+\examples{
+data(fitpar)
+perf <- rep(1:2, each=2)
+plotGC(fitpar, "all", col=perf)
+
+}
 
