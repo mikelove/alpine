@@ -22,11 +22,13 @@
 #' @export
 plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) {
   n <- length(knots)
-  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[model]][1:(n+2)])
-  genecoefs <- lapply(fitpar, function(elem)
+  coef.nms <- names(fitpar[[1]][["coefs"]][[model]])
+  coef.idx <- c(grep("\\(Intercept\\)",coef.nms), grep("ns\\(gc", coef.nms))
+  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[model]][coef.idx])
+  gene.coefs <- lapply(fitpar, function(elem)
     elem[["coefs"]][[model]][ grep("gene", names(elem[["coefs"]][[model]])) ])
   # new intercept: the average of the intercept + gene coefficients
-  coefmat[1,] <- coefmat[1,] + sapply(genecoefs, mean)
+  coefmat[1,] <- coefmat[1,] + sapply(gene.coefs, mean)
   z <- seq(from=.2,to=.8,length=101)
   x <- model.matrix(~ ns(z, knots=knots, Boundary.knots=bk))
   logpred <- x %*% coefmat
@@ -68,8 +70,9 @@ plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) 
 #' @export
 plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(0,1)) {
   n <- length(knots)
-  # assuming same number of knots for GC and for relpos
-  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[model]][c(1,(3+n):(3+2*n))])
+  coef.nms <- names(fitpar[[1]][["coefs"]][[model]])
+  coef.idx <- c(grep("\\(Intercept\\)",coef.nms), grep("ns\\(relpos", coef.nms))
+  coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[model]][coef.idx])
   z <- seq(from=0,to=1,length=101)
   x <- model.matrix(~ ns(z, knots=knots, Boundary.knots=bk))
   logpred <- x %*% coefmat
