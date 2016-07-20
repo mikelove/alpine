@@ -1,22 +1,22 @@
-predictOneGene <- function(gene, bamfiles, fitpar, genome=Hsapiens,
+predictOneGene <- function(gene, bam.files, fitpar, genome=Hsapiens,
                            models, readlength, minsize, maxsize) {
   stopifnot(is(gene, "GRanges"))
   stopifnot(all(sapply(models, function(x) names(x) %in% c("formula","offset"))))
   stopifnot(!is.null(fitpar))
-  stopifnot(all(names(bamfiles) %in% names(fitpar)))
-  if (is.null(names(bamfiles))) {
-    names(bamfiles) <- seq_along(bamfiles)
+  stopifnot(all(names(bam.files) %in% names(fitpar)))
+  if (is.null(names(bam.files))) {
+    names(bam.files) <- seq_along(bam.files)
   }
   fragtypes <- buildFragtypes(gene, genome, readlength=readlength,
                                        minsize=minsize, maxsize=maxsize)
   res <- list()
-  for (bamname in names(bamfiles)) {
+  for (bamname in names(bam.files)) {
     # add counts
-    bamfile <- bamfiles[bamname]
+    bam.file <- bam.files[bamname]
     generange <- range(gene)
     strand(generange) <- "*" # not necessary
     suppressWarnings({
-      ga <- readGAlignAlpine(bamfile, generange)
+      ga <- readGAlignAlpine(bam.file, generange)
     })
     if (length(ga) == 0) {
       res[[bamname]] <- as.list(rep(NA,length(models)))

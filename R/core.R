@@ -261,10 +261,10 @@ matchToDensity <- function(x, d) {
   stopifnot(all(pdf.x > 0))
   pdf.x
 }
-getFPBP <- function(genes, bamfile) {
+getFPBP <- function(genes, bam.file) {
   gene.ranges <- unlist(range(genes))
   gene.lengths <- sum(width(genes))
-  res <- countBam(bamfile, param=ScanBamParam(which=gene.ranges))
+  res <- countBam(bam.file, param=ScanBamParam(which=gene.ranges))
   # two records per fragment
   out <- (res$records / 2)/gene.lengths
   names(out) <- names(genes)

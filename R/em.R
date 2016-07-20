@@ -7,7 +7,7 @@
 #' 
 #' @param transcripts a GRangesList of the exons for multiple isoforms of a gene.
 #' For a single-isoform gene, just wrap the exons in \code{GRangesList()}
-#' @param bamfiles a named vector pointing to the indexed BAM files
+#' @param bam.files a named vector pointing to the indexed BAM files
 #' @param fitpar the output of \link{fitBiasModels}
 #' @param genome a BSGenome object
 #' @param models a list of character strings or formula describing the bias models, see vignette
@@ -20,6 +20,10 @@
 #' If NULL (the default) a value of 1e6 is used for all samples.
 #' @param optim logical, whether to use numerical optimization instead of the EM.
 #' Default is FALSE.
+#' @param customFeatures an optional function to add custom features
+#' to the fragment types DataFrame. This function takes in a DataFrame
+#' returned by \code{\link{buildFragtypes}} and returns a DataFrame
+#' with additional columns added. Default is I(), the identity function.
 #'
 #' @return a list of lists. For each sample, a list with elements:
 #' theta, lambda and count. theta gives the FPKM estimates for the
@@ -28,10 +32,11 @@
 #' compatible with any of the isoforms in \code{transcripts}
 #'
 #' @export
-estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
+estimateTheta <- function(transcripts, bam.files, fitpar, genome,
                           models, readlength, minsize, maxsize,
                           subset=TRUE, niter=100, 
-                          lib.sizes=NULL, optim=FALSE) {
+                          lib.sizes=NULL, optim=FALSE,
+                          customFeatures=I) {
   
   stopifnot(is(transcripts, "GRangesList"))
   stopifnot(length(transcripts) >= 1)
@@ -40,15 +45,15 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   stopifnot(all(c("exon_rank","exon_id") %in% names(mcols(transcripts[[1]]))))
 
   stopifnot(!is.null(fitpar))
-  stopifnot(all(!is.null(names(bamfiles))))
-  stopifnot(all(names(bamfiles) %in% names(fitpar)))
-  stopifnot(all(file.exists(bamfiles)))
+  stopifnot(all(!is.null(names(bam.files))))
+  stopifnot(all(names(bam.files) %in% names(fitpar)))
+  stopifnot(all(file.exists(bam.files)))
 
-  stopifnot(all(file.exists(paste0(bamfiles, ".bai"))))
-  if (!is.null(lib.sizes)) stopifnot(all(names(bamfiles) %in% names(lib.sizes)))
+  stopifnot(all(file.exists(paste0(bam.files, ".bai"))))
+  if (!is.null(lib.sizes)) stopifnot(all(names(bam.files) %in% names(lib.sizes)))
   if (is.null(lib.sizes)) {
-    lib.sizes <- rep(1e6, length(bamfiles))
-    names(lib.sizes) <- names(bamfiles)
+    lib.sizes <- rep(1e6, length(bam.files))
+    names(lib.sizes) <- names(bam.files)
   }
   
   w <- sum(width(transcripts))
@@ -56,7 +61,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   # is VLMM one of the offsets for any model
   any.vlmm <- any(sapply(models, function(m) "vlmm" %in% m$offset))
 
-  # TODO: give better output here
+  # TODO: give better output for genes with smaller length than minsize
   if (min(w) <= minsize + 1) return(NULL)
 
   if (min(w) <= maxsize) {
@@ -71,6 +76,8 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     fraglist <- lapply(seq_along(transcripts), function(i) {
       out <- buildFragtypes(transcripts[[i]], genome, readlength,
                             minsize, maxsize, vlmm=any.vlmm)
+      # optionally add more features to the fragment types DataFrame
+      out <- customFeatures(out)
       out$tx <- names(transcripts)[i]
       out
     })
@@ -79,16 +86,16 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
   #message("building fragment types: ",round(unname(st[3]),1)," seconds")
   names(fraglist) <- names(transcripts)
 
-  res <- lapply(seq_along(bamfiles), function(i) {
-    bamfile <- bamfiles[i]
-    bamname <- names(bamfile)
+  res <- lapply(seq_along(bam.files), function(i) {
+    bam.file <- bam.files[i]
+    bamname <- names(bam.file)
     txrange <- unlist(range(transcripts))
     strand(txrange) <- "*"
     generange <- range(txrange)
     
     #message("align reads to txs")
     suppressWarnings({
-      ga <- readGAlignAlpine(bamfile, generange)
+      ga <- readGAlignAlpine(bam.file, generange)
     })
     #message("-- ",length(ga)," reads")
 
@@ -157,7 +164,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     # specific code for one isoform
     if (singleiso) {
       n.obs <- fragtypes$count
-      # this gives list output for one bamfile
+      # this gives list output for one bam.file
       res.sub <- lapply(model.names, function(modeltype) {
         log.lambda <- getLogLambda(fragtypes, models, modeltype, fitpar, bamname)
         log.lambda <- as.numeric(log.lambda)
@@ -196,7 +203,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     n.obs <- fragtypes.sub$count
     
     # run EM for different models
-    # this gives list output for one bamfile
+    # this gives list output for one BAM file
     res.sub <- lapply(model.names, function(modeltype) {
       log.lambda <- getLogLambda(fragtypes, models, modeltype, fitpar, bamname)
       ## pred0 <- as.numeric(exp(log.lambda))
@@ -237,7 +244,7 @@ estimateTheta <- function(transcripts, bamfiles, fitpar, genome,
     })
     return(c(res.sub, count=numCompatible))
   })
-  names(res) <- names(bamfiles)
+  names(res) <- names(bam.files)
   res
 }
 

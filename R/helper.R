@@ -10,7 +10,7 @@
 #' @param res a list where each element is the output of \link{estimateTheta}
 #' @param model the name of a model, corresponds to names of \code{models}
 #' used in \link{fitBiasModels}
-#' @param nsamp the number of samples, corresponds to length of \code{bamfiles}
+#' @param nsamp the number of samples, corresponds to length of \code{bam.files}
 #' in \link{estimateTheta}
 #' @param lib.sizes the vector of library sizes passed to \link{estimateTheta}.
 #' not needed if \code{divideOut=FALSE}
@@ -189,14 +189,14 @@ normalizeDESeq <- function(mat, cutoff) {
 #' returns estimates of the fragment widths, by mapping the
 #' fragment alignments to the transcript coordinates.
 #'
-#' @param bamfile a character string pointing to a BAM file
+#' @param bam.file a character string pointing to a BAM file
 #' @param tx a GRanges object of the exons of a single isoform gene
 #'
 #' @return a numeric vector of estimated fragment widths
 #'
 #' @export
-getFragmentWidths <- function(bamfile, tx) {
-  gap <- readGAlignmentPairs(bamfile, param=ScanBamParam(which=range(tx)))
+getFragmentWidths <- function(bam.file, tx) {
+  gap <- readGAlignmentPairs(bam.file, param=ScanBamParam(which=range(tx)))
   stopifnot(length(gap) > 0)
   fo <- findCompatibleOverlaps(gap, GRangesList(tx=tx))
   stopifnot(length(fo) > 0)
@@ -223,17 +223,17 @@ getFragmentWidths <- function(bamfile, tx) {
 #'
 #' Gets the length of the first read in a BAM file
 #'
-#' @param bamfiles a character vector pointing to BAM files
+#' @param bam.files a character vector pointing to BAM files
 #'
 #' @return a numeric vector, one number per BAM file, the
 #' length of the first read in the file
 #'
 #' @export
-getReadLength <- function(bamfiles) {
+getReadLength <- function(bam.files) {
   getRL1 <- function(file) {
-    qwidth(readGAlignments(BamFile(file, yieldSize=1)))
+    qwidth(readGAlignments(Bam.File(file, yieldSize=1)))
   }
-  sapply(bamfiles, getRL1)
+  sapply(bam.files, getRL1)
 }
 
 ######### unexported helper functions #########
@@ -253,12 +253,12 @@ extractRes <- function(res, model, what, nsamp) {
   }))
 }
 alpineFlag <- function() scanBamFlag(isSecondaryAlignment=FALSE)
-readGAlignAlpine <- function(bamfile, generange, manual=TRUE) {
+readGAlignAlpine <- function(bam.file, generange, manual=TRUE) {
   if (manual) {
     param <- ScanBamParam(which=generange, what=c("flag","mrnm","mpos"), flag=alpineFlag())
-    gal <- readGAlignments(bamfile, use.names=TRUE, param=param)
+    gal <- readGAlignments(bam.file, use.names=TRUE, param=param)
     makeGAlignmentPairs(gal)
   } else {
-    readGAlignmentPairs(bamfile,param=ScanBamParam(which=generange,flag=alpineFlag()))
+    readGAlignmentPairs(bam.file,param=ScanBamParam(which=generange,flag=alpineFlag()))
   }
 }

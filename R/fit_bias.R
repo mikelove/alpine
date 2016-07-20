@@ -6,7 +6,7 @@
 #' estimate the parameters robustly.
 #' 
 #' @param genes a GRangesList with the exons of different genes
-#' @param bamfile a character string pointing to an indexed BAM file
+#' @param bam.file a character string pointing to an indexed BAM file
 #' @param fragtypes the output of \link{buildFragtypes}. must contain
 #' the potential fragment types for the genes named in \code{genes}
 #' @param genome a BSGenome object
@@ -27,11 +27,11 @@
 #' @return
 #'
 #' @export
-fitBiasModels <- function(genes, bamfile, fragtypes, genome,
+fitBiasModels <- function(genes, bam.file, fragtypes, genome,
                           models, readlength, minsize, maxsize,
                           speedglm=TRUE) {
-  stopifnot(file.exists(bamfile))
-  stopifnot(file.exists(paste0(as.character(bamfile),".bai")))
+  stopifnot(file.exists(bam.file))
+  stopifnot(file.exists(paste0(as.character(bam.file),".bai")))
   stopifnot(is(genes, "GRangesList"))
   stopifnot(all(!is.na(sapply(models, function(x) x$formula))))
   stopifnot(is.numeric(readlength) & length(readlength) == 1)
@@ -42,14 +42,14 @@ fitBiasModels <- function(genes, bamfile, fragtypes, genome,
   exon.dna <- getSeq(genome, genes)
   gene.seqs <- as(lapply(exon.dna, unlist), "DNAStringSet")
   # FPBP needed to downsample to a target fragment per kilobase
-  fpbp <- getFPBP(genes, bamfile)
+  fpbp <- getFPBP(genes, bam.file)
   # want ~1000 rows per gene, so ~300 reads per gene
   # so ~300/1500 = 0.2 fragments per basepair 
   target.fpbp <- 0.4
   fitpar.sub <- list()
   fitpar.sub[["coefs"]] <- list()
   fitpar.sub[["summary"]] <- list()
-  # create a list over genes, populated with read info from this 'bamfile'
+  # create a list over genes, populated with read info from this 'bam.file'
   # so we create a new object, and preserve the original 'fragtypes' object
   fragtypes.sub.list <- list()
   for (i in seq_along(genes)) {
@@ -59,12 +59,12 @@ fitBiasModels <- function(genes, bamfile, fragtypes, genome,
     # add counts per sample and subset
     generange <- range(gene)
     strand(generange) <- "*" # not necessary
-    if (!as.character(seqnames(generange)) %in% seqlevels(BamFile(bamfile))) next
+    if (!as.character(seqnames(generange)) %in% seqlevels(Bam.File(bam.file))) next
     # this necessary to avoid hanging on highly duplicated regions
-    ## roughNumFrags <- countBam(bamfile, param=ScanBamParam(which=generange))$records/2
+    ## roughNumFrags <- countBam(bam.file, param=ScanBamParam(which=generange))$records/2
     ## if (roughNumFrags > 10000) next
     suppressWarnings({
-                       ga <- readGAlignAlpine(bamfile, generange)
+                       ga <- readGAlignAlpine(bam.file, generange)
                      })
     if (length(ga) < 20) next
     ga <- keepSeqlevels(ga, as.character(seqnames(gene)[1]))
@@ -92,7 +92,7 @@ fitBiasModels <- function(genes, bamfile, fragtypes, genome,
                                                                downsample=200,
                                                                minzero=700)
   }
-  if (length(fragtypes.sub.list) == 0) stop("not enough reads to model: ",bamfile)
+  if (length(fragtypes.sub.list) == 0) stop("not enough reads to model: ",bam.file)
   # collapse the list over genes into a
   # single DataFrame with the subsetted and weighted
   # potential fragment types from all genes
