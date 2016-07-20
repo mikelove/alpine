@@ -4,13 +4,13 @@
 \alias{fitBiasModels}
 \title{Fit bias models over single-isoform genes}
 \usage{
-fitBiasModels(genes, bamfile, fragtypes, genome, models, readlength, minsize,
+fitBiasModels(genes, bam.file, fragtypes, genome, models, readlength, minsize,
   maxsize, speedglm = TRUE)
 }
 \arguments{
 \item{genes}{a GRangesList with the exons of different genes}
 
-\item{bamfile}{a character string pointing to an indexed BAM file}
+\item{bam.file}{a character string pointing to an indexed BAM file}
 
 \item{fragtypes}{the output of \link{buildFragtypes}. must contain
 the potential fragment types for the genes named in \code{genes}}

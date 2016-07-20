@@ -4,15 +4,15 @@
 \alias{estimateTheta}
 \title{Estimate bias-corrected transcript abundances (FPKM)}
 \usage{
-estimateTheta(transcripts, bamfiles, fitpar, genome, models, readlength,
+estimateTheta(transcripts, bam.files, fitpar, genome, models, readlength,
   minsize, maxsize, subset = TRUE, niter = 100, lib.sizes = NULL,
-  optim = FALSE)
+  optim = FALSE, customFeatures = NULL)
 }
 \arguments{
 \item{transcripts}{a GRangesList of the exons for multiple isoforms of a gene.
 For a single-isoform gene, just wrap the exons in \code{GRangesList()}}
 
-\item{bamfiles}{a named vector pointing to the indexed BAM files}
+\item{bam.files}{a named vector pointing to the indexed BAM files}
 
 \item{fitpar}{the output of \link{fitBiasModels}}
 
@@ -35,6 +35,11 @@ If NULL (the default) a value of 1e6 is used for all samples.}
 
 \item{optim}{logical, whether to use numerical optimization instead of the EM.
 Default is FALSE.}
+
+\item{customFeatures}{an optional function to add custom features
+to the fragment types DataFrame. This function takes in a DataFrame
+returned by \code{\link{buildFragtypes}} and returns a DataFrame
+with additional columns added. Default is NULL, adding no custom features.}
 }
 \value{
 a list of lists. For each sample, a list with elements:

@@ -4,10 +4,10 @@
 \alias{getReadLength}
 \title{Get read length}
 \usage{
-getReadLength(bamfiles)
+getReadLength(bam.files)
 }
 \arguments{
-\item{bamfiles}{a character vector pointing to BAM files}
+\item{bam.files}{a character vector pointing to BAM files}
 }
 \value{
 a numeric vector, one number per BAM file, the

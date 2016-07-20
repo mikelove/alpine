@@ -4,7 +4,7 @@
 \alias{extractAlpine}
 \title{Extract results from estimateTheta run across genes}
 \usage{
-extractAlpine(res, model, nsamp, lib.sizes = 1e+06, divideOut = TRUE,
+extractAlpine(res, model, nsamp, lib.sizes = 1e+06, divide.out = TRUE,
   transcripts = NULL)
 }
 \arguments{
@@ -13,13 +13,13 @@ extractAlpine(res, model, nsamp, lib.sizes = 1e+06, divideOut = TRUE,
 \item{model}{the name of a model, corresponds to names of \code{models}
 used in \link{fitBiasModels}}
 
-\item{nsamp}{the number of samples, corresponds to length of \code{bamfiles}
+\item{nsamp}{the number of samples, corresponds to length of \code{bam.files}
 in \link{estimateTheta}}
 
 \item{lib.sizes}{the vector of library sizes passed to \link{estimateTheta}.
 not needed if \code{divideOut=FALSE}}
 
-\item{divideOut}{logical, whether to divide out the initial estimate of
+\item{divide.out}{logical, whether to divide out the initial estimate of
 library size and to instead use the count of compatible fragments for
 genes calculated by \link{estimateTheta}. Default is TRUE}
 

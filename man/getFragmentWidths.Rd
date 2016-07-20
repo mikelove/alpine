@@ -4,10 +4,10 @@
 \alias{getFragmentWidths}
 \title{Get fragment widths}
 \usage{
-getFragmentWidths(bamfile, tx)
+getFragmentWidths(bam.file, tx)
 }
 \arguments{
-\item{bamfile}{a character string pointing to a BAM file}
+\item{bam.file}{a character string pointing to a BAM file}
 
 \item{tx}{a GRanges object of the exons of a single isoform gene}
 }

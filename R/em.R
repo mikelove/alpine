@@ -23,7 +23,7 @@
 #' @param customFeatures an optional function to add custom features
 #' to the fragment types DataFrame. This function takes in a DataFrame
 #' returned by \code{\link{buildFragtypes}} and returns a DataFrame
-#' with additional columns added. Default is I(), the identity function.
+#' with additional columns added. Default is NULL, adding no custom features.
 #'
 #' @return a list of lists. For each sample, a list with elements:
 #' theta, lambda and count. theta gives the FPKM estimates for the
@@ -36,7 +36,7 @@ estimateTheta <- function(transcripts, bam.files, fitpar, genome,
                           models, readlength, minsize, maxsize,
                           subset=TRUE, niter=100, 
                           lib.sizes=NULL, optim=FALSE,
-                          customFeatures=I) {
+                          customFeatures=NULL) {
   
   stopifnot(is(transcripts, "GRangesList"))
   stopifnot(length(transcripts) >= 1)
@@ -77,7 +77,9 @@ estimateTheta <- function(transcripts, bam.files, fitpar, genome,
       out <- buildFragtypes(transcripts[[i]], genome, readlength,
                             minsize, maxsize, vlmm=any.vlmm)
       # optionally add more features to the fragment types DataFrame
-      out <- customFeatures(out)
+      if (!is.null(customFeatures)) {
+        out <- customFeatures(out)
+      }
       out$tx <- names(transcripts)[i]
       out
     })
@@ -164,7 +166,7 @@ estimateTheta <- function(transcripts, bam.files, fitpar, genome,
     # specific code for one isoform
     if (singleiso) {
       n.obs <- fragtypes$count
-      # this gives list output for one bam.file
+      # this gives list output for one BAM file
       res.sub <- lapply(model.names, function(modeltype) {
         log.lambda <- getLogLambda(fragtypes, models, modeltype, fitpar, bamname)
         log.lambda <- as.numeric(log.lambda)

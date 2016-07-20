@@ -60,6 +60,10 @@ library(GenomicRanges)
 ```
 
 ```
+## Loading required package: stats4
+```
+
+```
 ## Loading required package: BiocGenerics
 ```
 
@@ -94,7 +98,8 @@ library(GenomicRanges)
 ##     grepl, intersect, is.unsorted, lapply, lengths, Map, mapply,
 ##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
 ##     Position, rank, rbind, Reduce, rownames, sapply, setdiff,
-##     sort, table, tapply, union, unique, unsplit
+##     sort, table, tapply, union, unique, unsplit, which, which.max,
+##     which.min
 ```
 
 ```
@@ -102,12 +107,14 @@ library(GenomicRanges)
 ```
 
 ```
-## Loading required package: stats4
+## 
+## Attaching package: 'S4Vectors'
 ```
 
 ```
+## The following object is masked from 'package:testthat':
 ## 
-## Attaching package: 'S4Vectors'
+##     compare
 ```
 
 ```
@@ -253,7 +260,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  14.876   0.372  15.246
+##  18.042   2.194  20.973
 ```
 
 ```r
@@ -349,7 +356,7 @@ a list of fitted parameters across samples.
 system.time({
 fitpar <- lapply(bam.files, function(bf) {
                    fitBiasModels(genes=ebt,
-                                 bamfile=bf,
+                                 bam.file=bf,
                                  fragtypes=fragtypes,
                                  genome=Hsapiens,
                                  models=models,
@@ -362,11 +369,11 @@ fitpar <- lapply(bam.files, function(bf) {
 
 ```
 ##    user  system elapsed 
-##  53.352   0.724  54.124
+##  61.623   5.153  68.109
 ```
 
 ```r
-#save(fitpar, file="fitpar.rda")
+#save(fitpar, file="~/proj/alpine/alpine/data/fitpar.rda")
 ```
 
 # Visually exploring the bias parameters
@@ -506,7 +513,7 @@ system.time({
 res <- lapply(subset.genes, function(gene.name) {
          txs <- txdf.sub$tx_id[txdf.sub$gene_id == gene.name]
          estimateTheta(transcripts=ebt.sub[txs],
-                       bamfiles=bam.files,
+                       bam.files=bam.files,
                        fitpar=fitpar,
                        genome=Hsapiens,
                        models=models,
@@ -519,7 +526,7 @@ res <- lapply(subset.genes, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  44.472   0.252  44.743
+##  55.326   3.255  61.356
 ```
 
 Each element of this list has the abundances (`theta`) and average
@@ -548,7 +555,7 @@ res[[6]][["ERR188297"]][["GC"]]
 ```
 ## $theta
 ## ENST00000477403 ENST00000468844 ENST00000361575 
-##     7.869292934     0.008579681     3.014203873 
+##     7.869292932     0.008579681     3.014203873 
 ## 
 ## $lambda
 ## ENST00000477403 ENST00000468844 ENST00000361575 
@@ -561,7 +568,7 @@ the total bias observed over all transcripts is centered at 1.  The
 estimates produce by `estimateTheta` presume a default library size of
 1e6, but will be rescaled using the total number of fragments across
 genes when using `extractAlpine` (if this library size rescaling is
-not desired, choose `divideOut=FALSE`).
+not desired, choose `divide.out=FALSE`).
 
 
 ```r
@@ -631,56 +638,52 @@ sessionInfo()
 ```
 
 ```
-## R Under development (unstable) (2016-05-23 r70660)
-## Platform: x86_64-pc-linux-gnu (64-bit)
-## Running under: Ubuntu 16.04 LTS
+## R Under development (unstable) (2016-03-21 r70361)
+## Platform: x86_64-apple-darwin14.5.0 (64-bit)
+## Running under: OS X 10.10.5 (Yosemite)
 ## 
 ## locale:
-##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
-##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
-##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
-##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
-##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
 ## 
 ## attached base packages:
-## [1] stats4    parallel  stats     graphics  grDevices datasets  utils    
+## [1] parallel  stats4    stats     graphics  grDevices datasets  utils    
 ## [8] methods   base     
 ## 
 ## other attached packages:
 ##  [1] RColorBrewer_1.1-2                    
 ##  [2] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
 ##  [3] BSgenome_1.41.2                       
-##  [4] rtracklayer_1.33.2                    
-##  [5] Biostrings_2.41.1                     
-##  [6] XVector_0.13.0                        
-##  [7] GenomicRanges_1.25.0                  
+##  [4] rtracklayer_1.33.7                    
+##  [5] Biostrings_2.41.4                     
+##  [6] XVector_0.13.2                        
+##  [7] GenomicRanges_1.25.8                  
 ##  [8] GenomeInfoDb_1.9.1                    
-##  [9] IRanges_2.7.0                         
-## [10] S4Vectors_0.11.1                      
-## [11] BiocGenerics_0.19.0                   
+##  [9] IRanges_2.7.11                        
+## [10] S4Vectors_0.11.5                      
+## [11] BiocGenerics_0.19.1                   
 ## [12] alpine_0.1.6                          
 ## [13] magrittr_1.5                          
 ## [14] knitr_1.13                            
-## [15] devtools_1.11.1                       
-## [16] BiocInstaller_1.23.6                  
+## [15] testthat_1.0.2                        
+## [16] devtools_1.11.1                       
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] compiler_3.4.0             formatR_1.4               
-##  [3] GenomicFeatures_1.25.12    bitops_1.0-6              
+##  [3] GenomicFeatures_1.25.14    bitops_1.0-6              
 ##  [5] tools_3.4.0                zlibbioc_1.19.0           
-##  [7] biomaRt_2.29.0             digest_0.6.9              
-##  [9] evaluate_0.9               memoise_1.0.0             
-## [11] RSQLite_1.0.0              lattice_0.20-33           
+##  [7] biomaRt_2.29.2             digest_0.6.9              
+##  [9] lattice_0.20-33            evaluate_0.9              
+## [11] memoise_1.0.0              RSQLite_1.0.0             
 ## [13] Matrix_1.2-6               graph_1.51.0              
 ## [15] DBI_0.4-1                  speedglm_0.3-1            
-## [17] withr_1.0.1                stringr_1.0.0             
+## [17] withr_1.0.2                stringr_1.0.0             
 ## [19] grid_3.4.0                 Biobase_2.33.0            
-## [21] AnnotationDbi_1.35.3       XML_3.98-1.4              
-## [23] RBGL_1.49.1                BiocParallel_1.7.2        
-## [25] Rsamtools_1.25.0           GenomicAlignments_1.9.0   
-## [27] MASS_7.3-45                splines_3.4.0             
-## [29] SummarizedExperiment_1.3.2 stringi_1.0-1             
-## [31] RCurl_1.95-4.8
+## [21] R6_2.1.2                   AnnotationDbi_1.35.3      
+## [23] XML_3.98-1.4               RBGL_1.49.1               
+## [25] BiocParallel_1.7.4         splines_3.4.0             
+## [27] MASS_7.3-45                Rsamtools_1.25.0          
+## [29] GenomicAlignments_1.9.4    SummarizedExperiment_1.3.5
+## [31] stringi_1.1.1              RCurl_1.95-4.8            
+## [33] crayon_1.3.1
 ```
 

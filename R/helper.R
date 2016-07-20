@@ -14,7 +14,7 @@
 #' in \link{estimateTheta}
 #' @param lib.sizes the vector of library sizes passed to \link{estimateTheta}.
 #' not needed if \code{divideOut=FALSE}
-#' @param divideOut logical, whether to divide out the initial estimate of
+#' @param divide.out logical, whether to divide out the initial estimate of
 #' library size and to instead use the count of compatible fragments for
 #' genes calculated by \link{estimateTheta}. Default is TRUE
 #' @param transcripts an optional \code{GRangesList} of the exons for each
@@ -28,13 +28,13 @@
 #'
 #' @export
 extractAlpine <- function(res, model, nsamp, lib.sizes=1e6,
-                          divideOut=TRUE, transcripts=NULL) {
+                          divide.out=TRUE, transcripts=NULL) {
   fpkm <- extractRes(res, model, "theta", nsamp)
   lambda <- extractRes(res, model, "lambda", nsamp)
   count <- extractRes(res, model, "count", nsamp)
   lambdaBar <- colMeans(lambda, na.rm=TRUE)
   colSumsCount <- colSums(count)
-  multFactor <- if (divideOut) {
+  multFactor <- if (divide.out) {
     lambdaBar * lib.sizes / colSumsCount
   } else {
     lambdaBar
@@ -61,8 +61,19 @@ extractAlpine <- function(res, model, nsamp, lib.sizes=1e6,
 #'
 #' @return a list of manipulated \code{ebg} and \code{txdf}
 #'
+#' @examples
+#'
+#' library(GenomicRanges)
+#' txdf <- data.frame(TXCHROM=c("1","1","2"),
+#'                    GENEID=c("101","102","102")) 
+#' ebg <- GRangesList(GRanges("1",IRanges(c(100,200),width=50)),
+#'                    GRanges(c("1","2"),IRanges(c(400,100),width=50)))
+#' names(ebg) <- c("101","102")
+#' splitGenesAcrossChroms(ebg, txdf)
+#' 
 #' @export
 splitGenesAcrossChroms <- function(ebg, txdf) {
+  txdf$GENEID <- as.character(txdf$GENEID)
   split.chroms <- sapply(split(txdf$TXCHROM, txdf$GENEID), function(x) !all(x == x[1]))
   message("found ",sum(split.chroms),
           " genes split over chroms out of ",length(split.chroms))
@@ -72,7 +83,7 @@ splitGenesAcrossChroms <- function(ebg, txdf) {
     chroms <- unique(txdf$TXCHROM[txdf$GENEID == gid])
     exs <- ebg[[gid]]
     for (i in seq_along(chroms)) {
-      # cl = chromosome split
+      # cs = chromosome split
       new.name <- paste0(gid,"_cs",i)
       txdf$GENEID[txdf$GENEID == gid & txdf$TXCHROM == chroms[i]] <- new.name
       new.genes[[new.name]] <- exs[seqnames(exs) == chroms[i]]
@@ -95,13 +106,28 @@ splitGenesAcrossChroms <- function(ebg, txdf) {
 #' @param ebt an exons-by-tx GRangesList, created with \code{exonsBy}
 #' @param txdf a data.frame created by running \code{select} on a TxDb object.
 #' Must have columns GENEID and TXNAME, where TXNAME corresponds to the
-#' names of \code{ebt}. Note: this requires renaming \code{ebt}.
+#' names of \code{ebt}. Note: this may require renaming \code{ebt}.
 #' @param long a numeric value such that ranges longer than this are "long"
 #'
 #' @return a list of manipulated \code{ebg} and \code{txdf}
 #'
+#' @examples
+#'
+#' library(GenomicRanges)
+#' txdf <- data.frame(GENEID=c("101","101","102"),
+#'                    TXNAME=c("201","202","203"))
+#' ebt <- GRangesList(GRanges("1",IRanges(c(100,200),width=50)),
+#'                    GRanges("1",IRanges(2e6 + c(100,200),width=50)),
+#'                    GRanges("1",IRanges(3e6 + c(100,200),width=50)))
+#' names(ebt) <- c("201","202","203")
+#' ebg <- GRangesList(reduce(unlist(ebt[1:2])),ebt[[3]])
+#' names(ebg) <- c("101","102")
+#' splitLongGenes(ebg, ebt, txdf)
+#' 
 #' @export
 splitLongGenes <- function(ebg, ebt, txdf, long=1e6) {
+  txdf$GENEID <- as.character(txdf$GENEID)
+  txdf$TXNAME <- as.character(txdf$TXNAME)
   strand(ebg) <- "*"
   r <- unlist(range(ebg))
   w <- width(r)
@@ -141,8 +167,20 @@ splitLongGenes <- function(ebg, ebt, txdf, long=1e6) {
 #'
 #' @return a manipulated \code{txdf}.
 #'
+#' @examples
+#' 
+#' library(GenomicRanges)
+#' txdf <- data.frame(GENEID=c("101","102","103","104"))
+#' ebg <- GRangesList(GRanges("1",IRanges(c(100,200),width=50)),
+#'                    GRanges("1",IRanges(c(200,300),width=50)),
+#'                    GRanges("1",IRanges(c(300,400),width=50)),
+#'                    GRanges("1",IRanges(c(500,600),width=50)))
+#' names(ebg) <- c("101","102","103","104")
+#' mergeGenes(ebg, txdf)
+#' 
 #' @export
 mergeGenes <- function(ebg, txdf, ignore.strand=TRUE) {
+  txdf$GENEID <- as.character(txdf$GENEID)
   fo <- findOverlaps(ebg, ignore.strand=ignore.strand)
   fo <- fo[queryHits(fo) < subjectHits(fo)]
   mat <- as.matrix(fo)
@@ -172,6 +210,12 @@ mergeGenes <- function(ebg, txdf, ignore.strand=TRUE) {
 #' @references Anders, S. and Huber, W.,
 #' Differential expression analysis for sequence count data.
 #' Genome Biology (2010) doi: 10.1186/gb-2010-11-10-r106
+#'
+#' @examples
+#'
+#' x <- runif(50,1,100)
+#' mat <- cbind(x, 2*x, 3*x)
+#' norm.mat <- normalizeDESeq(mat, 5)
 #' 
 #' @export
 normalizeDESeq <- function(mat, cutoff) {
@@ -231,7 +275,7 @@ getFragmentWidths <- function(bam.file, tx) {
 #' @export
 getReadLength <- function(bam.files) {
   getRL1 <- function(file) {
-    qwidth(readGAlignments(Bam.File(file, yieldSize=1)))
+    qwidth(readGAlignments(BamFile(file, yieldSize=1)))
   }
   sapply(bam.files, getRL1)
 }

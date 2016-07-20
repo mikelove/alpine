@@ -13,7 +13,8 @@ GEUVADIS project. For more details on these files, see
 
 ```{r, echo=FALSE} 
 library(knitr)
-opts_chunk$set(cache=FALSE)
+opts_chunk$set(cache=FALSE,
+               error=FALSE)
 ```
 
 ```{r}
@@ -191,7 +192,7 @@ a list of fitted parameters across samples.
 system.time({
 fitpar <- lapply(bam.files, function(bf) {
                    fitBiasModels(genes=ebt,
-                                 bamfile=bf,
+                                 bam.file=bf,
                                  fragtypes=fragtypes,
                                  genome=Hsapiens,
                                  models=models,
@@ -307,7 +308,7 @@ system.time({
 res <- lapply(subset.genes, function(gene.name) {
          txs <- txdf.sub$tx_id[txdf.sub$gene_id == gene.name]
          estimateTheta(transcripts=ebt.sub[txs],
-                       bamfiles=bam.files,
+                       bam.files=bam.files,
                        fitpar=fitpar,
                        genome=Hsapiens,
                        models=models,
@@ -333,7 +334,7 @@ the total bias observed over all transcripts is centered at 1.  The
 estimates produce by `estimateTheta` presume a default library size of
 1e6, but will be rescaled using the total number of fragments across
 genes when using `extractAlpine` (if this library size rescaling is
-not desired, choose `divideOut=FALSE`).
+not desired, choose `divide.out=FALSE`).
 
 ```{r}
 mat <- extractAlpine(res,

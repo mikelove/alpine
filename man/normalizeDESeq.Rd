@@ -21,6 +21,13 @@ divided out
 \description{
 Simple implementation of DESeq median ratio normalization
 }
+\examples{
+
+x <- runif(50,1,100)
+mat <- cbind(x, 2*x, 3*x)
+norm.mat <- normalizeDESeq(mat, 5)
+
+}
 \references{
 Anders, S. and Huber, W.,
 Differential expression analysis for sequence count data.

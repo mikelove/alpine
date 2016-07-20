@@ -59,7 +59,7 @@ fitBiasModels <- function(genes, bam.file, fragtypes, genome,
     # add counts per sample and subset
     generange <- range(gene)
     strand(generange) <- "*" # not necessary
-    if (!as.character(seqnames(generange)) %in% seqlevels(Bam.File(bam.file))) next
+    if (!as.character(seqnames(generange)) %in% seqlevels(BamFile(bam.file))) next
     # this necessary to avoid hanging on highly duplicated regions
     ## roughNumFrags <- countBam(bam.file, param=ScanBamParam(which=generange))$records/2
     ## if (roughNumFrags > 10000) next

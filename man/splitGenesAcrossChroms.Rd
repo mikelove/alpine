@@ -19,4 +19,15 @@ a list of manipulated \code{ebg} and \code{txdf}
 This function simply splits apart genes which have isoforms across multiple
 chromosomes. New "genes" are created with the suffix "_cs" and a number.
 }
+\examples{
+
+library(GenomicRanges)
+txdf <- data.frame(TXCHROM=c("1","1","2"),
+                   GENEID=c("101","102","102")) 
+ebg <- GRangesList(GRanges("1",IRanges(c(100,200),width=50)),
+                   GRanges(c("1","2"),IRanges(c(400,100),width=50)))
+names(ebg) <- c("101","102")
+splitGenesAcrossChroms(ebg, txdf)
+
+}
 

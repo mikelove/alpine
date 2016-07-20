@@ -13,7 +13,7 @@ splitLongGenes(ebg, ebt, txdf, long = 1e+06)
 
 \item{txdf}{a data.frame created by running \code{select} on a TxDb object.
 Must have columns GENEID and TXNAME, where TXNAME corresponds to the
-names of \code{ebt}. Note: this requires renaming \code{ebt}.}
+names of \code{ebt}. Note: this may require renaming \code{ebt}.}
 
 \item{long}{a numeric value such that ranges longer than this are "long"}
 }
@@ -26,5 +26,19 @@ and new "genes" are formed where each isoform is its own "gene",
 with the suffix "_ls" and a number.
 It makes sense to turn each isoform into its own gene only if this
 function is followed by \link{mergeGenes}.
+}
+\examples{
+
+library(GenomicRanges)
+txdf <- data.frame(GENEID=c("101","101","102"),
+                   TXNAME=c("201","202","203"))
+ebt <- GRangesList(GRanges("1",IRanges(c(100,200),width=50)),
+                   GRanges("1",IRanges(2e6 + c(100,200),width=50)),
+                   GRanges("1",IRanges(3e6 + c(100,200),width=50)))
+names(ebt) <- c("201","202","203")
+ebg <- GRangesList(reduce(unlist(ebt[1:2])),ebt[[3]])
+names(ebg) <- c("101","102")
+splitLongGenes(ebg, ebt, txdf)
+
 }
 

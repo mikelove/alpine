@@ -25,4 +25,16 @@ which can be reached from each other through overlap relations)
 are connected into a new gene cluster, which is given the
 suffix "_mrg" and using one of the original gene names.
 }
+\examples{
+
+library(GenomicRanges)
+txdf <- data.frame(GENEID=c("101","102","103","104"))
+ebg <- GRangesList(GRanges("1",IRanges(c(100,200),width=50)),
+                   GRanges("1",IRanges(c(200,300),width=50)),
+                   GRanges("1",IRanges(c(300,400),width=50)),
+                   GRanges("1",IRanges(c(500,600),width=50)))
+names(ebg) <- c("101","102","103","104")
+mergeGenes(ebg, txdf)
+
+}
 
