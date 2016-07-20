@@ -81,17 +81,31 @@ NULL
 #' Markov model for read starts
 #'
 #' @return a DataFrame with bias features for all potential fragments
+#'
+#' @examples
+#'
+#' library(GenomicRanges)
+#' library(BSgenome.Hsapiens.NCBI.GRCh38)
+#' # some made up gene
+#' exons <- GRanges("1",IRanges(50e6 + c(101,301,501,701),width=150), "+")
+#' mcols(exons) <- data.frame(exon_rank=1:4, exon_id=1:4)
+#' readlength <- 100
+#' minsize <- 100
+#' maxsize <- 120 # too small range, not recommended
+#' fragtypes <- buildFragtypes(exons, Hsapiens, readlength,
+#'                             minsize, maxsize)
 #' 
 #' @export
 buildFragtypes <- function(exons, genome, readlength,
-                                    minsize, maxsize, 
-                                    gc=TRUE, gc.str=TRUE, vlmm=TRUE) {
+                           minsize, maxsize, 
+                           gc=TRUE, gc.str=TRUE, vlmm=TRUE) {
   stopifnot(is(exons,"GRanges"))
   stopifnot(is(genome,"BSgenome"))
   stopifnot(is.numeric(minsize) & is.numeric(maxsize) & is.numeric(readlength))
   stopifnot(sum(width(exons)) >= maxsize)
   stopifnot(all(c("exon_rank","exon_id") %in% names(mcols(exons))))
-
+  stopifnot(!any(strand(exons) == "*"))
+  
   # these parameters must be fixed, as dictated by fitVLMM()
   npre <- 8
   npost <- 12

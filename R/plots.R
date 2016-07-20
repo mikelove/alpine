@@ -58,6 +58,12 @@ plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) 
 #' @param ylim the y limits for the plot
 #' @param knots the knots for the spline
 #' @param bk the boundary knots for the spline
+#'
+#' @examples
+#'
+#' data(fitpar)
+#' perf <- rep(1:2, each=2)
+#' plotRelPos(fitpar, "all", col=perf)
 #' 
 #' @export
 plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(0,1)) {
@@ -93,6 +99,10 @@ plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(
 #' @param col a vector of colors
 #' @param lty a vector of line types
 #'
+#' data(fitpar)
+#' perf <- rep(1:2, each=2)
+#' plotFragLen(fitpar, col=perf)
+#' 
 #' @export
 plotFragLen <- function(fitpar, col, lty) {
   if (missing(col)) {
@@ -113,11 +123,15 @@ plotFragLen <- function(fitpar, col, lty) {
 #' Plot parameters of the variable length Markov model (VLMM) for read starts
 #'
 #' This function plots portions of the Cufflinks VLMM for read start bias.
+#' The natural log of observed over expected is shown, such that 0
+#' indicates no contribution of a position to the read start bias.
 #' As the variable lenght Markov model has different dependencies for different
 #' positions (see Roberts et al, 2011), it is difficult
 #' to show all the 744 parameters simultaneously. Instead this function
 #' offers to show the 0-order terms for all positions, or the 1st and 2nd
 #' order terms for selected positions within the read start sequence.
+#' For the 1- and 2-order terms, the log bias is shown for each nucleotide
+#' (A,C,T,G) given the previous nucleotide (1-order) or di-nucleotide (2-order).
 #'
 #' @references
 #'
@@ -132,6 +146,13 @@ plotFragLen <- function(fitpar, col, lty) {
 #' @param pos2 the position of the 2nd order VLMM to plot
 #' @param ... parameters passed to \code{plot}
 #'
+#' @examples
+#' 
+#' data(fitpar)
+#' plotOrder0(fitpar[[1]][["vlmm.fivep"]][["order0"]])
+#' plotOrder1(fitpar[[1]][["vlmm.fivep"]][["order1"]], pos1=5:19)
+#' plotOrder2(fitpar[[1]][["vlmm.fivep"]][["order2"]], pos2=8:17)
+#' 
 #' @export
 plotOrder0 <- function(order0, ...) {
   dna.letters <- c("A","C","G","T")
@@ -149,11 +170,12 @@ plotOrder0 <- function(order0, ...) {
 #' @describeIn plotOrder0 Plot first order parameters for a position
 #' @export
 plotOrder1 <- function(order1, pos1) {
+  dna.letters <- c("A","C","G","T")
   order <- 1
   npos <- length(pos1)
   dna.cols <- c("green3","blue3","orange3","red3")
-  mypar(1,npos+1,mar=c(5,1,3,1))
-  for (i in 1:npos) {
+  par(mfrow=c(1,npos+1),mar=c(5,1,3,1))
+  for (i in seq_len(npos)) {
     plot(as.vector(log(order1$obs[,,i]/order1$expect)), rev(seq_len(4 * 4^order)),
          col=rep(dna.cols,each=4), xlim=c(-1,1),
          ylab="",xlab="",yaxt="n",main=pos1[i] - 10 + 1,cex=2)
@@ -167,10 +189,11 @@ plotOrder1 <- function(order1, pos1) {
 #' @describeIn plotOrder0 Plot second order parameters for a position
 #' @export
 plotOrder2 <- function(order2, pos2) {
+  dna.letters <- c("A","C","G","T")
   order <- 2
   npos <- length(pos2)
   dna.cols <- c("green3","blue3","orange3","red3")
-  mypar(1,npos+1,mar=c(5,1,3,1))
+  par(mfrow=c(1,npos+1),mar=c(5,1,3,1))
   for (i in 1:npos) {
     plot(as.vector(log(order2$obs[,,i]/order2$expect)), rev(seq_len(4 * 4^order)),
          col=rep(dna.cols,each=4),pch=rep(1:4,each=16), xlim=c(-1,1),
@@ -189,6 +212,13 @@ plotOrder2 <- function(order2, pos2) {
 #' @param grl GRangesList object
 #' @param ... passed to plot
 #'
+#' library(GenomicRanges)
+#' grl <- GRangesList(GRanges("1",IRanges(c(100,200,300),width=50)),
+#'                    GRanges("1",IRanges(c(100,300),width=c(75,50))),
+#'                    GRanges("1",IRanges(c(100,200,400),width=c(75,50,50))),
+#'                    GRanges("1",IRanges(c(200,300,400),width=50)))
+#' plotGRL(grl)
+#' 
 #' @export
 plotGRL <- function(grl, ...) {
   df <- as.data.frame(grl)

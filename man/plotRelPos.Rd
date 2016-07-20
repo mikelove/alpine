@@ -25,4 +25,11 @@ plotRelPos(fitpar, model, col, lty, ylim, knots = c(0.25, 0.5, 0.75),
 \description{
 Plots the smooth curves of log fragment rate over relative position.
 }
+\examples{
+
+data(fitpar)
+perf <- rep(1:2, each=2)
+plotRelPos(fitpar, "all", col=perf)
+
+}
 

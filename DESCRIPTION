@@ -24,5 +24,6 @@ Suggests:
     alpineData,
     ensembldb,
     BSgenome.Hsapiens.NCBI.GRCh38,
-    RColorBrewer
+    RColorBrewer,
+    GenomicRanges
 RoxygenNote: 5.0.1

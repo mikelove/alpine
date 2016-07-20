@@ -9,7 +9,14 @@ plotGRL(grl, ...)
 \arguments{
 \item{grl}{GRangesList object}
 
-\item{...}{passed to plot}
+\item{...}{passed to plot
+
+library(GenomicRanges)
+grl <- GRangesList(GRanges("1",IRanges(c(100,200,300),width=50)),
+                   GRanges("1",IRanges(c(100,300),width=c(75,50))),
+                   GRanges("1",IRanges(c(100,200,400),width=c(75,50,50))),
+                   GRanges("1",IRanges(c(200,300,400),width=50)))
+plotGRL(grl)}
 }
 \description{
 Simple segments plot for GRangesList

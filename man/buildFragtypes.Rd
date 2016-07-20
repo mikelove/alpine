@@ -40,4 +40,18 @@ arise from a transcript. The output of this function is used by
 in order to model the bias affecting different fragments across isoforms
 of a gene.
 }
+\examples{
+
+library(GenomicRanges)
+library(BSgenome.Hsapiens.NCBI.GRCh38)
+# some made up gene
+exons <- GRanges("1",IRanges(50e6 + c(101,301,501,701),width=150), "+")
+mcols(exons) <- data.frame(exon_rank=1:4, exon_id=1:4)
+readlength <- 100
+minsize <- 100
+maxsize <- 120 # too small range, not recommended
+fragtypes <- buildFragtypes(exons, Hsapiens, readlength,
+                            minsize, maxsize)
+
+}
 

@@ -28,11 +28,15 @@ within the list that is the output of \link{fitBiasModels}}
 }
 \description{
 This function plots portions of the Cufflinks VLMM for read start bias.
+The natural log of observed over expected is shown, such that 0
+indicates no contribution of a position to the read start bias.
 As the variable lenght Markov model has different dependencies for different
 positions (see Roberts et al, 2011), it is difficult
 to show all the 744 parameters simultaneously. Instead this function
 offers to show the 0-order terms for all positions, or the 1st and 2nd
 order terms for selected positions within the read start sequence.
+For the 1- and 2-order terms, the log bias is shown for each nucleotide
+(A,C,T,G) given the previous nucleotide (1-order) or di-nucleotide (2-order).
 }
 \section{Functions}{
 \itemize{
@@ -40,6 +44,14 @@ order terms for selected positions within the read start sequence.
 
 \item \code{plotOrder2}: Plot second order parameters for a position
 }}
+\examples{
+
+data(fitpar)
+plotOrder0(fitpar[[1]][["vlmm.fivep"]][["order0"]])
+plotOrder1(fitpar[[1]][["vlmm.fivep"]][["order1"]], pos1=5:19)
+plotOrder2(fitpar[[1]][["vlmm.fivep"]][["order2"]], pos2=8:17)
+
+}
 \references{
 Roberts et al, "Improving RNA-Seq expression estimates by correcting for fragment bias"
 Genome Biology (2011) doi:101186/gb-2011-12-3-r22

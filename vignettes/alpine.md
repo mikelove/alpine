@@ -59,77 +59,6 @@ the vignette takes a short period of time and does not use much memory.
 library(GenomicRanges)
 ```
 
-```
-## Loading required package: stats4
-```
-
-```
-## Loading required package: BiocGenerics
-```
-
-```
-## Loading required package: parallel
-```
-
-```
-## 
-## Attaching package: 'BiocGenerics'
-```
-
-```
-## The following objects are masked from 'package:parallel':
-## 
-##     clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
-##     clusterExport, clusterMap, parApply, parCapply, parLapply,
-##     parLapplyLB, parRapply, parSapply, parSapplyLB
-```
-
-```
-## The following objects are masked from 'package:stats':
-## 
-##     IQR, mad, xtabs
-```
-
-```
-## The following objects are masked from 'package:base':
-## 
-##     anyDuplicated, append, as.data.frame, cbind, colnames,
-##     do.call, duplicated, eval, evalq, Filter, Find, get, grep,
-##     grepl, intersect, is.unsorted, lapply, lengths, Map, mapply,
-##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
-##     Position, rank, rbind, Reduce, rownames, sapply, setdiff,
-##     sort, table, tapply, union, unique, unsplit, which, which.max,
-##     which.min
-```
-
-```
-## Loading required package: S4Vectors
-```
-
-```
-## 
-## Attaching package: 'S4Vectors'
-```
-
-```
-## The following object is masked from 'package:testthat':
-## 
-##     compare
-```
-
-```
-## The following objects are masked from 'package:base':
-## 
-##     colMeans, colSums, expand.grid, rowMeans, rowSums
-```
-
-```
-## Loading required package: IRanges
-```
-
-```
-## Loading required package: GenomeInfoDb
-```
 
 ```r
 dir <- system.file("data",package="alpine")
@@ -214,25 +143,6 @@ getReadLength(bam.files)
 ```r
 library(alpine)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
-```
-
-```
-## Loading required package: BSgenome
-```
-
-```
-## Loading required package: Biostrings
-```
-
-```
-## Loading required package: XVector
-```
-
-```
-## Loading required package: rtracklayer
-```
-
-```r
 minsize <- 125 # better 80 for this data
 maxsize <- 175 # better 350 for this data
 readlength <- 75 
@@ -260,7 +170,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  18.042   2.194  20.973
+##  15.565   2.036  17.977
 ```
 
 ```r
@@ -369,7 +279,7 @@ fitpar <- lapply(bam.files, function(bf) {
 
 ```
 ##    user  system elapsed 
-##  61.623   5.153  68.109
+##  62.893   4.981  69.013
 ```
 
 ```r
@@ -526,7 +436,7 @@ res <- lapply(subset.genes, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  55.326   3.255  61.356
+##  54.861   2.888  58.337
 ```
 
 Each element of this list has the abundances (`theta`) and average
@@ -683,7 +593,8 @@ sessionInfo()
 ## [25] BiocParallel_1.7.4         splines_3.4.0             
 ## [27] MASS_7.3-45                Rsamtools_1.25.0          
 ## [29] GenomicAlignments_1.9.4    SummarizedExperiment_1.3.5
-## [31] stringi_1.1.1              RCurl_1.95-4.8            
-## [33] crayon_1.3.1
+## [31] mime_0.4                   stringi_1.1.1             
+## [33] RCurl_1.95-4.8             markdown_0.7.7            
+## [35] crayon_1.3.1
 ```
 

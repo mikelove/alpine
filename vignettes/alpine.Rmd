@@ -56,8 +56,11 @@ parameters to use in selecting this subset of genes,
 although here we use different parameters to ensure the building of
 the vignette takes a short period of time and does not use much memory.
 
-```{r}
+```{r message=FALSE}
 library(GenomicRanges)
+```
+
+```{r}
 dir <- system.file("data",package="alpine")
 load(file.path(dir,"ebt.rda"))
 # filter small genes and long genes

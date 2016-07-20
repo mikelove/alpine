@@ -1,5 +1,6 @@
-# Functions for estimating a variable length Markov model (VLMM).
-# Here we implement the VLMM used in Cufflinks to estimate read start
+# unexported functions for estimating a variable length Markov model (VLMM).
+#
+# Here we implement the 21 bp VLMM used in Cufflinks to estimate read start
 # biases. The method is described in:
 #
 # Roberts et al, "Improving RNA-Seq expression estimates by correcting for fragment bias"

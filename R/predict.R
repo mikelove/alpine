@@ -1,4 +1,5 @@
-predictOneGene <- function(gene, bam.files, fitpar, genome=Hsapiens,
+# unexported function for predicting coverage on test set genes
+predictOneGene <- function(gene, bam.files, fitpar, genome,
                            models, readlength, minsize, maxsize) {
   stopifnot(is(gene, "GRanges"))
   stopifnot(all(sapply(models, function(x) names(x) %in% c("formula","offset"))))
@@ -8,7 +9,7 @@ predictOneGene <- function(gene, bam.files, fitpar, genome=Hsapiens,
     names(bam.files) <- seq_along(bam.files)
   }
   fragtypes <- buildFragtypes(gene, genome, readlength=readlength,
-                                       minsize=minsize, maxsize=maxsize)
+                              minsize=minsize, maxsize=maxsize)
   res <- list()
   for (bamname in names(bam.files)) {
     # add counts

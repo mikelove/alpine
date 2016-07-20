@@ -11,7 +11,11 @@ plotFragLen(fitpar, col, lty)
 
 \item{col}{a vector of colors}
 
-\item{lty}{a vector of line types}
+\item{lty}{a vector of line types
+
+data(fitpar)
+perf <- rep(1:2, each=2)
+plotFragLen(fitpar, col=perf)}
 }
 \description{
 Plots the fragment length distribution.
