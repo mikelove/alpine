@@ -26,6 +26,10 @@ plotGC(fitpar, model, col, lty, ylim, knots = c(0.4, 0.5, 0.6), bk = c(0,
 Plots smooth curves of the log fragment rate over fragment GC content.
 }
 \examples{
+
+# fitpar was fit using identical code
+# as found in the vignette, except with
+# 25 genes, and with fragment size in 80-350 bp
 data(fitpar)
 perf <- rep(1:2, each=2)
 plotGC(fitpar, "all", col=perf)
