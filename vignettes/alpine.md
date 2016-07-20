@@ -57,11 +57,79 @@ the vignette takes a short period of time and does not use much memory.
 
 ```r
 library(GenomicRanges)
+```
+
+```
+## Loading required package: BiocGenerics
+```
+
+```
+## Loading required package: parallel
+```
+
+```
+## 
+## Attaching package: 'BiocGenerics'
+```
+
+```
+## The following objects are masked from 'package:parallel':
+## 
+##     clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
+##     clusterExport, clusterMap, parApply, parCapply, parLapply,
+##     parLapplyLB, parRapply, parSapply, parSapplyLB
+```
+
+```
+## The following objects are masked from 'package:stats':
+## 
+##     IQR, mad, xtabs
+```
+
+```
+## The following objects are masked from 'package:base':
+## 
+##     anyDuplicated, append, as.data.frame, cbind, colnames,
+##     do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+##     grepl, intersect, is.unsorted, lapply, lengths, Map, mapply,
+##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
+##     Position, rank, rbind, Reduce, rownames, sapply, setdiff,
+##     sort, table, tapply, union, unique, unsplit
+```
+
+```
+## Loading required package: S4Vectors
+```
+
+```
+## Loading required package: stats4
+```
+
+```
+## 
+## Attaching package: 'S4Vectors'
+```
+
+```
+## The following objects are masked from 'package:base':
+## 
+##     colMeans, colSums, expand.grid, rowMeans, rowSums
+```
+
+```
+## Loading required package: IRanges
+```
+
+```
+## Loading required package: GenomeInfoDb
+```
+
+```r
 dir <- system.file("data",package="alpine")
 load(file.path(dir,"ebt.rda"))
 # filter small genes and long genes
-min.bp <- 800 
-max.bp <- 5000 
+min.bp <- 600
+max.bp <- 7000 
 gene.lengths <- sum(width(ebt))
 summary(gene.lengths)
 ```
@@ -77,7 +145,7 @@ length(ebt)
 ```
 
 ```
-## [1] 19
+## [1] 25
 ```
 
 ```r
@@ -102,20 +170,13 @@ single-isoform genes with sufficient counts:
 
 
 ```r
-w <- getFragmentWidths(bam.files[1], ebt[[12]])
-```
-
-```
-## Error in normalizeDoubleBracketSubscript(i, x, exact = exact, error.if.nomatch = FALSE): subscript is out of bounds
-```
-
-```r
+w <- getFragmentWidths(bam.files[1], ebt[[1]])
 c(summary(w), Number=length(w))
 ```
 
 ```
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.  Number 
-##   111.0   137.2   171.5   186.2   200.5   369.0    34.0
+##    79.0   161.0   189.0   197.1   224.0   468.0  1762.0
 ```
 
 ```r
@@ -123,8 +184,8 @@ quantile(w, c(.025, .975))
 ```
 
 ```
-##    2.5%   97.5% 
-## 121.725 325.275
+##   2.5%  97.5% 
+## 122.05 321.95
 ```
 
 It is also required to specify the read length. Currently *alpine*
@@ -146,6 +207,25 @@ getReadLength(bam.files)
 ```r
 library(alpine)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
+```
+
+```
+## Loading required package: BSgenome
+```
+
+```
+## Loading required package: Biostrings
+```
+
+```
+## Loading required package: XVector
+```
+
+```
+## Loading required package: rtracklayer
+```
+
+```r
 minsize <- 125 # better 80 for this data
 maxsize <- 175 # better 350 for this data
 readlength <- 75 
@@ -173,7 +253,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  14.806   2.944  19.785
+##  14.876   0.372  15.246
 ```
 
 ```r
@@ -181,7 +261,7 @@ object.size(fragtypes)/1e6
 ```
 
 ```
-## 117.38596 bytes
+## 104.540624 bytes
 ```
 
 We can examine the information for a single gene:
@@ -195,19 +275,19 @@ head(fragtypes[[1]], 3)
 ## DataFrame with 3 rows and 14 columns
 ##       start       end     relpos   fraglen        id fivep.test
 ##   <integer> <integer>  <numeric> <integer> <IRanges>  <logical>
-## 1         1       125 0.01694004       125  [1, 125]      FALSE
-## 2         1       126 0.01694004       126  [1, 126]      FALSE
-## 3         1       127 0.01720893       127  [1, 127]      FALSE
+## 1         1       125 0.01032279       125  [1, 125]      FALSE
+## 2         1       126 0.01032279       126  [1, 126]      FALSE
+## 3         1       127 0.01048665       127  [1, 127]      FALSE
 ##            fivep threep.test                threep        gc    gstart
 ##   <DNAStringSet>   <logical>        <DNAStringSet> <numeric> <integer>
-## 1  TAGGGGCCATTCA        TRUE TGGGACTAAAAGAGCTATGTG 0.4320000  38675421
-## 2  TAGGGGCCATTCA        TRUE TTGGGACTAAAAGAGCTATGT 0.4285714  38675421
-## 3  TAGGGGCCATTCA        TRUE CTTGGGACTAAAAGAGCTATG 0.4251969  38675421
+## 1  ATCCGGGGCAGCG        TRUE TCAATTCAAAATGTCTCAGGA 0.7680000  32277664
+## 2  ATCCGGGGCAGCG        TRUE GTCAATTCAAAATGTCTCAGG 0.7619048  32277664
+## 3  ATCCGGGGCAGCG        TRUE TGTCAATTCAAAATGTCTCAG 0.7637795  32277664
 ##        gend gread1end gread2start
 ##   <integer> <integer>   <integer>
-## 1  38675297  38675347    38675371
-## 2  38675296  38675347    38675370
-## 3  38675295  38675347    38675369
+## 1  32309735  32277738    32277714
+## 2  32309736  32277738    32277715
+## 3  32309737  32277738    32277716
 ```
 
 # Defining bias models
@@ -282,7 +362,7 @@ fitpar <- lapply(bam.files, function(bf) {
 
 ```
 ##    user  system elapsed 
-##  56.217   5.305  63.894
+##  53.352   0.724  54.124
 ```
 
 ```r
@@ -360,12 +440,12 @@ print(head(fitpar[["ERR188297"]][["summary"]][["all"]]), row.names=FALSE)
 
 ```
 ##    Estimate Std. Error z value Pr(>|z|)
-##  -3.9083495  0.8331642 -4.6910 2.72e-06
-##   0.9625445  0.7551262  1.2747 2.02e-01
-##   0.2585230  0.5542776  0.4664 6.41e-01
-##   2.3180714  1.6119570  1.4380 1.50e-01
-##   0.9266690  0.7564718  1.2250 2.21e-01
-##   0.4677710  0.1499013  3.1205 1.81e-03
+##  -4.9780792  1.2944129 -3.8458 1.20e-04
+##   1.3428276  1.2486577  1.0754 2.82e-01
+##   1.8331308  0.8646923  2.1200 3.40e-02
+##   1.8867834  2.5408684  0.7426 4.58e-01
+##  -3.8256451  2.0065307 -1.9066 5.66e-02
+##   0.8080533  0.1568161  5.1529 2.57e-07
 ```
 
 # Estimating transcript abundances
@@ -439,7 +519,7 @@ res <- lapply(subset.genes, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  54.388   3.438  59.924
+##  44.472   0.252  44.743
 ```
 
 Each element of this list has the abundances (`theta`) and average
@@ -454,11 +534,11 @@ res[[1]][["ERR188297"]][["GC"]]
 ```
 ## $theta
 ## ENST00000259030 
-##         140.446 
+##       0.3425053 
 ## 
 ## $lambda
 ## ENST00000259030 
-##       0.1788614
+##        73.34301
 ```
 
 ```r
@@ -468,11 +548,11 @@ res[[6]][["ERR188297"]][["GC"]]
 ```
 ## $theta
 ## ENST00000477403 ENST00000468844 ENST00000361575 
-##     2887.879205        3.393093     1381.706561 
+##     7.869292934     0.008579681     3.014203873 
 ## 
 ## $lambda
 ## ENST00000477403 ENST00000468844 ENST00000361575 
-##       0.2097460       0.1775862       0.2065689
+##        82.26703        70.47448        82.04643
 ```
 
 The `extractAlpine` function can be used to collate estimates from
@@ -493,18 +573,18 @@ mat
 
 ```
 ##                    ERR188297   ERR188088   ERR188204    ERR188317
-## ENST00000259030 5.920076e+03  18862.9931  10487.1371 1.274049e+04
-## ENST00000304788 4.213002e+03   5410.4464   7887.0129 6.909883e+03
-## ENST00000295025 1.444024e+04  10273.5296  18168.7162 1.420013e+04
-## ENST00000394479 4.647200e+03    649.9816   7546.6234 3.994584e+03
-## ENST00000330871 1.738873e+04  47403.3301  12723.6303 1.558782e+04
+## ENST00000259030 5.557029e+03  17769.0617  10514.5581 1.302500e+04
+## ENST00000304788 4.300769e+03   5620.1425   8585.7954 7.675728e+03
+## ENST00000295025 1.341303e+04   9652.3313  18721.2112 1.531396e+04
+## ENST00000394479 4.793712e+03   1000.5219   6205.6560 4.114905e+03
+## ENST00000330871 1.525750e+04  33787.1234  10879.3160 1.139717e+04
 ## ENST00000587578 0.000000e+00      0.0000      0.0000 0.000000e+00
-## ENST00000264254 3.556872e+04  48376.4663  51756.6024 6.605936e+04
-## ENST00000416255 1.123909e+03   2215.9470   4071.3331 1.991665e+03
-## ENST00000450127 3.932206e-27   1632.6309    652.1059 1.876635e-19
-## ENST00000477403 1.217298e+05 115074.6560 255090.1677 1.447597e+05
-## ENST00000468844 1.430256e+02    655.5402   1183.0995 1.195055e+03
-## ENST00000361575 5.824167e+04  59143.7913  90171.5288 1.878034e+05
+## ENST00000264254 3.832130e+04  50374.8018  53612.5766 6.396532e+04
+## ENST00000416255 2.095944e+03   6057.3662   4859.2903 2.357083e+03
+## ENST00000450127 5.805294e-32   1681.2494    585.0105 2.387932e-28
+## ENST00000477403 1.276765e+05 128681.9577 243208.0857 1.707819e+05
+## ENST00000468844 1.392023e+02    634.9873   1192.6475 1.167633e+03
+## ENST00000361575 4.890440e+04  63053.9109  84102.2731 1.851644e+05
 ```
 
 If we provide a *GRangesList* which contains the exons for each
@@ -551,53 +631,56 @@ sessionInfo()
 ```
 
 ```
-## R Under development (unstable) (2016-03-21 r70361)
-## Platform: x86_64-apple-darwin14.5.0 (64-bit)
-## Running under: OS X 10.10.5 (Yosemite)
+## R Under development (unstable) (2016-05-23 r70660)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Ubuntu 16.04 LTS
 ## 
 ## locale:
-## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 ## 
 ## attached base packages:
-## [1] parallel  stats4    stats     graphics  grDevices datasets  utils    
+## [1] stats4    parallel  stats     graphics  grDevices datasets  utils    
 ## [8] methods   base     
 ## 
 ## other attached packages:
 ##  [1] RColorBrewer_1.1-2                    
 ##  [2] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
 ##  [3] BSgenome_1.41.2                       
-##  [4] rtracklayer_1.33.7                    
-##  [5] Biostrings_2.41.4                     
-##  [6] XVector_0.13.2                        
-##  [7] GenomicRanges_1.25.8                  
+##  [4] rtracklayer_1.33.2                    
+##  [5] Biostrings_2.41.1                     
+##  [6] XVector_0.13.0                        
+##  [7] GenomicRanges_1.25.0                  
 ##  [8] GenomeInfoDb_1.9.1                    
-##  [9] IRanges_2.7.11                        
-## [10] S4Vectors_0.11.5                      
-## [11] BiocGenerics_0.19.1                   
-## [12] alpine_0.1.5                          
+##  [9] IRanges_2.7.0                         
+## [10] S4Vectors_0.11.1                      
+## [11] BiocGenerics_0.19.0                   
+## [12] alpine_0.1.6                          
 ## [13] magrittr_1.5                          
 ## [14] knitr_1.13                            
-## [15] testthat_1.0.2                        
-## [16] devtools_1.11.1                       
+## [15] devtools_1.11.1                       
+## [16] BiocInstaller_1.23.6                  
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] compiler_3.4.0             formatR_1.4               
-##  [3] GenomicFeatures_1.25.14    bitops_1.0-6              
+##  [3] GenomicFeatures_1.25.12    bitops_1.0-6              
 ##  [5] tools_3.4.0                zlibbioc_1.19.0           
-##  [7] biomaRt_2.29.2             digest_0.6.9              
-##  [9] lattice_0.20-33            evaluate_0.9              
-## [11] memoise_1.0.0              RSQLite_1.0.0             
+##  [7] biomaRt_2.29.0             digest_0.6.9              
+##  [9] evaluate_0.9               memoise_1.0.0             
+## [11] RSQLite_1.0.0              lattice_0.20-33           
 ## [13] Matrix_1.2-6               graph_1.51.0              
 ## [15] DBI_0.4-1                  speedglm_0.3-1            
-## [17] withr_1.0.2                stringr_1.0.0             
+## [17] withr_1.0.1                stringr_1.0.0             
 ## [19] grid_3.4.0                 Biobase_2.33.0            
-## [21] R6_2.1.2                   AnnotationDbi_1.35.3      
-## [23] XML_3.98-1.4               RBGL_1.49.1               
-## [25] BiocParallel_1.7.4         splines_3.4.0             
-## [27] MASS_7.3-45                Rsamtools_1.25.0          
-## [29] GenomicAlignments_1.9.4    SummarizedExperiment_1.3.5
-## [31] mime_0.4                   stringi_1.1.1             
-## [33] RCurl_1.95-4.8             markdown_0.7.7            
-## [35] crayon_1.3.1
+## [21] AnnotationDbi_1.35.3       XML_3.98-1.4              
+## [23] RBGL_1.49.1                BiocParallel_1.7.2        
+## [25] Rsamtools_1.25.0           GenomicAlignments_1.9.0   
+## [27] MASS_7.3-45                splines_3.4.0             
+## [29] SummarizedExperiment_1.3.2 stringi_1.0-1             
+## [31] RCurl_1.95-4.8
 ```
 

@@ -60,8 +60,8 @@ library(GenomicRanges)
 dir <- system.file("data",package="alpine")
 load(file.path(dir,"ebt.rda"))
 # filter small genes and long genes
-min.bp <- 800 
-max.bp <- 5000 
+min.bp <- 600
+max.bp <- 7000 
 gene.lengths <- sum(width(ebt))
 summary(gene.lengths)
 ebt <- ebt[gene.lengths > min.bp & gene.lengths < max.bp]
@@ -86,7 +86,7 @@ helper function `getFragmentWidths`, iterating over a few
 single-isoform genes with sufficient counts:
 
 ```{r}
-w <- getFragmentWidths(bam.files[1], ebt[[12]])
+w <- getFragmentWidths(bam.files[1], ebt[[1]])
 c(summary(w), Number=length(w))
 quantile(w, c(.025, .975))
 ```
