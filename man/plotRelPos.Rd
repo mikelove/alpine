@@ -27,6 +27,9 @@ Plots the smooth curves of log fragment rate over relative position.
 }
 \examples{
 
+# fitpar was fit using identical code
+# as found in the vignette, except with
+# 25 genes, and with fragment size in 80-350 bp
 data(fitpar)
 perf <- rep(1:2, each=2)
 plotRelPos(fitpar, "all", col=perf)

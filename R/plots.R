@@ -63,6 +63,9 @@ plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) 
 #'
 #' @examples
 #'
+#' # fitpar was fit using identical code
+#' # as found in the vignette, except with
+#' # 25 genes, and with fragment size in 80-350 bp
 #' data(fitpar)
 #' perf <- rep(1:2, each=2)
 #' plotRelPos(fitpar, "all", col=perf)
@@ -102,6 +105,9 @@ plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(
 #' @param col a vector of colors
 #' @param lty a vector of line types
 #'
+#' # fitpar was fit using identical code
+#' # as found in the vignette, except with
+#' # 25 genes, and with fragment size in 80-350 bp
 #' data(fitpar)
 #' perf <- rep(1:2, each=2)
 #' plotFragLen(fitpar, col=perf)
@@ -150,7 +156,10 @@ plotFragLen <- function(fitpar, col, lty) {
 #' @param ... parameters passed to \code{plot}
 #'
 #' @examples
-#' 
+#'
+#' # fitpar was fit using identical code
+#' # as found in the vignette, except with
+#' # 25 genes, and with fragment size in 80-350 bp
 #' data(fitpar)
 #' plotOrder0(fitpar[[1]][["vlmm.fivep"]][["order0"]])
 #' plotOrder1(fitpar[[1]][["vlmm.fivep"]][["order1"]], pos1=5:19)

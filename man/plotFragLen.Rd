@@ -13,6 +13,9 @@ plotFragLen(fitpar, col, lty)
 
 \item{lty}{a vector of line types
 
+# fitpar was fit using identical code
+# as found in the vignette, except with
+# 25 genes, and with fragment size in 80-350 bp
 data(fitpar)
 perf <- rep(1:2, each=2)
 plotFragLen(fitpar, col=perf)}

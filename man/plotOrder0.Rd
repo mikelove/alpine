@@ -46,6 +46,9 @@ For the 1- and 2-order terms, the log bias is shown for each nucleotide
 }}
 \examples{
 
+# fitpar was fit using identical code
+# as found in the vignette, except with
+# 25 genes, and with fragment size in 80-350 bp
 data(fitpar)
 plotOrder0(fitpar[[1]][["vlmm.fivep"]][["order0"]])
 plotOrder1(fitpar[[1]][["vlmm.fivep"]][["order1"]], pos1=5:19)
