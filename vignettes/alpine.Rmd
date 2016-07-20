@@ -200,7 +200,7 @@ fitpar <- lapply(bam.files, function(bf) {
                                  maxsize=maxsize)
                  })
 })
-#save(fitpar, file="fitpar.rda")
+#save(fitpar, file="~/proj/alpine/alpine/data/fitpar.rda")
 ```
 
 # Visually exploring the bias parameters
