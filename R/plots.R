@@ -105,6 +105,8 @@ plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(
 #' @param col a vector of colors
 #' @param lty a vector of line types
 #'
+#' @examples
+#' 
 #' # fitpar was fit using identical code
 #' # as found in the vignette, except with
 #' # 25 genes, and with fragment size in 80-350 bp
@@ -224,6 +226,8 @@ plotOrder2 <- function(order2, pos2) {
 #' @param grl GRangesList object
 #' @param ... passed to plot
 #'
+#' @examples
+#' 
 #' library(GenomicRanges)
 #' grl <- GRangesList(GRanges("1",IRanges(c(100,200,300),width=50)),
 #'                    GRanges("1",IRanges(c(100,300),width=c(75,50))),
