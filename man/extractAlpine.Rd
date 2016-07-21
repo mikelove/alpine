@@ -4,7 +4,7 @@
 \alias{extractAlpine}
 \title{Extract results from estimateTheta run across genes}
 \usage{
-extractAlpine(res, model, nsamp, lib.sizes = 1e+06, divide.out = TRUE,
+extractAlpine(res, model, lib.sizes = 1e+06, divide.out = TRUE,
   transcripts = NULL)
 }
 \arguments{
@@ -12,9 +12,6 @@ extractAlpine(res, model, nsamp, lib.sizes = 1e+06, divide.out = TRUE,
 
 \item{model}{the name of a model, corresponds to names of \code{models}
 used in \link{fitBiasModels}}
-
-\item{nsamp}{the number of samples, corresponds to length of \code{bam.files}
-in \link{estimateTheta}}
 
 \item{lib.sizes}{the vector of library sizes passed to \link{estimateTheta}.
 not needed if \code{divideOut=FALSE}}
@@ -31,7 +28,8 @@ find the correct transcript by the names in \code{res} and
 put them in the correct order.}
 }
 \value{
-a matrix of FPKM values across transcripts and samples
+a matrix of FPKM values across transcripts and samples,
+or a SummarizedExperiment if \code{transcripts} is provided
 }
 \description{
 This function extracts estimates for a given model from a list
@@ -40,5 +38,11 @@ number of transcript x number of samples.
 Here, the count of compatible fragments aligning to the
 genes is used to estimate the FPKM, dividing out the previously
 used estimate \code{lib.sizes}.
+}
+\examples{
+
+data(res)
+extractAlpine(res, "GC")
+
 }
 

@@ -61,8 +61,7 @@ estimate the parameters robustly.
 
 library(GenomicRanges)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
-dir <- system.file("data",package="alpine")
-load(file.path(dir,"ebtfit.rda"))
+data(ebtfit)
 readlength <- 100
 minsize <- 125 # see vignette how to choose
 maxsize <- 175 # see vignette how to choose

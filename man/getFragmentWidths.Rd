@@ -20,4 +20,12 @@ to be the single isoform of a gene), this function
 returns estimates of the fragment widths, by mapping the
 fragment alignments to the transcript coordinates.
 }
+\examples{
+
+data(ebtfit)
+bam.file <- "~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam"
+w <- getFragmentWidths(bam.file, ebt.fit[[2]])
+quantile(w, c(.025, .975))
+
+}
 

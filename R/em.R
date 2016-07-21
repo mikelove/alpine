@@ -31,6 +31,35 @@
 #' for the isoforms, and count gives the number of fragments which are
 #' compatible with any of the isoforms in \code{transcripts}
 #'
+#' @examples
+#'
+#' # see vignette for a more realistic example
+#' 
+#' data(thetaobjs)
+#' data(fitparsmall)
+#' library(GenomicRanges)
+#' library(BSgenome.Hsapiens.NCBI.GRCh38)
+#' models <- list(
+#'  "GC"=list(formula="count~
+#'  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+#'  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+#'  0",
+#'  offset=c("fraglen"))
+#' )
+#' readlength <- 75
+#' minsize <- 125 # see vignette how to choose
+#' maxsize <- 175 # see vignette how to choose
+#' bam.file <- c(ERR188088="~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam")
+#' txs <- txdf.theta$tx_id[txdf.theta$gene_id == "ENSG00000198918"]
+#' res <- estimateTheta(transcripts=ebt.theta[txs],
+#'                      bam.files=bam.file,
+#'                      fitpar=fitpar.small,
+#'                      genome=Hsapiens,
+#'                      models=models,
+#'                      readlength=readlength,
+#'                      minsize=minsize,
+#'                      maxsize=maxsize)
+#' 
 #' @export
 estimateTheta <- function(transcripts, bam.files, fitpar, genome,
                           models, readlength, minsize, maxsize,

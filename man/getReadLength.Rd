@@ -16,4 +16,10 @@ length of the first read in the file
 \description{
 Gets the length of the first read in a BAM file
 }
+\examples{
+
+bam.file <- "~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam"
+getReadLength(bam.file)
+
+}
 

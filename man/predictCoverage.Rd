@@ -32,4 +32,50 @@ Predict coverage for a single-isoform gene given
 fitted bias parameters in a set of models,
 and compare to the observed fragment coverage.
 }
+\examples{
+
+data(ebtfit)
+data(fitparsmall)
+pred.models <- list(
+  "fraglen" = list(formula=NULL, offset=c("fraglen")),
+  "readstart" = list(formula=NULL, offset=c("fraglen","vlmm")),
+  "GC" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  0",
+  offset=c("fraglen")),
+  "all" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  0",
+  offset=c("fraglen","vlmm"))
+)
+bam.file <- c(ERR188088="~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam")
+readlength <- 75
+minsize <- 125 # see vignette how to choose
+maxsize <- 175 # see vignette how to choose
+pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000379660"]],
+                            bam.files=bam.file,
+                            fitpar=fitpar.small,
+                            genome=Hsapiens,
+                            models=pred.models,
+                            readlength=readlength,
+                            minsize=minsize,
+                            maxsize=maxsize)
+# plot the coverage:
+# note that, because [125,175] does not cover the
+# fragment width distribution, the predicted curves
+# will underestimate the observed. we correct here post-hoc
+
+frag.cov <- pred.cov[["ERR188088"]][["frag.cov"]]
+plot(frag.cov, type="l", lwd=3, ylim=c(0,max(frag.cov)*1.5))
+for (i in seq_along(pred.models)) {
+  m <- names(pred.models)[i]
+  pred <- pred.cov[["ERR188088"]][["pred.cov"]][[m]]
+  lines(pred/mean(pred)*mean(frag.cov), col=i+1, lwd=3)
+}
+legend("topright", legend=c("observed",names(pred.models)),
+       col=seq_len(length(pred.models)+1), lwd=3)
+
+}
 

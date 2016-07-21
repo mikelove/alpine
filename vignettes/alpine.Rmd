@@ -347,9 +347,7 @@ genes when using `extractAlpine` (if this library size rescaling is
 not desired, choose `divide.out=FALSE`).
 
 ```{r}
-mat <- extractAlpine(res,
-                     model="GC",
-                     nsamp=length(bam.files))
+mat <- extractAlpine(res, model="GC")
 mat
 ```
 
@@ -360,10 +358,7 @@ correct order, the transcripts will be extracted by name to match the
 rows of the FPKM matrix.
 
 ```{r}
-se <- extractAlpine(res,
-                    model="GC",
-                    nsamp=length(bam.files),
-                    transcripts=ebt.sub)
+se <- extractAlpine(res, model="GC", transcripts=ebt.sub)
 se
 ```
 
@@ -437,7 +432,7 @@ with the fragment length range [80,350] bp.
 ```{r predictCoverage}
 data(fitpar)
 system.time({
-  pred.cov <- predictCoverage(gene=ebt[[3]],
+  pred.cov <- predictCoverage(gene=ebt.fit[[3]],
                               bam.files=bam.files[3],
                               fitpar=fitpar,
                               genome=Hsapiens,

@@ -10,8 +10,6 @@
 #' @param res a list where each element is the output of \link{estimateTheta}
 #' @param model the name of a model, corresponds to names of \code{models}
 #' used in \link{fitBiasModels}
-#' @param nsamp the number of samples, corresponds to length of \code{bam.files}
-#' in \link{estimateTheta}
 #' @param lib.sizes the vector of library sizes passed to \link{estimateTheta}.
 #' not needed if \code{divideOut=FALSE}
 #' @param divide.out logical, whether to divide out the initial estimate of
@@ -24,11 +22,22 @@
 #' find the correct transcript by the names in \code{res} and
 #' put them in the correct order.
 #' 
-#' @return a matrix of FPKM values across transcripts and samples
+#' @return a matrix of FPKM values across transcripts and samples,
+#' or a SummarizedExperiment if \code{transcripts} is provided
 #'
+#' @examples
+#' 
+#' data(res)
+#' extractAlpine(res, "GC")
+#' 
 #' @export
-extractAlpine <- function(res, model, nsamp, lib.sizes=1e6,
+extractAlpine <- function(res, model, lib.sizes=1e6,
                           divide.out=TRUE, transcripts=NULL) {
+  # some rough code to figure out how many samples:
+  # look at the first 10 (or fewer) elements of res and
+  # calculate the length. why? the result for a given gene
+  # could be NULL if it didn't pass some tests in estimateTheta
+  nsamp <- max(sapply(res[seq_len(min(10,length(res)))], length))
   fpkm <- extractRes(res, model, "theta", nsamp)
   lambda <- extractRes(res, model, "lambda", nsamp)
   count <- extractRes(res, model, "count", nsamp)
@@ -238,6 +247,13 @@ normalizeDESeq <- function(mat, cutoff) {
 #'
 #' @return a numeric vector of estimated fragment widths
 #'
+#' @examples
+#'
+#' data(ebtfit)
+#' bam.file <- "~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam"
+#' w <- getFragmentWidths(bam.file, ebt.fit[[2]])
+#' quantile(w, c(.025, .975))
+#' 
 #' @export
 getFragmentWidths <- function(bam.file, tx) {
   gap <- readGAlignmentPairs(bam.file, param=ScanBamParam(which=range(tx)))
@@ -271,6 +287,11 @@ getFragmentWidths <- function(bam.file, tx) {
 #'
 #' @return a numeric vector, one number per BAM file, the
 #' length of the first read in the file
+#'
+#' @examples
+#'
+#' bam.file <- "~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam"
+#' getReadLength(bam.file)
 #'
 #' @export
 getReadLength <- function(bam.files) {
