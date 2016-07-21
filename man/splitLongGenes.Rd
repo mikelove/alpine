@@ -12,8 +12,8 @@ splitLongGenes(ebg, ebt, txdf, long = 1e+06)
 \item{ebt}{an exons-by-tx GRangesList, created with \code{exonsBy}}
 
 \item{txdf}{a data.frame created by running \code{select} on a TxDb object.
-Must have columns GENEID and TXNAME, where TXNAME corresponds to the
-names of \code{ebt}. Note: this may require renaming \code{ebt}.}
+Must have columns GENEID and TXID, where TXID corresponds to the
+names of \code{ebt}.}
 
 \item{long}{a numeric value such that ranges longer than this are "long"}
 }
@@ -31,7 +31,7 @@ function is followed by \link{mergeGenes}.
 
 library(GenomicRanges)
 txdf <- data.frame(GENEID=c("101","101","102"),
-                   TXNAME=c("201","202","203"))
+                   TXID=c("201","202","203"))
 ebt <- GRangesList(GRanges("1",IRanges(c(100,200),width=50)),
                    GRanges("1",IRanges(2e6 + c(100,200),width=50)),
                    GRanges("1",IRanges(3e6 + c(100,200),width=50)))

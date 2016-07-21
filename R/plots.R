@@ -9,6 +9,13 @@
 #' @param ylim the y limits for the plot
 #' @param knots the knots for the spline
 #' @param bk the boundary knots for the spline
+#' @param gc.range a numeric of length two,
+#' the range of the fragment GC content. By default,
+#' [.2,.8] for plotting and [0,1] for returning a matrix
+#' @param return.type a numeric, either
+#' 0: make a plot,
+#' 1: skip the plot and return a matrix of log fragment rate,
+#' 2: skip the plot and return a matrix of probabilities 
 #'
 #' @examples
 #'
@@ -20,7 +27,19 @@
 #' plotGC(fitpar, "all", col=perf)
 #' 
 #' @export
-plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) {
+plotGC <- function(fitpar, model, col, lty, ylim,
+                   knots=c(.4,.5,.6), bk=c(0,1),
+                   gc.range=NULL, return.type=0) {
+  if (is.null(gc.range)) {
+    gc.range <- if (return.type == 0) {
+      c(.2, .8)
+    } else {
+      c(0,1)
+    }
+  }
+  stopifnot(length(gc.range) == 2)
+  stopifnot(length(return.type) == 1 & return.type %in% 0:2)
+  
   n <- length(knots)
   coef.nms <- names(fitpar[[1]][["coefs"]][[model]])
   coef.idx <- c(grep("\\(Intercept\\)",coef.nms), grep("ns\\(gc", coef.nms))
@@ -29,13 +48,21 @@ plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) 
     elem[["coefs"]][[model]][ grep("gene", names(elem[["coefs"]][[model]])) ])
   # new intercept: the average of the intercept + gene coefficients
   coefmat[1,] <- coefmat[1,] + sapply(gene.coefs, mean)
-  z <- seq(from=.2,to=.8,length=101)
+  z <- seq(from=gc.range[1],to=gc.range[2],length=101)
   x <- model.matrix(~ ns(z, knots=knots, Boundary.knots=bk))
   logpred <- x %*% coefmat
+  rownames(logpred) <- as.character(z)
+  if (return.type == 1) {
+    return(logpred)
+  } else if (return.type == 2) {
+    probmat <- exp(logpred)
+    probmat <- sweep(probmat, 2, apply(probmat, 2, max), "/")
+    return(probmat)
+  }
   if (missing(ylim)) {
     ylim <- c(min(logpred),max(logpred))
   }
-  plot(0,0,type="n",xlim=c(.2,.8),ylim=ylim,
+  plot(0,0,type="n",xlim=c(gc.range[1],gc.range[2]),ylim=ylim,
        ylab="log fragment rate", xlab="fragment GC content",
        main="fragment sequence bias")
   if (missing(col)) {

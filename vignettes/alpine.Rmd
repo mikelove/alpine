@@ -54,7 +54,7 @@ Here we pick a subset of single-isoform genes based on the
 number of exons, and the length. We show in comments the recommended
 parameters to use in selecting this subset of genes,
 although here we use different parameters to ensure the building of
-the vignette takes a short period of time and does not use much memory.
+the vignette takes only a short period of time and does not use much memory.
 
 ```{r message=FALSE}
 library(GenomicRanges)
@@ -103,6 +103,11 @@ ignored.
 ```{r}
 getReadLength(bam.files)
 ```
+
+Here we use a very limited range of fragment lengths for speed, but
+for a real analysis we would suggest using the minimum and maximum
+of the quantiles computed above across all samples (the minimum of the
+lower quantiles and the maximum of the upper quantiles).
 
 ```{r}
 library(alpine)
@@ -369,6 +374,33 @@ very large abundance estimates for a minority of transcripts.
 ```{r, eval=FALSE}
 norm.mat <- normalizeDESeq(mat, cutoff=0.1)
 ```
+
+# Simulating RNA-seq experiments using empirically estimated GC bias
+
+The fragment GC bias which *alpine* estimates can be used in
+downstream simulations, for example in the *polyester* Bioconductor
+package. All we need to do is to run the *plotGC* function, but
+specifying that instead of a plot, we want to return a matrix of
+probabilities for each percentile of fragment GC content. This matrix
+can be provided to the `frag_GC_bias` argument of *simulate_experiment*.
+
+We load a `fitpar` object that was run with the fragment length range
+[80,350] bp. 
+
+```{r}
+data(fitpar)
+prob.mat <- plotGC(fitpar, "all", return.type=2)
+head(prob.mat)
+```
+
+If `return.type=0` (the default) the function makes the plot of log
+fragment rate over fragment GC content. If `return.type=1` the
+function returns the matrix of log fragment rate over percentiles of
+fragment GC content, and if `return.type=2`, the matrix returns
+probabilities of observing fragments based on percentiles of fragment
+GC content (the log fragment rate exponentiated and scaled to have a
+maximum of 1). The matrix returned by `return.type=2` is appropriate
+for downstream use with *polyester*.
 
 # Plotting predicted fragment coverage
 

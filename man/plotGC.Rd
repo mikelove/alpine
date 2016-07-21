@@ -5,7 +5,7 @@
 \title{Plot the fragment GC bias over samples}
 \usage{
 plotGC(fitpar, model, col, lty, ylim, knots = c(0.4, 0.5, 0.6), bk = c(0,
-  1))
+  1), gc.range = NULL, return.type = 0)
 }
 \arguments{
 \item{fitpar}{a list of the output of \link{fitBiasModels} over samples}
@@ -21,6 +21,15 @@ plotGC(fitpar, model, col, lty, ylim, knots = c(0.4, 0.5, 0.6), bk = c(0,
 \item{knots}{the knots for the spline}
 
 \item{bk}{the boundary knots for the spline}
+
+\item{gc.range}{a numeric of length two,
+the range of the fragment GC content. By default,
+[.2,.8] for plotting and [0,1] for returning a matrix}
+
+\item{return.type}{a numeric, either
+0: make a plot,
+1: skip the plot and return a matrix of log fragment rate,
+2: skip the plot and return a matrix of probabilities}
 }
 \description{
 Plots smooth curves of the log fragment rate over fragment GC content.

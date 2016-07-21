@@ -105,8 +105,8 @@ splitGenesAcrossChroms <- function(ebg, txdf) {
 #' @param ebg an exons-by-genes GRangesList, created with \code{exonsBy}
 #' @param ebt an exons-by-tx GRangesList, created with \code{exonsBy}
 #' @param txdf a data.frame created by running \code{select} on a TxDb object.
-#' Must have columns GENEID and TXNAME, where TXNAME corresponds to the
-#' names of \code{ebt}. Note: this may require renaming \code{ebt}.
+#' Must have columns GENEID and TXID, where TXID corresponds to the
+#' names of \code{ebt}. 
 #' @param long a numeric value such that ranges longer than this are "long"
 #'
 #' @return a list of manipulated \code{ebg} and \code{txdf}
@@ -115,7 +115,7 @@ splitGenesAcrossChroms <- function(ebg, txdf) {
 #'
 #' library(GenomicRanges)
 #' txdf <- data.frame(GENEID=c("101","101","102"),
-#'                    TXNAME=c("201","202","203"))
+#'                    TXID=c("201","202","203"))
 #' ebt <- GRangesList(GRanges("1",IRanges(c(100,200),width=50)),
 #'                    GRanges("1",IRanges(2e6 + c(100,200),width=50)),
 #'                    GRanges("1",IRanges(3e6 + c(100,200),width=50)))
@@ -127,7 +127,7 @@ splitGenesAcrossChroms <- function(ebg, txdf) {
 #' @export
 splitLongGenes <- function(ebg, ebt, txdf, long=1e6) {
   txdf$GENEID <- as.character(txdf$GENEID)
-  txdf$TXNAME <- as.character(txdf$TXNAME)
+  txdf$TXID <- as.character(txdf$TXID)
   strand(ebg) <- "*"
   r <- unlist(range(ebg))
   w <- width(r)
@@ -142,7 +142,7 @@ splitLongGenes <- function(ebg, ebt, txdf, long=1e6) {
     ebg[[gid]] <- NULL
     txdf$GENEID[txdf$GENEID == gid] <- new.names
     for (new.gene in new.names) {
-      gr <- ebt[[txdf$TXNAME[txdf$GENEID == new.gene]]]
+      gr <- ebt[[txdf$TXID[txdf$GENEID == new.gene]]]
       mcols(gr)$exon_rank <- NULL
       new.genes[[new.gene]] <- gr
     }
