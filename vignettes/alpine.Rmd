@@ -370,6 +370,68 @@ very large abundance estimates for a minority of transcripts.
 norm.mat <- normalizeDESeq(mat, cutoff=0.1)
 ```
 
+# Plotting predicted fragment coverage
+
+In the *alpine* paper, it was shown the fragment GC bias can be a
+better predictor of test set RNA-seq fragment coverage, compared to
+read start bias. Here we show how to predict fragment coverage for a
+single-isoform gene using a variety of fitted bias models. The models
+involving formula need to have the exact same name and form as a
+fitted model in `fitpar`.
+
+```{r}
+pred.models <- list(
+  "fraglen" = list(formula=NULL, offset=c("fraglen")),
+  "readstart" = list(formula=NULL, offset=c("fraglen","vlmm")),
+  "GC" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  0",
+  offset=c("fraglen")),
+  "all" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  0",
+  offset=c("fraglen","vlmm"))
+)
+```
+
+The following function computes the predicted coverage for one
+single-isoform gene. We load a `fitpar` object that was run
+with the fragment length range [80,350] bp.
+
+```{r predictCoverage}
+data(fitpar)
+system.time({
+  pred.cov <- predictCoverage(gene=ebt[[3]],
+                              bam.files=bam.files[3],
+                              fitpar=fitpar,
+                              genome=Hsapiens,
+                              models=pred.models,
+                              readlength=readlength,
+                              minsize=80,
+                              maxsize=350)
+})
+```
+
+We can plot the observed and predicted coverage for one of the
+samples: 
+
+```{r}
+palette(brewer.pal(9, "Set1"))
+frag.cov <- pred.cov[["ERR188204"]][["frag.cov"]]
+plot(frag.cov, type="l", lwd=3, ylim=c(0,max(frag.cov)*1.5))
+for (i in seq_along(pred.models)) {
+  m <- names(pred.models)[i]
+  pred <- pred.cov[["ERR188204"]][["pred.cov"]][[m]]
+  lines(pred, col=i, lwd=3)
+}
+legend("topright", legend=c("observed",names(pred.models)),
+       col=c("black",seq_along(pred.models)), lwd=3)
+```
+
+# Session information
+
 ```{r}
 sessionInfo()
 ```

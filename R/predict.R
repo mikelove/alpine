@@ -1,6 +1,23 @@
-# unexported function for predicting coverage on test set genes
-predictOneGene <- function(gene, bam.files, fitpar, genome,
-                           models, readlength, minsize, maxsize) {
+#' Predict coverage for a single-isoform gene
+#'
+#' Predict coverage for a single-isoform gene given
+#' fitted bias parameters in a set of models,
+#' and compare to the observed fragment coverage.
+#'
+#' @param gene a GRangesList with the exons of different genes
+#' @param bam.files a character string pointing to indexed BAM files
+#' @param fitpar the output of running \code{\link{fitBiasModels}}
+#' @param genome a BSgenome object
+#' @param models a list describing the models, see \code{link{fitBiasModels}}
+#' @param readlength the read length
+#' @param minsize the minimum fragment length to model
+#' @param maxsize the maximum fragment length to model
+#'
+#' @return TODO
+#'
+#' @export
+predictCoverage <- function(gene, bam.files, fitpar, genome,
+                            models, readlength, minsize, maxsize) {
   stopifnot(is(gene, "GRanges"))
   stopifnot(all(sapply(models, function(x) names(x) %in% c("formula","offset"))))
   stopifnot(!is.null(fitpar))
@@ -37,7 +54,8 @@ predictOneGene <- function(gene, bam.files, fitpar, genome,
     ## -- fragment bias --
     fraglen.density <- fitpar[[bamname]][["fraglen.density"]]
     stopifnot(!is.null(fraglen.density))
-    fragtypes.temp$logdfraglen <- log(matchToDensity(fragtypes.temp$fraglen, fraglen.density))
+    fragtypes.temp$logdfraglen <- log(matchToDensity(fragtypes.temp$fraglen,
+                                                     fraglen.density))
     ## -- random hexamer priming bias with VLMM --
     vlmm.fivep <- fitpar[[bamname]][["vlmm.fivep"]]
     vlmm.threep <- fitpar[[bamname]][["vlmm.threep"]]

@@ -5,11 +5,12 @@
 #' genes. ~100 medium to highly expressed genes should be sufficient to
 #' estimate the parameters robustly.
 #' 
-#' @param genes a GRangesList with the exons of different genes
+#' @param genes a GRangesList with the exons of different
+#' single-isoform genes
 #' @param bam.file a character string pointing to an indexed BAM file
 #' @param fragtypes the output of \link{buildFragtypes}. must contain
 #' the potential fragment types for the genes named in \code{genes}
-#' @param genome a BSGenome object
+#' @param genome a BSgenome object
 #' @param models a list of lists: the outer list describes multiple models
 #' each element of the inner list has two elements: \code{formula} and \code{offset}.
 #' \code{formula} should be a character strings of an R formula
@@ -24,7 +25,7 @@
 #' @param speedglm logical, whether to use speedglm to estimate the coefficients.
 #' Default is TRUE.
 #'
-#' @return
+#' @return TODO a list containing bias parameters
 #'
 #' @export
 fitBiasModels <- function(genes, bam.file, fragtypes, genome,

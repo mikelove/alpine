@@ -8,14 +8,15 @@ fitBiasModels(genes, bam.file, fragtypes, genome, models, readlength, minsize,
   maxsize, speedglm = TRUE)
 }
 \arguments{
-\item{genes}{a GRangesList with the exons of different genes}
+\item{genes}{a GRangesList with the exons of different
+single-isoform genes}
 
 \item{bam.file}{a character string pointing to an indexed BAM file}
 
 \item{fragtypes}{the output of \link{buildFragtypes}. must contain
 the potential fragment types for the genes named in \code{genes}}
 
-\item{genome}{a BSGenome object}
+\item{genome}{a BSgenome object}
 
 \item{models}{a list of lists: the outer list describes multiple models
 each element of the inner list has two elements: \code{formula} and \code{offset}.
@@ -36,7 +37,7 @@ See vignette for recommendations and details.}
 Default is TRUE.}
 }
 \value{
-
+TODO a list containing bias parameters
 }
 \description{
 This function estimates parameters for one or more bias models

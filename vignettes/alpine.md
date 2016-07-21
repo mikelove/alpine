@@ -170,7 +170,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  15.565   2.036  17.977
+##  10.236   0.140  10.378
 ```
 
 ```r
@@ -279,7 +279,7 @@ fitpar <- lapply(bam.files, function(bf) {
 
 ```
 ##    user  system elapsed 
-##  62.893   4.981  69.013
+##  42.264   0.272  42.539
 ```
 
 ```r
@@ -436,7 +436,7 @@ res <- lapply(subset.genes, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  54.861   2.888  58.337
+##  38.160   0.172  38.337
 ```
 
 Each element of this list has the abundances (`theta`) and average
@@ -465,7 +465,7 @@ res[[6]][["ERR188297"]][["GC"]]
 ```
 ## $theta
 ## ENST00000477403 ENST00000468844 ENST00000361575 
-##     7.869292932     0.008579681     3.014203873 
+##     7.869292934     0.008579681     3.014203873 
 ## 
 ## $lambda
 ## ENST00000477403 ENST00000468844 ENST00000361575 
@@ -542,59 +542,136 @@ very large abundance estimates for a minority of transcripts.
 norm.mat <- normalizeDESeq(mat, cutoff=0.1)
 ```
 
+# Plotting predicted fragment coverage
+
+In the *alpine* paper, it was shown the fragment GC bias can be a
+better predictor of test set RNA-seq fragment coverage, compared to
+read start bias. Here we show how to predict fragment coverage for a
+single-isoform gene using a variety of fitted bias models. The models
+involving formula need to have the exact same name and form as a
+fitted model in `fitpar`.
+
+
+```r
+pred.models <- list(
+  "fraglen" = list(formula=NULL, offset=c("fraglen")),
+  "readstart" = list(formula=NULL, offset=c("fraglen","vlmm")),
+  "GC" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  0",
+  offset=c("fraglen")),
+  "all" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  0",
+  offset=c("fraglen","vlmm"))
+)
+```
+
+The following function computes the predicted coverage for one
+single-isoform gene. We load a `fitpar` object that was run
+with the fragment length range [80,350] bp.
+
+
+```r
+data(fitpar)
+system.time({
+  pred.cov <- predictCoverage(gene=ebt[[3]],
+                              bam.files=bam.files[3],
+                              fitpar=fitpar,
+                              genome=Hsapiens,
+                              models=pred.models,
+                              readlength=readlength,
+                              minsize=80,
+                              maxsize=350)
+})
+```
+
+```
+##    user  system elapsed 
+##  24.116   0.224  24.357
+```
+
+We can plot the observed and predicted coverage for one of the
+samples: 
+
+
+```r
+palette(brewer.pal(9, "Set1"))
+frag.cov <- pred.cov[["ERR188204"]][["frag.cov"]]
+plot(frag.cov, type="l", lwd=3, ylim=c(0,max(frag.cov)*1.5))
+for (i in seq_along(pred.models)) {
+  m <- names(pred.models)[i]
+  pred <- pred.cov[["ERR188204"]][["pred.cov"]][[m]]
+  lines(pred, col=i, lwd=3)
+}
+legend("topright", legend=c("observed",names(pred.models)),
+       col=c("black",seq_along(pred.models)), lwd=3)
+```
+
+![plot of chunk unnamed-chunk-21](figure/unnamed-chunk-21-1.png)
+
+# Session information
+
 
 ```r
 sessionInfo()
 ```
 
 ```
-## R Under development (unstable) (2016-03-21 r70361)
-## Platform: x86_64-apple-darwin14.5.0 (64-bit)
-## Running under: OS X 10.10.5 (Yosemite)
+## R Under development (unstable) (2016-05-23 r70660)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Ubuntu 16.04 LTS
 ## 
 ## locale:
-## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 ## 
 ## attached base packages:
-## [1] parallel  stats4    stats     graphics  grDevices datasets  utils    
+## [1] stats4    parallel  stats     graphics  grDevices datasets  utils    
 ## [8] methods   base     
 ## 
 ## other attached packages:
 ##  [1] RColorBrewer_1.1-2                    
-##  [2] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
-##  [3] BSgenome_1.41.2                       
-##  [4] rtracklayer_1.33.7                    
-##  [5] Biostrings_2.41.4                     
-##  [6] XVector_0.13.2                        
-##  [7] GenomicRanges_1.25.8                  
-##  [8] GenomeInfoDb_1.9.1                    
-##  [9] IRanges_2.7.11                        
-## [10] S4Vectors_0.11.5                      
-## [11] BiocGenerics_0.19.1                   
-## [12] alpine_0.1.6                          
+##  [2] alpine_0.1.6                          
+##  [3] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
+##  [4] BSgenome_1.41.2                       
+##  [5] rtracklayer_1.33.2                    
+##  [6] Biostrings_2.41.1                     
+##  [7] XVector_0.13.0                        
+##  [8] GenomicRanges_1.25.0                  
+##  [9] GenomeInfoDb_1.9.1                    
+## [10] IRanges_2.7.0                         
+## [11] S4Vectors_0.11.1                      
+## [12] BiocGenerics_0.19.0                   
 ## [13] magrittr_1.5                          
 ## [14] knitr_1.13                            
-## [15] testthat_1.0.2                        
-## [16] devtools_1.11.1                       
+## [15] devtools_1.11.1                       
+## [16] BiocInstaller_1.23.6                  
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] compiler_3.4.0             formatR_1.4               
-##  [3] GenomicFeatures_1.25.14    bitops_1.0-6              
-##  [5] tools_3.4.0                zlibbioc_1.19.0           
-##  [7] biomaRt_2.29.2             digest_0.6.9              
-##  [9] lattice_0.20-33            evaluate_0.9              
+##  [1] Rcpp_0.12.5                compiler_3.4.0            
+##  [3] formatR_1.4                GenomicFeatures_1.25.12   
+##  [5] bitops_1.0-6               tools_3.4.0               
+##  [7] zlibbioc_1.19.0            biomaRt_2.29.0            
+##  [9] digest_0.6.9               evaluate_0.9              
 ## [11] memoise_1.0.0              RSQLite_1.0.0             
-## [13] Matrix_1.2-6               graph_1.51.0              
-## [15] DBI_0.4-1                  speedglm_0.3-1            
-## [17] withr_1.0.2                stringr_1.0.0             
-## [19] grid_3.4.0                 Biobase_2.33.0            
-## [21] R6_2.1.2                   AnnotationDbi_1.35.3      
-## [23] XML_3.98-1.4               RBGL_1.49.1               
-## [25] BiocParallel_1.7.4         splines_3.4.0             
-## [27] MASS_7.3-45                Rsamtools_1.25.0          
-## [29] GenomicAlignments_1.9.4    SummarizedExperiment_1.3.5
-## [31] mime_0.4                   stringi_1.1.1             
-## [33] RCurl_1.95-4.8             markdown_0.7.7            
-## [35] crayon_1.3.1
+## [13] lattice_0.20-33            Matrix_1.2-6              
+## [15] graph_1.51.0               DBI_0.4-1                 
+## [17] speedglm_0.3-1             roxygen2_5.0.1            
+## [19] withr_1.0.1                stringr_1.0.0             
+## [21] grid_3.4.0                 Biobase_2.33.0            
+## [23] AnnotationDbi_1.35.3       XML_3.98-1.4              
+## [25] RBGL_1.49.1                BiocParallel_1.7.2        
+## [27] Rsamtools_1.25.0           GenomicAlignments_1.9.0   
+## [29] MASS_7.3-45                splines_3.4.0             
+## [31] SummarizedExperiment_1.3.2 mime_0.4                  
+## [33] stringi_1.0-1              RCurl_1.95-4.8            
+## [35] markdown_0.7.7
 ```
 
