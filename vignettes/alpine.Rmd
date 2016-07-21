@@ -46,8 +46,8 @@ selected.genes <- scan("~/proj/alpine/alpine/inst/extdata/selected.genes.txt",
 one.iso.txs <- txdf$tx_id[txdf$gene_id %in%
                           intersect(one.iso.genes, selected.genes)]
 ebt0 <- exonsBy(txdb, by="tx")
-ebt <- ebt0[one.iso.txs]
-#save(ebt, file="~/proj/alpine/alpine/data/ebt.rda")
+ebt.fit <- ebt0[one.iso.txs]
+#save(ebt.fit, file="~/proj/alpine/alpine/data/ebtfit.rda")
 ```
 
 Here we pick a subset of single-isoform genes based on the
@@ -62,17 +62,17 @@ library(GenomicRanges)
 
 ```{r}
 dir <- system.file("data",package="alpine")
-load(file.path(dir,"ebt.rda"))
+load(file.path(dir,"ebtfit.rda"))
 # filter small genes and long genes
 min.bp <- 600
 max.bp <- 7000 
-gene.lengths <- sum(width(ebt))
+gene.lengths <- sum(width(ebt.fit))
 summary(gene.lengths)
-ebt <- ebt[gene.lengths > min.bp & gene.lengths < max.bp]
-length(ebt)
+ebt.fit <- ebt.fit[gene.lengths > min.bp & gene.lengths < max.bp]
+length(ebt.fit)
 set.seed(1)
 # better to use ~100 genes
-ebt <- ebt[sample(length(ebt),10)] 
+ebt.fit <- ebt.fit[sample(length(ebt.fit),10)] 
 ```
 
 # Fitting the bias model
@@ -90,7 +90,7 @@ helper function `getFragmentWidths`, iterating over a few
 single-isoform genes with sufficient counts:
 
 ```{r}
-w <- getFragmentWidths(bam.files[1], ebt[[1]])
+w <- getFragmentWidths(bam.files[1], ebt.fit[[1]])
 c(summary(w), Number=length(w))
 quantile(w, c(.025, .975))
 ```
@@ -115,7 +115,7 @@ library(BSgenome.Hsapiens.NCBI.GRCh38)
 minsize <- 125 # better 80 for this data
 maxsize <- 175 # better 350 for this data
 readlength <- 75 
-gene.names <- names(ebt)
+gene.names <- names(ebt.fit)
 names(gene.names) <- gene.names
 ```
 
@@ -126,7 +126,7 @@ training set.
 ```{r buildFragtype}
 system.time({
 fragtypes <- lapply(gene.names, function(gene.name) {
-                      buildFragtypes(exons=ebt[[gene.name]],
+                      buildFragtypes(exons=ebt.fit[[gene.name]],
                                      genome=Hsapiens,
                                      readlength=readlength,
                                      minsize=minsize,
@@ -199,7 +199,7 @@ a list of fitted parameters across samples.
 ```{r fitBiasModels}
 system.time({
 fitpar <- lapply(bam.files, function(bf) {
-                   fitBiasModels(genes=ebt,
+                   fitBiasModels(genes=ebt.fit,
                                  bam.file=bf,
                                  fragtypes=fragtypes,
                                  genome=Hsapiens,
@@ -209,7 +209,8 @@ fitpar <- lapply(bam.files, function(bf) {
                                  maxsize=maxsize)
                  })
 })
-#save(fitpar, file="~/proj/alpine/alpine/data/fitpar.rda")
+#fitpar.small <- fitpar # save as fitpar.small for examples
+#save(fitpar.small, file="~/proj/alpine/alpine/data/fitparsmall.rda")
 ```
 
 # Visually exploring the bias parameters
@@ -277,17 +278,17 @@ one.iso.genes <- intersect(names(tab)[tab == 1], selected.genes)
 two.iso.genes <- intersect(names(tab)[tab == 2], selected.genes)
 three.iso.genes <- intersect(names(tab)[tab == 3], selected.genes)
 set.seed(1)
-subset.genes <- c(sample(one.iso.genes, 2),
-                  sample(two.iso.genes, 2),
-                  sample(three.iso.genes, 2)) 
-txdf.sub <- txdf[txdf$gene_id %in% subset.genes,]
-ebt.sub <- ebt0[txdf.sub$tx_id]
-#save(ebt.sub, txdf.sub, subset.genes, file="~/proj/alpine/alpine/data/estimationObjects.rda")
+genes.theta <- c(sample(one.iso.genes, 2),
+                 sample(two.iso.genes, 2),
+                 sample(three.iso.genes, 2)) 
+txdf.theta <- txdf[txdf$gene_id %in% genes.theta,]
+ebt.theta <- ebt0[txdf.theta$tx_id]
+#save(ebt.theta, txdf.theta, genes.theta, file="~/proj/alpine/alpine/data/thetaobjs.rda")
 ```
 
 ```{r}
 dir <- system.file("data",package="alpine")
-load(file.path(dir,"estimationObjects.rda"))
+load(file.path(dir,"thetaobjs.rda"))
 ```
 
 We specify a set of models. Any formula used here must be equal to
@@ -313,9 +314,9 @@ transcript (multiple if the gene has multiple isoforms).
 
 ```{r estimateTheta}
 system.time({
-res <- lapply(subset.genes, function(gene.name) {
-         txs <- txdf.sub$tx_id[txdf.sub$gene_id == gene.name]
-         estimateTheta(transcripts=ebt.sub[txs],
+res <- lapply(genes.theta, function(gene.name) {
+         txs <- txdf.theta$tx_id[txdf.theta$gene_id == gene.name]
+         estimateTheta(transcripts=ebt.theta[txs],
                        bam.files=bam.files,
                        fitpar=fitpar,
                        genome=Hsapiens,
@@ -325,6 +326,7 @@ res <- lapply(subset.genes, function(gene.name) {
                        maxsize=maxsize)
        })
 })
+#save(res, file="~/proj/alpine/alpine/data/res.rda")
 ```
 
 Each element of this list has the abundances (`theta`) and average

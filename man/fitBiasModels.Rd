@@ -37,12 +37,57 @@ See vignette for recommendations and details.}
 Default is TRUE.}
 }
 \value{
-TODO a list containing bias parameters
+a list with elements: coefs, summary, models,
+and optional offets: fraglen.density, vlmm.fivep,
+and vlmm.threep. \strong{coefs} gives the estimated coefficients
+for the different models that specified formula.
+\strong{summary} gives the tables with coefficients, standard
+errors and p-values, \strong{models} stores the incoming
+\code{models} list, \strong{fraglen.density} is a
+estimated density object for the fragment length distribution,
+and \strong{vlmm.fivep} and \strong{vlmm.threep}
+store the observed and expected tabulations for the different
+orders of the VLMM for read start bias.
 }
 \description{
 This function estimates parameters for one or more bias models
 for a single sample over a set of single-isoform
 genes. ~100 medium to highly expressed genes should be sufficient to
 estimate the parameters robustly.
+}
+\examples{
+
+# see vignette for a more realistic example
+
+library(GenomicRanges)
+library(BSgenome.Hsapiens.NCBI.GRCh38)
+dir <- system.file("data",package="alpine")
+load(file.path(dir,"ebtfit.rda"))
+readlength <- 100
+minsize <- 125 # see vignette how to choose
+maxsize <- 175 # see vignette how to choose
+# here a very small subset, should be ~100 genes
+gene.names <- names(ebt.fit)[6:8] 
+names(gene.names) <- gene.names
+fragtypes <- lapply(gene.names, function(gene.name) {
+                      buildFragtypes(ebt.fit[[gene.name]],
+                                     Hsapiens, readlength,
+                                     minsize, maxsize)
+})
+models <- list(
+  "GC" = list(formula = "count ~ ns(gc,knots=gc.knots,
+                Boundary.knots=gc.bk) + gene",
+              offset=c("fraglen"))
+)
+bam.file <- "~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam"
+fitpar <- fitBiasModels(genes=ebt.fit[gene.names],
+                        bam.file=bam.file,
+                        fragtypes=fragtypes,
+                        genome=Hsapiens,
+                        models=models,
+                        readlength=readlength,
+                        minsize=minsize,
+                        maxsize=maxsize)
+
 }
 

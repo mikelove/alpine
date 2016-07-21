@@ -86,13 +86,13 @@ NULL
 #'
 #' library(GenomicRanges)
 #' library(BSgenome.Hsapiens.NCBI.GRCh38)
-#' # some made up gene
-#' exons <- GRanges("1",IRanges(50e6 + c(101,301,501,701),width=150), "+")
-#' mcols(exons) <- data.frame(exon_rank=1:4, exon_id=1:4)
+#' dir <- system.file("data",package="alpine")
+#' load(file.path(dir,"ebtfit.rda"))
 #' readlength <- 100
-#' minsize <- 100
-#' maxsize <- 120 # too small range, not recommended
-#' fragtypes <- buildFragtypes(exons, Hsapiens, readlength,
+#' minsize <- 125 # see vignette how to choose
+#' maxsize <- 175 # see vignette how to choose
+#' fragtypes <- buildFragtypes(ebt.fit[["ENST00000624447"]],
+#'                             Hsapiens, readlength,
 #'                             minsize, maxsize)
 #' 
 #' @export
