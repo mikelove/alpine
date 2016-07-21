@@ -44,15 +44,15 @@ selected.genes <- scan("~/proj/alpine/alpine/inst/extdata/selected.genes.txt",
 one.iso.txs <- txdf$tx_id[txdf$gene_id %in%
                           intersect(one.iso.genes, selected.genes)]
 ebt0 <- exonsBy(txdb, by="tx")
-ebt <- ebt0[one.iso.txs]
-#save(ebt, file="~/proj/alpine/alpine/data/ebt.rda")
+ebt.fit <- ebt0[one.iso.txs]
+#save(ebt.fit, file="~/proj/alpine/alpine/data/ebtfit.rda")
 ```
 
 Here we pick a subset of single-isoform genes based on the
 number of exons, and the length. We show in comments the recommended
 parameters to use in selecting this subset of genes,
 although here we use different parameters to ensure the building of
-the vignette takes a short period of time and does not use much memory.
+the vignette takes only a short period of time and does not use much memory.
 
 
 ```r
@@ -62,11 +62,11 @@ library(GenomicRanges)
 
 ```r
 dir <- system.file("data",package="alpine")
-load(file.path(dir,"ebt.rda"))
+load(file.path(dir,"ebtfit.rda"))
 # filter small genes and long genes
 min.bp <- 600
 max.bp <- 7000 
-gene.lengths <- sum(width(ebt))
+gene.lengths <- sum(width(ebt.fit))
 summary(gene.lengths)
 ```
 
@@ -76,8 +76,8 @@ summary(gene.lengths)
 ```
 
 ```r
-ebt <- ebt[gene.lengths > min.bp & gene.lengths < max.bp]
-length(ebt)
+ebt.fit <- ebt.fit[gene.lengths > min.bp & gene.lengths < max.bp]
+length(ebt.fit)
 ```
 
 ```
@@ -87,7 +87,7 @@ length(ebt)
 ```r
 set.seed(1)
 # better to use ~100 genes
-ebt <- ebt[sample(length(ebt),10)] 
+ebt.fit <- ebt.fit[sample(length(ebt.fit),10)] 
 ```
 
 # Fitting the bias model
@@ -106,7 +106,7 @@ single-isoform genes with sufficient counts:
 
 
 ```r
-w <- getFragmentWidths(bam.files[1], ebt[[1]])
+w <- getFragmentWidths(bam.files[1], ebt.fit[[1]])
 c(summary(w), Number=length(w))
 ```
 
@@ -139,6 +139,11 @@ getReadLength(bam.files)
 ##        75        75        76        76
 ```
 
+Here we use a very limited range of fragment lengths for speed, but
+for a real analysis we would suggest using the minimum and maximum
+of the quantiles computed above across all samples (the minimum of the
+lower quantiles and the maximum of the upper quantiles).
+
 
 ```r
 library(alpine)
@@ -146,7 +151,7 @@ library(BSgenome.Hsapiens.NCBI.GRCh38)
 minsize <- 125 # better 80 for this data
 maxsize <- 175 # better 350 for this data
 readlength <- 75 
-gene.names <- names(ebt)
+gene.names <- names(ebt.fit)
 names(gene.names) <- gene.names
 ```
 
@@ -158,7 +163,7 @@ training set.
 ```r
 system.time({
 fragtypes <- lapply(gene.names, function(gene.name) {
-                      buildFragtypes(exons=ebt[[gene.name]],
+                      buildFragtypes(exons=ebt.fit[[gene.name]],
                                      genome=Hsapiens,
                                      readlength=readlength,
                                      minsize=minsize,
@@ -170,7 +175,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  10.236   0.140  10.378
+##  14.080   2.209  17.203
 ```
 
 ```r
@@ -265,7 +270,7 @@ a list of fitted parameters across samples.
 ```r
 system.time({
 fitpar <- lapply(bam.files, function(bf) {
-                   fitBiasModels(genes=ebt,
+                   fitBiasModels(genes=ebt.fit,
                                  bam.file=bf,
                                  fragtypes=fragtypes,
                                  genome=Hsapiens,
@@ -279,11 +284,12 @@ fitpar <- lapply(bam.files, function(bf) {
 
 ```
 ##    user  system elapsed 
-##  42.264   0.272  42.539
+##  61.188   5.011  67.542
 ```
 
 ```r
-#save(fitpar, file="~/proj/alpine/alpine/data/fitpar.rda")
+#fitpar.small <- fitpar # save as fitpar.small for examples
+#save(fitpar.small, file="~/proj/alpine/alpine/data/fitparsmall.rda")
 ```
 
 # Visually exploring the bias parameters
@@ -381,18 +387,18 @@ one.iso.genes <- intersect(names(tab)[tab == 1], selected.genes)
 two.iso.genes <- intersect(names(tab)[tab == 2], selected.genes)
 three.iso.genes <- intersect(names(tab)[tab == 3], selected.genes)
 set.seed(1)
-subset.genes <- c(sample(one.iso.genes, 2),
-                  sample(two.iso.genes, 2),
-                  sample(three.iso.genes, 2)) 
-txdf.sub <- txdf[txdf$gene_id %in% subset.genes,]
-ebt.sub <- ebt0[txdf.sub$tx_id]
-#save(ebt.sub, txdf.sub, subset.genes, file="~/proj/alpine/alpine/data/estimationObjects.rda")
+genes.theta <- c(sample(one.iso.genes, 2),
+                 sample(two.iso.genes, 2),
+                 sample(three.iso.genes, 2)) 
+txdf.theta <- txdf[txdf$gene_id %in% genes.theta,]
+ebt.theta <- ebt0[txdf.theta$tx_id]
+#save(ebt.theta, txdf.theta, genes.theta, file="~/proj/alpine/alpine/data/thetaobjs.rda")
 ```
 
 
 ```r
 dir <- system.file("data",package="alpine")
-load(file.path(dir,"estimationObjects.rda"))
+load(file.path(dir,"thetaobjs.rda"))
 ```
 
 We specify a set of models. Any formula used here must be equal to
@@ -420,9 +426,9 @@ transcript (multiple if the gene has multiple isoforms).
 
 ```r
 system.time({
-res <- lapply(subset.genes, function(gene.name) {
-         txs <- txdf.sub$tx_id[txdf.sub$gene_id == gene.name]
-         estimateTheta(transcripts=ebt.sub[txs],
+res <- lapply(genes.theta, function(gene.name) {
+         txs <- txdf.theta$tx_id[txdf.theta$gene_id == gene.name]
+         estimateTheta(transcripts=ebt.theta[txs],
                        bam.files=bam.files,
                        fitpar=fitpar,
                        genome=Hsapiens,
@@ -436,7 +442,11 @@ res <- lapply(subset.genes, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  38.160   0.172  38.337
+##  54.923   2.994  58.784
+```
+
+```r
+#save(res, file="~/proj/alpine/alpine/data/res.rda")
 ```
 
 Each element of this list has the abundances (`theta`) and average
@@ -465,7 +475,7 @@ res[[6]][["ERR188297"]][["GC"]]
 ```
 ## $theta
 ## ENST00000477403 ENST00000468844 ENST00000361575 
-##     7.869292934     0.008579681     3.014203873 
+##     7.869292932     0.008579681     3.014203873 
 ## 
 ## $lambda
 ## ENST00000477403 ENST00000468844 ENST00000361575 
@@ -482,9 +492,7 @@ not desired, choose `divide.out=FALSE`).
 
 
 ```r
-mat <- extractAlpine(res,
-                     model="GC",
-                     nsamp=length(bam.files))
+mat <- extractAlpine(res, model="GC")
 mat
 ```
 
@@ -512,10 +520,7 @@ rows of the FPKM matrix.
 
 
 ```r
-se <- extractAlpine(res,
-                    model="GC",
-                    nsamp=length(bam.files),
-                    transcripts=ebt.sub)
+se <- extractAlpine(res, model="GC", transcripts=ebt.theta)
 se
 ```
 
@@ -542,14 +547,52 @@ very large abundance estimates for a minority of transcripts.
 norm.mat <- normalizeDESeq(mat, cutoff=0.1)
 ```
 
+# Simulating RNA-seq experiments using empirically estimated GC bias
+
+The fragment GC bias which *alpine* estimates can be used in
+downstream simulations, for example in the *polyester* Bioconductor
+package. All we need to do is to run the *plotGC* function, but
+specifying that instead of a plot, we want to return a matrix of
+probabilities for each percentile of fragment GC content. This matrix
+can be provided to the `frag_GC_bias` argument of *simulate_experiment*.
+
+We load a `fitpar` object that was run with the fragment length range
+[80,350] bp. 
+
+
+```r
+data(fitpar)
+prob.mat <- plotGC(fitpar, "all", return.type=2)
+head(prob.mat)
+```
+
+```
+##       ERR188297 ERR188088  ERR188204  ERR188317
+## 0    0.04366855 0.2561645 0.06914584 0.07234787
+## 0.01 0.04936226 0.2725952 0.07667866 0.08005226
+## 0.02 0.05578805 0.2900464 0.08501986 0.08856473
+## 0.03 0.06302707 0.3085437 0.09424127 0.09795502
+## 0.04 0.07116603 0.3281071 0.10441771 0.10829555
+## 0.05 0.08029675 0.3487502 0.11562636 0.11966079
+```
+
+If `return.type=0` (the default) the function makes the plot of log
+fragment rate over fragment GC content. If `return.type=1` the
+function returns the matrix of log fragment rate over percentiles of
+fragment GC content, and if `return.type=2`, the matrix returns
+probabilities of observing fragments based on percentiles of fragment
+GC content (the log fragment rate exponentiated and scaled to have a
+maximum of 1). The matrix returned by `return.type=2` is appropriate
+for downstream use with *polyester*.
+
 # Plotting predicted fragment coverage
 
-In the *alpine* paper, it was shown the fragment GC bias can be a
-better predictor of test set RNA-seq fragment coverage, compared to
-read start bias. Here we show how to predict fragment coverage for a
-single-isoform gene using a variety of fitted bias models. The models
-involving formula need to have the exact same name and form as a
-fitted model in `fitpar`.
+In the *alpine* paper, it was shown that models incorporating fragment
+GC bias can be a better predictor of test set RNA-seq fragment
+coverage, compared to models incorporating read start bias. Here we
+show how to predict fragment coverage for a single-isoform gene using
+a variety of fitted bias models. The models involving formula need to
+have the exact same name and form as a fitted model in `fitpar`.
 
 
 ```r
@@ -577,8 +620,8 @@ with the fragment length range [80,350] bp.
 ```r
 data(fitpar)
 system.time({
-  pred.cov <- predictCoverage(gene=ebt[[3]],
-                              bam.files=bam.files[3],
+  pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000245479"]],
+                              bam.files=bam.files["ERR188204"],
                               fitpar=fitpar,
                               genome=Hsapiens,
                               models=pred.models,
@@ -590,7 +633,7 @@ system.time({
 
 ```
 ##    user  system elapsed 
-##  24.116   0.224  24.357
+##  40.639   4.303  46.059
 ```
 
 We can plot the observed and predicted coverage for one of the
@@ -610,7 +653,7 @@ legend("topright", legend=c("observed",names(pred.models)),
        col=c("black",seq_along(pred.models)), lwd=3)
 ```
 
-![plot of chunk unnamed-chunk-21](figure/unnamed-chunk-21-1.png)
+![plot of chunk unnamed-chunk-22](figure/unnamed-chunk-22-1.png)
 
 # Session information
 
@@ -620,58 +663,53 @@ sessionInfo()
 ```
 
 ```
-## R Under development (unstable) (2016-05-23 r70660)
-## Platform: x86_64-pc-linux-gnu (64-bit)
-## Running under: Ubuntu 16.04 LTS
+## R Under development (unstable) (2016-03-21 r70361)
+## Platform: x86_64-apple-darwin14.5.0 (64-bit)
+## Running under: OS X 10.10.5 (Yosemite)
 ## 
 ## locale:
-##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
-##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
-##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
-##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
-##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
 ## 
 ## attached base packages:
-## [1] stats4    parallel  stats     graphics  grDevices datasets  utils    
+## [1] parallel  stats4    stats     graphics  grDevices datasets  utils    
 ## [8] methods   base     
 ## 
 ## other attached packages:
 ##  [1] RColorBrewer_1.1-2                    
-##  [2] alpine_0.1.6                          
-##  [3] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
-##  [4] BSgenome_1.41.2                       
-##  [5] rtracklayer_1.33.2                    
-##  [6] Biostrings_2.41.1                     
-##  [7] XVector_0.13.0                        
-##  [8] GenomicRanges_1.25.0                  
-##  [9] GenomeInfoDb_1.9.1                    
-## [10] IRanges_2.7.0                         
-## [11] S4Vectors_0.11.1                      
-## [12] BiocGenerics_0.19.0                   
+##  [2] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
+##  [3] BSgenome_1.41.2                       
+##  [4] rtracklayer_1.33.7                    
+##  [5] Biostrings_2.41.4                     
+##  [6] XVector_0.13.2                        
+##  [7] GenomicRanges_1.25.8                  
+##  [8] GenomeInfoDb_1.9.1                    
+##  [9] IRanges_2.7.11                        
+## [10] S4Vectors_0.11.5                      
+## [11] BiocGenerics_0.19.1                   
+## [12] alpine_0.1.6                          
 ## [13] magrittr_1.5                          
 ## [14] knitr_1.13                            
-## [15] devtools_1.11.1                       
-## [16] BiocInstaller_1.23.6                  
+## [15] testthat_1.0.2                        
+## [16] devtools_1.11.1                       
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] Rcpp_0.12.5                compiler_3.4.0            
-##  [3] formatR_1.4                GenomicFeatures_1.25.12   
-##  [5] bitops_1.0-6               tools_3.4.0               
-##  [7] zlibbioc_1.19.0            biomaRt_2.29.0            
-##  [9] digest_0.6.9               evaluate_0.9              
+##  [1] compiler_3.4.0             formatR_1.4               
+##  [3] GenomicFeatures_1.25.14    bitops_1.0-6              
+##  [5] tools_3.4.0                zlibbioc_1.19.0           
+##  [7] biomaRt_2.29.2             digest_0.6.9              
+##  [9] lattice_0.20-33            evaluate_0.9              
 ## [11] memoise_1.0.0              RSQLite_1.0.0             
-## [13] lattice_0.20-33            Matrix_1.2-6              
-## [15] graph_1.51.0               DBI_0.4-1                 
-## [17] speedglm_0.3-1             roxygen2_5.0.1            
-## [19] withr_1.0.1                stringr_1.0.0             
-## [21] grid_3.4.0                 Biobase_2.33.0            
-## [23] AnnotationDbi_1.35.3       XML_3.98-1.4              
-## [25] RBGL_1.49.1                BiocParallel_1.7.2        
-## [27] Rsamtools_1.25.0           GenomicAlignments_1.9.0   
-## [29] MASS_7.3-45                splines_3.4.0             
-## [31] SummarizedExperiment_1.3.2 mime_0.4                  
-## [33] stringi_1.0-1              RCurl_1.95-4.8            
-## [35] markdown_0.7.7
+## [13] Matrix_1.2-6               graph_1.51.0              
+## [15] DBI_0.4-1                  speedglm_0.3-1            
+## [17] withr_1.0.2                stringr_1.0.0             
+## [19] grid_3.4.0                 Biobase_2.33.0            
+## [21] R6_2.1.2                   AnnotationDbi_1.35.3      
+## [23] XML_3.98-1.4               RBGL_1.49.1               
+## [25] BiocParallel_1.7.4         splines_3.4.0             
+## [27] MASS_7.3-45                Rsamtools_1.25.0          
+## [29] GenomicAlignments_1.9.4    SummarizedExperiment_1.3.5
+## [31] mime_0.4                   stringi_1.1.1             
+## [33] RCurl_1.95-4.8             markdown_0.7.7            
+## [35] crayon_1.3.1
 ```
 

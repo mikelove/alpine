@@ -358,7 +358,7 @@ correct order, the transcripts will be extracted by name to match the
 rows of the FPKM matrix.
 
 ```{r}
-se <- extractAlpine(res, model="GC", transcripts=ebt.sub)
+se <- extractAlpine(res, model="GC", transcripts=ebt.theta)
 se
 ```
 
@@ -432,8 +432,8 @@ with the fragment length range [80,350] bp.
 ```{r predictCoverage}
 data(fitpar)
 system.time({
-  pred.cov <- predictCoverage(gene=ebt.fit[[3]],
-                              bam.files=bam.files[3],
+  pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000245479"]],
+                              bam.files=bam.files["ERR188204"],
                               fitpar=fitpar,
                               genome=Hsapiens,
                               models=pred.models,
