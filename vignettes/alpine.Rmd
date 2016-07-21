@@ -372,12 +372,12 @@ norm.mat <- normalizeDESeq(mat, cutoff=0.1)
 
 # Plotting predicted fragment coverage
 
-In the *alpine* paper, it was shown the fragment GC bias can be a
-better predictor of test set RNA-seq fragment coverage, compared to
-read start bias. Here we show how to predict fragment coverage for a
-single-isoform gene using a variety of fitted bias models. The models
-involving formula need to have the exact same name and form as a
-fitted model in `fitpar`.
+In the *alpine* paper, it was shown that models incorporating fragment
+GC bias can be a better predictor of test set RNA-seq fragment
+coverage, compared to models incorporating read start bias. Here we
+show how to predict fragment coverage for a single-isoform gene using
+a variety of fitted bias models. The models involving formula need to
+have the exact same name and form as a fitted model in `fitpar`.
 
 ```{r}
 pred.models <- list(
