@@ -49,7 +49,7 @@ For the 1- and 2-order terms, the log bias is shown for each nucleotide
 # fitpar was fit using identical code
 # as found in the vignette, except with
 # 25 genes, and with fragment size in 80-350 bp
-data(fitpar)
+data(preprocessedData)
 plotOrder0(fitpar[[1]][["vlmm.fivep"]][["order0"]])
 plotOrder1(fitpar[[1]][["vlmm.fivep"]][["order1"]], pos1=5:19)
 plotOrder2(fitpar[[1]][["vlmm.fivep"]][["order2"]], pos2=8:17)

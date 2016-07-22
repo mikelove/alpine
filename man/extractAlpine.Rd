@@ -41,7 +41,7 @@ used estimate \code{lib.sizes}.
 }
 \examples{
 
-data(res)
+data(preprocessedData)
 extractAlpine(res, "GC")
 
 }

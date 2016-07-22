@@ -47,7 +47,6 @@ one.iso.txs <- txdf$tx_id[txdf$gene_id %in%
                           intersect(one.iso.genes, selected.genes)]
 ebt0 <- exonsBy(txdb, by="tx")
 ebt.fit <- ebt0[one.iso.txs]
-#save(ebt.fit, file="~/proj/alpine/alpine/data/ebtfit.rda")
 ```
 
 Here we pick a subset of single-isoform genes based on the
@@ -61,8 +60,7 @@ library(GenomicRanges)
 ```
 
 ```{r}
-dir <- system.file("data",package="alpine")
-load(file.path(dir,"ebtfit.rda"))
+data(preprocessedData)
 # filter small genes and long genes
 min.bp <- 600
 max.bp <- 7000 
@@ -209,8 +207,7 @@ fitpar <- lapply(bam.files, function(bf) {
                                  maxsize=maxsize)
                  })
 })
-#fitpar.small <- fitpar # save as fitpar.small for examples
-#save(fitpar.small, file="~/proj/alpine/alpine/data/fitparsmall.rda")
+fitpar.small <- fitpar # save as fitpar.small for examples
 ```
 
 ## Visually exploring the bias parameters
@@ -283,12 +280,6 @@ genes.theta <- c(sample(one.iso.genes, 2),
                  sample(three.iso.genes, 2)) 
 txdf.theta <- txdf[txdf$gene_id %in% genes.theta,]
 ebt.theta <- ebt0[txdf.theta$tx_id]
-#save(ebt.theta, txdf.theta, genes.theta, file="~/proj/alpine/alpine/data/thetaobjs.rda")
-```
-
-```{r}
-dir <- system.file("data",package="alpine")
-load(file.path(dir,"thetaobjs.rda"))
 ```
 
 We specify a set of models. Any formula used here must be equal to
@@ -326,7 +317,6 @@ res <- lapply(genes.theta, function(gene.name) {
                        maxsize=maxsize)
        })
 })
-#save(res, file="~/proj/alpine/alpine/data/res.rda")
 ```
 
 Each element of this list has the abundances (`theta`) and average
@@ -385,7 +375,6 @@ We load a `fitpar` object that was run with the fragment length range
 [80,350] bp. 
 
 ```{r}
-data(fitpar)
 prob.mat <- plotGC(fitpar, "all", return.type=2)
 head(prob.mat)
 ```
@@ -430,7 +419,6 @@ single-isoform gene. We load a `fitpar` object that was run
 with the fragment length range [80,350] bp.
 
 ```{r predictCoverage}
-data(fitpar)
 system.time({
   pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000245479"]],
                               bam.files=bam.files["ERR188204"],

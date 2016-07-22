@@ -22,7 +22,7 @@
 #' # fitpar was fit using identical code
 #' # as found in the vignette, except with
 #' # 25 genes, and with fragment size in 80-350 bp
-#' data(fitpar)
+#' data(preprocessedData)
 #' perf <- rep(1:2, each=2)
 #' plotGC(fitpar, "all", col=perf)
 #' 
@@ -93,7 +93,7 @@ plotGC <- function(fitpar, model, col, lty, ylim,
 #' # fitpar was fit using identical code
 #' # as found in the vignette, except with
 #' # 25 genes, and with fragment size in 80-350 bp
-#' data(fitpar)
+#' data(preprocessedData)
 #' perf <- rep(1:2, each=2)
 #' plotRelPos(fitpar, "all", col=perf)
 #' 
@@ -137,7 +137,7 @@ plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(
 #' # fitpar was fit using identical code
 #' # as found in the vignette, except with
 #' # 25 genes, and with fragment size in 80-350 bp
-#' data(fitpar)
+#' data(preprocessedData)
 #' perf <- rep(1:2, each=2)
 #' plotFragLen(fitpar, col=perf)
 #' 
@@ -189,7 +189,7 @@ plotFragLen <- function(fitpar, col, lty) {
 #' # fitpar was fit using identical code
 #' # as found in the vignette, except with
 #' # 25 genes, and with fragment size in 80-350 bp
-#' data(fitpar)
+#' data(preprocessedData)
 #' plotOrder0(fitpar[[1]][["vlmm.fivep"]][["order0"]])
 #' plotOrder1(fitpar[[1]][["vlmm.fivep"]][["order1"]], pos1=5:19)
 #' plotOrder2(fitpar[[1]][["vlmm.fivep"]][["order2"]], pos2=8:17)
@@ -204,7 +204,7 @@ plotOrder0 <- function(order0, ...) {
   for (i in 1:4) {
     points(xpos, mat[i,], col=dna.cols[i], type="b", lwd=2)
   }
-  abline(v=0, h=0, col=rgb(0,0,0,.3))
+  abline(v=0, h=0)
   legend("topright",dna.letters,pch=1,lty=1,col=dna.cols,bg="white")
 }
 

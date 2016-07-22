@@ -41,8 +41,8 @@ predicted coverage will underestimate the observed coverage.
 }
 \examples{
 
-data(ebtfit)
-data(fitparsmall)
+data(preprocessedData)
+library(BSgenome.Hsapiens.NCBI.GRCh38)
 pred.models <- list(
   "fraglen" = list(formula=NULL, offset=c("fraglen")),
   "readstart" = list(formula=NULL, offset=c("fraglen","vlmm")),

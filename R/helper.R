@@ -27,7 +27,7 @@
 #'
 #' @examples
 #' 
-#' data(res)
+#' data(preprocessedData)
 #' extractAlpine(res, "GC")
 #' 
 #' @export
@@ -249,7 +249,7 @@ normalizeDESeq <- function(mat, cutoff) {
 #'
 #' @examples
 #'
-#' data(ebtfit)
+#' data(preprocessedData)
 #' bam.file <- "~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam"
 #' w <- getFragmentWidths(bam.file, ebt.fit[[2]])
 #' quantile(w, c(.025, .975))

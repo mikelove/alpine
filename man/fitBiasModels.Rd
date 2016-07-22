@@ -66,7 +66,7 @@ estimate the parameters robustly.
 
 library(GenomicRanges)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
-data(ebtfit)
+data(preprocessedData)
 readlength <- 100
 minsize <- 125 # see vignette how to choose
 maxsize <- 175 # see vignette how to choose

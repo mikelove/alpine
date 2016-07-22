@@ -63,7 +63,7 @@
 #' 
 #' library(GenomicRanges)
 #' library(BSgenome.Hsapiens.NCBI.GRCh38)
-#' data(ebtfit)
+#' data(preprocessedData)
 #' readlength <- 100
 #' minsize <- 125 # see vignette how to choose
 #' maxsize <- 175 # see vignette how to choose
@@ -233,8 +233,12 @@ fitBiasModels <- function(genes, bam.file, fragtypes, genome,
                            weights=fragtypes.sub$wts,
                            offset=fragtypes.sub$offset)
     } else {
-        fit <- glm(formula(f), family=poisson, data=fragtypes.sub, weights=wts, offset=offset)
-      }
+      fit <- glm(formula(f),
+                 family=poisson,
+                 data=fragtypes.sub,
+                 weights=fragtypes.sub$wts,
+                 offset=fragtypes.sub$offset)
+    }
     fitpar.sub[["coefs"]][[modeltype]] <- fit$coefficients
     fitpar.sub[["summary"]][[modeltype]] <- summary(fit)$coefficients
   }

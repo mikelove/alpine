@@ -57,6 +57,10 @@
 #' @importFrom graph ftM2graphNEL
 #' @importFrom RBGL connectedComp
 #' @importFrom GenomicFeatures mapToTranscripts
+#' @importFrom graphics abline legend lines par plot points segments
+#' @importFrom stats density dpois formula glm model.matrix poisson
+#' @importFrom GenomeInfoDb seqlevels keepSeqlevels
+#' @importFrom S4Vectors DataFrame queryHits subjectHits
 #' @import Biostrings IRanges GenomicRanges GenomicAlignments Rsamtools SummarizedExperiment
 #' 
 #' @docType package
@@ -95,7 +99,7 @@ NULL
 #'
 #' library(GenomicRanges)
 #' library(BSgenome.Hsapiens.NCBI.GRCh38)
-#' data(ebtfit)
+#' data(preprocessedData)
 #' readlength <- 100
 #' minsize <- 125 # see vignette how to choose
 #' maxsize <- 175 # see vignette how to choose

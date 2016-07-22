@@ -15,15 +15,20 @@ Imports:
     GenomicAlignments,
     Rsamtools,
     SummarizedExperiment,
+    GenomicFeatures,
     speedglm,
     splines,
     graph,
     RBGL,
-    stringr
+    stringr,
+    stats,
+    graphics,
+    GenomeInfoDb,
+    S4Vectors
 Suggests:
+    knitr,
     alpineData,
     ensembldb,
     BSgenome.Hsapiens.NCBI.GRCh38,
-    RColorBrewer,
-    GenomicRanges
+    RColorBrewer
 RoxygenNote: 5.0.1

@@ -63,8 +63,7 @@ across multiple samples.
 
 # see vignette for a more realistic example
 
-data(thetaobjs)
-data(fitparsmall)
+data(preprocessedData)
 library(GenomicRanges)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
 models <- list(

@@ -39,7 +39,7 @@ Plots smooth curves of the log fragment rate over fragment GC content.
 # fitpar was fit using identical code
 # as found in the vignette, except with
 # 25 genes, and with fragment size in 80-350 bp
-data(fitpar)
+data(preprocessedData)
 perf <- rep(1:2, each=2)
 plotGC(fitpar, "all", col=perf)
 
