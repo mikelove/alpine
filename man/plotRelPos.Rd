@@ -22,6 +22,9 @@ plotRelPos(fitpar, model, col, lty, ylim, knots = c(0.25, 0.5, 0.75),
 
 \item{bk}{the boundary knots for the spline}
 }
+\value{
+plot
+}
 \description{
 Plots the smooth curves of log fragment rate over relative position.
 }

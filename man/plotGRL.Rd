@@ -11,6 +11,9 @@ plotGRL(grl, ...)
 
 \item{...}{passed to plot}
 }
+\value{
+plot
+}
 \description{
 Simple segments plot for GRangesList
 }

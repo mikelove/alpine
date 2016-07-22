@@ -13,6 +13,9 @@ plotFragLen(fitpar, col, lty)
 
 \item{lty}{a vector of line types}
 }
+\value{
+plot
+}
 \description{
 Plots the fragment length distribution.
 }

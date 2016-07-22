@@ -26,6 +26,9 @@ within the list that is the output of \link{fitBiasModels}}
 
 \item{pos2}{the position of the 2nd order VLMM to plot}
 }
+\value{
+plot
+}
 \description{
 This function plots portions of the Cufflinks VLMM for read start bias.
 The natural log of observed over expected is shown, such that 0

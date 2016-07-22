@@ -17,6 +17,8 @@
 #' 1: skip the plot and return a matrix of log fragment rate,
 #' 2: skip the plot and return a matrix of probabilities 
 #'
+#' @return Either plot, or if \code{return.type} is 1 or 2, a matrix
+#' 
 #' @examples
 #'
 #' # fitpar was fit using identical code
@@ -88,6 +90,8 @@ plotGC <- function(fitpar, model, col, lty, ylim,
 #' @param knots the knots for the spline
 #' @param bk the boundary knots for the spline
 #'
+#' @return plot
+#' 
 #' @examples
 #'
 #' # fitpar was fit using identical code
@@ -132,6 +136,8 @@ plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(
 #' @param col a vector of colors
 #' @param lty a vector of line types
 #'
+#' @return plot
+#' 
 #' @examples
 #' 
 #' # fitpar was fit using identical code
@@ -184,6 +190,8 @@ plotFragLen <- function(fitpar, col, lty) {
 #' @param pos2 the position of the 2nd order VLMM to plot
 #' @param ... parameters passed to \code{plot}
 #'
+#' @return plot
+#' 
 #' @examples
 #'
 #' # fitpar was fit using identical code
@@ -253,6 +261,8 @@ plotOrder2 <- function(order2, pos2) {
 #' @param grl GRangesList object
 #' @param ... passed to plot
 #'
+#' @return plot
+#' 
 #' @examples
 #' 
 #' library(GenomicRanges)

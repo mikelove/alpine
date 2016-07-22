@@ -7,7 +7,7 @@ Description: Fragment sequence bias modeling and correction for RNA-seq
     transcript abundance estimation.
 License: GPL (>=2)
 VignetteBuilder: knitr
-Depends: R (>= 3.3.0)
+Depends: R (>= 3.4)
 Imports:
     Biostrings,
     IRanges,
@@ -32,4 +32,7 @@ Suggests:
     ensembldb,
     BSgenome.Hsapiens.NCBI.GRCh38,
     RColorBrewer
+biocViews: Sequencing, RNASeq, AlternativeSplicing, DifferentialSplicing,
+    GeneExpression, Transcription, Coverage, BatchEffect, Normalization,
+    Visualization, QualityControl
 RoxygenNote: 5.0.1

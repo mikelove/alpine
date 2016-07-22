@@ -31,6 +31,9 @@ the range of the fragment GC content. By default,
 1: skip the plot and return a matrix of log fragment rate,
 2: skip the plot and return a matrix of probabilities}
 }
+\value{
+Either plot, or if \code{return.type} is 1 or 2, a matrix
+}
 \description{
 Plots smooth curves of the log fragment rate over fragment GC content.
 }
