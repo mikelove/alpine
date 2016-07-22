@@ -78,6 +78,10 @@ library(GenomicRanges)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
 data(preprocessedData)
 
+readlength <- 100
+minsize <- 125 # see vignette how to choose
+maxsize <- 175 # see vignette how to choose
+
 # here a very small subset, should be ~100 genes
 gene.names <- names(ebt.fit)[6:8] 
 names(gene.names) <- gene.names
@@ -91,10 +95,6 @@ models <- list(
                 Boundary.knots=gc.bk) + gene",
               offset=c("fraglen"))
 )
-
-readlength <- 100
-minsize <- 125 # see vignette how to choose
-maxsize <- 175 # see vignette how to choose
 
 fitpar <- fitBiasModels(genes=ebt.fit[gene.names],
                         bam.file=bam.file,
