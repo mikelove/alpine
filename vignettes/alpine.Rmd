@@ -75,7 +75,7 @@ set.seed(1)
 ebt.fit <- ebt.fit[sample(length(ebt.fit),10)] 
 ```
 
-# Fitting the bias model
+## Defining a set of fragment types
 
 Robust fitting of these bias parameters is best with ~100 medium to
 high count genes, e.g. mean count across samples between 200 and
@@ -143,7 +143,7 @@ We can examine the information for a single gene:
 head(fragtypes[[1]], 3)
 ```
 
-# Defining bias models
+## Defining and fitting bias models
 
 The definition of bias models is extremely flexible in *alpine*.  The
 `models` argument should be given as a list, where each element is
@@ -213,7 +213,7 @@ fitpar <- lapply(bam.files, function(bf) {
 #save(fitpar.small, file="~/proj/alpine/alpine/data/fitparsmall.rda")
 ```
 
-# Visually exploring the bias parameters
+## Visually exploring the bias parameters
 
 Note that with more basepairs between `minsize` and `maxsize` and with
 more genes used for estimation, the bias parameters would be more
@@ -263,7 +263,7 @@ A coefficient table for the terms in `formula`:
 print(head(fitpar[["ERR188297"]][["summary"]][["all"]]), row.names=FALSE)
 ```
 
-# Estimating transcript abundances
+## Estimating transcript abundances
 
 We pick a subset of genes for estimating transcript abundances.  If
 the gene annotation includes genes with transcripts which span
@@ -372,7 +372,7 @@ very large abundance estimates for a minority of transcripts.
 norm.mat <- normalizeDESeq(mat, cutoff=0.1)
 ```
 
-# Simulating RNA-seq experiments using empirically estimated GC bias
+## Simulating using empirically estimated GC bias
 
 The fragment GC bias which *alpine* estimates can be used in
 downstream simulations, for example in the *polyester* Bioconductor
@@ -399,7 +399,7 @@ GC content (the log fragment rate exponentiated and scaled to have a
 maximum of 1). The matrix returned by `return.type=2` is appropriate
 for downstream use with *polyester*.
 
-# Plotting predicted fragment coverage
+## Plotting predicted fragment coverage
 
 In the *alpine* paper, it was shown that models incorporating fragment
 GC bias can be a better predictor of test set RNA-seq fragment
@@ -459,7 +459,7 @@ legend("topright", legend=c("observed",names(pred.models)),
        col=c("black",seq_along(pred.models)), lwd=3)
 ```
 
-# Session information
+## Session information
 
 ```{r}
 sessionInfo()
