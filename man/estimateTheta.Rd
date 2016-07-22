@@ -6,7 +6,7 @@
 \usage{
 estimateTheta(transcripts, bam.files, fitpar, genome, models, readlength,
   minsize, maxsize, subset = TRUE, niter = 100, lib.sizes = NULL,
-  optim = FALSE, customFeatures = NULL)
+  optim = FALSE, custom.features = NULL)
 }
 \arguments{
 \item{transcripts}{a GRangesList of the exons for multiple isoforms of a gene.
@@ -36,17 +36,22 @@ If NULL (the default) a value of 1e6 is used for all samples.}
 \item{optim}{logical, whether to use numerical optimization instead of the EM.
 Default is FALSE.}
 
-\item{customFeatures}{an optional function to add custom features
+\item{custom.features}{an optional function to add custom features
 to the fragment types DataFrame. This function takes in a DataFrame
 returned by \link{buildFragtypes} and returns a DataFrame
 with additional columns added. Default is NULL, adding no custom features.}
 }
 \value{
 a list of lists. For each sample, a list with elements:
-theta, lambda and count. theta gives the FPKM estimates for the
-isoforms in \code{transcripts}. lambda gives the average bias term
-for the isoforms, and count gives the number of fragments which are
+theta, lambda and count.
+\itemize{
+\item \strong{theta} gives the FPKM estimates for the
+isoforms in \code{transcripts}
+\item \strong{lambda} gives the average bias term
+for the isoforms
+\item \strong{count} gives the number of fragments which are
 compatible with any of the isoforms in \code{transcripts}
+}
 }
 \description{
 This function takes the fitted bias parameters from \link{fitBiasModels}

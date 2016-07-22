@@ -25,7 +25,12 @@ predictCoverage(gene, bam.files, fitpar, genome, models, readlength, minsize,
 \item{maxsize}{the maximum fragment length to model}
 }
 \value{
-TODO
+a list with elements frag.cov, the observed fragment coverage
+from the \code{bam.files} and pred.cov, a list with the predicted
+fragment coverage for each of the \code{models}. Note that if
+the range between \code{minsize} and \code{maxsize} does not
+cover most of the fragment length distribution, the predicted
+coverage will underestimate the observed coverage.
 }
 \description{
 Predict coverage for a single-isoform gene given

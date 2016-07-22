@@ -17,7 +17,7 @@
 #' describing the bias models, e.g. \code{"count ~ ns(gc) + gene"}.
 #' \code{offset} should be a character vector
 #' listing possible bias offsets to be used (\code{"fraglen"} or \code{"vlmm"}).
-#' Either \code{offset} or \code{formula} can be \code{NULL} for a model.
+#' Either \code{offset} or \code{formula} can be NULL for a model.
 #' See vignette for recommendations and details.
 #' @param readlength the read length
 #' @param minsize the minimum fragment length to model
@@ -27,16 +27,36 @@
 #'
 #' @return a list with elements: coefs, summary, models,
 #' and optional offets: fraglen.density, vlmm.fivep,
-#' and vlmm.threep. \strong{coefs} gives the estimated coefficients
+#' and vlmm.threep.
+#' \itemize{
+#' \item \strong{coefs} gives the estimated coefficients
 #' for the different models that specified formula.
-#' \strong{summary} gives the tables with coefficients, standard
-#' errors and p-values, \strong{models} stores the incoming
-#' \code{models} list, \strong{fraglen.density} is a
+#' \item \strong{summary} gives the tables with coefficients, standard
+#' errors and p-values,
+#' \item \strong{models} stores the incoming
+#' \code{models} list,
+#' \item \strong{fraglen.density} is a
 #' estimated density object for the fragment length distribution,
-#' and \strong{vlmm.fivep} and \strong{vlmm.threep}
+#' \item \strong{vlmm.fivep} and \strong{vlmm.threep}
 #' store the observed and expected tabulations for the different
 #' orders of the VLMM for read start bias.
+#' }
 #'
+#' @references
+#'
+#' The complete bias model including fragment sequence bias:
+#'
+#' Love, M.I., Hogenesch, J.B., and Irizarry, R.A.,
+#' Modeling of RNA-seq fragment sequence bias reduces
+#' systematic errors in transcript abundance estimation.
+#' bioRxiv (2015) doi: 10.1101/025767
+#' 
+#' The read start VLMM:
+#'
+#' Roberts, A., Trapnell, C., Donaghey, J., Rinn, J.L., and Pachter, L.,
+#' Improving RNA-Seq expression estimates by correcting for fragment bias.
+#' Genome Biology (2011) doi: 10.1186/gb-2011-12-3-r22
+#' 
 #' @examples
 #'
 #' # see vignette for a more realistic example

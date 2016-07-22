@@ -11,11 +11,10 @@ distribution, positional bias on the transcript, read
 start bias (random hexamer priming), and fragment GC content
 (amplification). It also offers bias-corrected estimates of
 transcript abundance (FPKM). It is currently designed for
-un-stranded paired-end RNA-seq data, but will be extended in the
-future to support strand-specific data.
+un-stranded paired-end RNA-seq data.
 }
 \details{
-See the vignette for a detailed workflow.
+See the package vignette for a detailed workflow.
 
 The main functions in this package are:
 \enumerate{
@@ -23,6 +22,7 @@ The main functions in this package are:
 \item \link{fitBiasModels} - fit parameters for one or more bias models over a set of ~100 medium to highly expressed single isoform genes (GRangesList)
 \item \link{estimateTheta} - given a set of genome alignments (BAM files) and a set of isoforms of a gene (GRangesList), estimate the transcript abundances for these isoforms (FPKM) for various bias models
 \item \link{extractAlpine} - given a list of output from \code{estimateTheta}, compile an FPKM matrix across transcripts and samples
+\item \link{predictCoverage} - given the exons of a single gene (GRanges) predict the coverage for a set of samples given fitted bias parameters and compute the observed coverage
 }
 
 Some helper functions for preparing gene objects:
@@ -32,12 +32,20 @@ Some helper functions for preparing gene objects:
 \item \link{mergeGenes} - merge overlapping isoforms into new "genes"
 }
 
+Some other assorted helper functions:
+\enumerate{
+\item \link{normalizeDESeq} - an across-sample normalization for FPKM matrices
+\item \link{getFragmentWidths} - return a vector estimated fragment lengths given a set of exons for a single gene (GRanges) and a BAM file
+\item \link{getReadLength} - return the read length of the first read across BAM files
+}
+
 The plotting functions are:
 \enumerate{
 \item \link{plotGC} - plot the fragment GC bias curves
 \item \link{plotFragLen} - plot the framgent length distributions
 \item \link{plotRelPos} - plot the positional bias (5' to 3')
-\item \link{plotOrder0}, \link{plotOrder1}, \link{plotOrder2} - plot the read start bias
+\item \link{plotOrder0}, \link{plotOrder1}, \link{plotOrder2} - plot the read start bias terms
+\item \link{plotGRL} - a simple function for visualizing GRangesList objects
 }
 }
 \author{

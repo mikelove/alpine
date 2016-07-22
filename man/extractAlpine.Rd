@@ -14,16 +14,16 @@ extractAlpine(res, model, lib.sizes = 1e+06, divide.out = TRUE,
 used in \link{fitBiasModels}}
 
 \item{lib.sizes}{the vector of library sizes passed to \link{estimateTheta}.
-not needed if \code{divideOut=FALSE}}
+not needed if \code{divide.out=FALSE}}
 
 \item{divide.out}{logical, whether to divide out the initial estimate of
 library size and to instead use the count of compatible fragments for
 genes calculated by \link{estimateTheta}. Default is TRUE}
 
-\item{transcripts}{an optional \code{GRangesList} of the exons for each
+\item{transcripts}{an optional GRangesList of the exons for each
 transcript. If this is provided, the output will be a
-\code{SummarizedExperiment}. The transcripts do not need
-to be provided in the correct order, \code{extractAlpine} will
+SummarizedExperiment. The transcripts do not need
+to be provided in the correct order, extractAlpine will
 find the correct transcript by the names in \code{res} and
 put them in the correct order.}
 }

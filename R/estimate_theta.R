@@ -20,16 +20,21 @@
 #' If NULL (the default) a value of 1e6 is used for all samples.
 #' @param optim logical, whether to use numerical optimization instead of the EM.
 #' Default is FALSE.
-#' @param customFeatures an optional function to add custom features
+#' @param custom.features an optional function to add custom features
 #' to the fragment types DataFrame. This function takes in a DataFrame
 #' returned by \link{buildFragtypes} and returns a DataFrame
 #' with additional columns added. Default is NULL, adding no custom features.
 #'
 #' @return a list of lists. For each sample, a list with elements:
-#' theta, lambda and count. theta gives the FPKM estimates for the
-#' isoforms in \code{transcripts}. lambda gives the average bias term
-#' for the isoforms, and count gives the number of fragments which are
+#' theta, lambda and count.
+#' \itemize{
+#' \item \strong{theta} gives the FPKM estimates for the
+#' isoforms in \code{transcripts}
+#' \item \strong{lambda} gives the average bias term
+#' for the isoforms
+#' \item \strong{count} gives the number of fragments which are
 #' compatible with any of the isoforms in \code{transcripts}
+#' }
 #'
 #' @examples
 #'
@@ -65,7 +70,7 @@ estimateTheta <- function(transcripts, bam.files, fitpar, genome,
                           models, readlength, minsize, maxsize,
                           subset=TRUE, niter=100, 
                           lib.sizes=NULL, optim=FALSE,
-                          customFeatures=NULL) {
+                          custom.features=NULL) {
   
   stopifnot(is(transcripts, "GRangesList"))
   stopifnot(length(transcripts) >= 1)
@@ -106,8 +111,8 @@ estimateTheta <- function(transcripts, bam.files, fitpar, genome,
       out <- buildFragtypes(transcripts[[i]], genome, readlength,
                             minsize, maxsize, vlmm=any.vlmm)
       # optionally add more features to the fragment types DataFrame
-      if (!is.null(customFeatures)) {
-        out <- customFeatures(out)
+      if (!is.null(custom.features)) {
+        out <- custom.features(out)
       }
       out$tx <- names(transcripts)[i]
       out

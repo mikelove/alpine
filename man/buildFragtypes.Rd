@@ -10,24 +10,24 @@ buildFragtypes(exons, genome, readlength, minsize, maxsize, gc = TRUE,
 \arguments{
 \item{exons}{a GRanges object with the exons for a single transcript}
 
-\item{genome}{a BSgenome object, for example \code{Hsapiens}, after
-loading the package \code{BSgenome.Hsapiens.UCSC.hg19}}
+\item{genome}{a BSgenome object}
 
 \item{readlength}{the length of the reads. This doesn't necessarily
-have to be exact (+/- 1 bp would be fine), but it should be close.}
+have to be exact (+/- 1 bp is acceptable)}
 
 \item{minsize}{the minimum fragment length to model. The interval between
-\code{minsize} and \code{maxsize} should contain the central 95-99 percent
-of the fragment length distribution}
+\code{minsize} and \code{maxsize} should contain the at least the
+central 95 percent of the fragment length distribution across samples}
 
 \item{maxsize}{the maximum fragment length to model}
 
-\item{gc}{logical, whether to estimate the fragment GC content}
+\item{gc}{logical, whether to calculate the fragment GC content}
 
-\item{gc.str}{logical, whether to look for stretches of very high GC within fragments}
+\item{gc.str}{logical, whether to look for presence of
+stretches of very high GC within fragments}
 
-\item{vlmm}{logical, whether to estimate the Cufflinks variable length
-Markov model for read starts}
+\item{vlmm}{logical, whether to calculate the Cufflinks Variable Length
+Markov Model (VLMM) for read start bias}
 }
 \value{
 a DataFrame with bias features for all potential fragments
