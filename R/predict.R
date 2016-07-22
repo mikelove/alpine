@@ -4,6 +4,10 @@
 #' fitted bias parameters in a set of models,
 #' and compare to the observed fragment coverage.
 #'
+#' Note that if the range between \code{minsize} and \code{maxsize}
+#' does not cover most of the fragment length distribution, the
+#' predicted coverage will underestimate the observed coverage.
+#'
 #' @param gene a GRangesList with the exons of different genes
 #' @param bam.files a character string pointing to indexed BAM files
 #' @param fitpar the output of running \link{fitBiasModels}
@@ -15,10 +19,7 @@
 #'
 #' @return a list with elements frag.cov, the observed fragment coverage
 #' from the \code{bam.files} and pred.cov, a list with the predicted
-#' fragment coverage for each of the \code{models}. Note that if
-#' the range between \code{minsize} and \code{maxsize} does not
-#' cover most of the fragment length distribution, the predicted
-#' coverage will underestimate the observed coverage.
+#' fragment coverage for each of the \code{models}. 
 #'
 #' @examples
 #'

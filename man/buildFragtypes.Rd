@@ -30,11 +30,12 @@ stretches of very high GC within fragments}
 Markov Model (VLMM) for read start bias}
 }
 \value{
-a DataFrame with bias features for all potential fragments
+a DataFrame with bias features (columns) for all
+potential fragments (rows)
 }
 \description{
-This is a core function used to construct a table of features used for
-bias modeling, with one row for every potential fragment that could
+This function constructs a DataFrame of fragment features used for
+bias modeling, with one row for every potential fragment type that could
 arise from a transcript. The output of this function is used by
 \link{fitBiasModels}, and this function is used inside \link{estimateTheta}
 in order to model the bias affecting different fragments across isoforms
