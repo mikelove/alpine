@@ -63,6 +63,16 @@ across multiple samples.
 
 # see vignette for a more realistic example
 
+# these next lines just write out a BAM file from R
+# typically you would already have a BAM file
+library(alpineData)
+library(GenomicAlignments)
+library(rtracklayer)
+gap <- ERR188088()
+dir <- system.file(package="alpineData", "extdata")
+bam.file <- c("ERR188088" = file.path(dir,"ERR188088.bam"))
+export(gap, con=bam.file)
+
 data(preprocessedData)
 library(GenomicRanges)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
@@ -73,11 +83,12 @@ models <- list(
  0",
  offset=c("fraglen"))
 )
+
 readlength <- 75
 minsize <- 125 # see vignette how to choose
 maxsize <- 175 # see vignette how to choose
-bam.file <- c(ERR188088="~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam")
 txs <- txdf.theta$tx_id[txdf.theta$gene_id == "ENSG00000198918"]
+
 res <- estimateTheta(transcripts=ebt.theta[txs],
                      bam.files=bam.file,
                      fitpar=fitpar.small,

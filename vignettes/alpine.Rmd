@@ -7,9 +7,9 @@
 
 Here we show a brief example of using the *alpine* package to model
 bias parameters and then using those parameters to estimate transcript
-abundance. We load a subset of reads from four samples from the
-GEUVADIS project. For more details on these files, see
-`?ERR188297` in the *alpineData* package.
+abundance. We load a metadata table and a subset of reads from four
+samples from the GEUVADIS project. For more details on these files,
+see `?alpineData` in the *alpineData* package.
 
 ```{r, echo=FALSE} 
 library(knitr)
@@ -17,19 +17,50 @@ opts_chunk$set(cache=FALSE,
                error=FALSE)
 ```
 
-```{r}
-library(alpine)
-dir <- system.file("extdata",package="alpine")
+```{r message=FALSE}
+library(alpineData)
+dir <- system.file("extdata",package="alpineData")
 metadata <- read.csv(file.path(dir,"metadata.csv"),
                      stringsAsFactors=FALSE)
-bam.files <- file.path(dir,paste0(metadata$Title,"_galignpairs.bam"))
+metadata[,c("Title","Performer","Date","Population")]
+```
+
+A subset of the reads from one of the samples:
+
+```{r message=FALSE}
+library(GenomicAlignments)
+ERR188297()
+```
+
+Before we start, we need to write these paired-end reads, here stored
+in a R/Bioconductor data object, out to a BAM file, because the *alpine*
+software works with alignments stored as BAM files. *This is
+not a typical step*, as you would normally have BAM files already on
+disk.  We write out four BAM files for each of the four samples
+contained in *alpineData*. So you can ignore the following code chunk
+if you are working with your own BAM files.
+
+```{r message=FALSE}
+library(rtracklayer)
+dir <- system.file(package="alpineData", "extdata")
+for (sample.name in metadata$Title) {
+  # the reads are accessed with functions named
+  # after the sample name. the following line calls
+  # the function with the sample name and saves 
+  # the reads to `gap`
+  gap <- match.fun(sample.name)()
+  file.name <- file.path(dir,paste0(sample.name,".bam"))
+  export(gap, con=file.name)
+}
+bam.files <- file.path(dir, paste0(metadata$Title, ".bam"))
 names(bam.files) <- metadata$Title
 stopifnot(all(file.exists(bam.files)))
 ```
 
+Now we continue with the typical steps in an *alpine* workflow.
 To fit the bias model, we need to identify single-isoform genes.
-We used the following chunk of code (here not
-evaluated) to generate a *GRangesList* of exons per single-isoform gene.
+We used the following chunk of code (here not evaluated) to generate a
+*GRangesList* of exons per single-isoform gene. 
 
 ```{r, eval=FALSE}
 library(ensembldb)
@@ -60,6 +91,7 @@ library(GenomicRanges)
 ```
 
 ```{r}
+library(alpine)
 data(preprocessedData)
 # filter small genes and long genes
 min.bp <- 600
@@ -207,7 +239,7 @@ fitpar <- lapply(bam.files, function(bf) {
                                  maxsize=maxsize)
                  })
 })
-fitpar.small <- fitpar # save as fitpar.small for examples
+fitpar.small <- fitpar # save this as `fitpar.small` for examples
 ```
 
 ## Visually exploring the bias parameters
@@ -269,6 +301,9 @@ apart, `splitGenesAcrossChroms` and `splitLongGenes`, respectively,
 can be used to split these.  For again merging any overlapping
 transcripts into "genes", the `mergeGenes` function can be used.  Here
 we use the ENSEMBL gene annotation as is.
+
+The following code chunk is not evaluated but was used to select 
+a few genes for demonstrating `estimateTheta`:
 
 ```{r, eval=FALSE}
 one.iso.genes <- intersect(names(tab)[tab == 1], selected.genes)
@@ -365,7 +400,8 @@ norm.mat <- normalizeDESeq(mat, cutoff=0.1)
 ## Simulating using empirically estimated GC bias
 
 The fragment GC bias which *alpine* estimates can be used in
-downstream simulations, for example in the *polyester* Bioconductor
+downstream simulations, for example in the 
+[polyester](http://bioconductor.org/packages/polyester) Bioconductor
 package. All we need to do is to run the *plotGC* function, but
 specifying that instead of a plot, we want to return a matrix of
 probabilities for each percentile of fragment GC content. This matrix
@@ -375,6 +411,7 @@ We load a `fitpar` object that was run with the fragment length range
 [80,350] bp. 
 
 ```{r}
+data(preprocessedData)
 prob.mat <- plotGC(fitpar, "all", return.type=2)
 head(prob.mat)
 ```

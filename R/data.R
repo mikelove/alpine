@@ -25,6 +25,9 @@
 #'
 #' @docType data
 #' @name preprocessedData
+#' @aliases ebt.fit ebt.theta fitpar fitpar.small genes.theta res txdf.theta
+#' 
+#' 
 #' @format \code{ebt.fit} and \code{ebt.theta} are GRangesList.
 #' \code{fitpar}, \code{fitpar.small}, \code{res} are lists created
 #' by alpine functions. \code{genes.theta} is a character vector.

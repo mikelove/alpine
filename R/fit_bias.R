@@ -60,13 +60,21 @@
 #' @examples
 #'
 #' # see vignette for a more realistic example
+#'
+#' # these next lines just write out a BAM file from R
+#' # typically you would already have a BAM file
+#' library(alpineData)
+#' library(GenomicAlignments)
+#' library(rtracklayer)
+#' gap <- ERR188088()
+#' dir <- system.file(package="alpineData", "extdata")
+#' bam.file <- c("ERR188088" = file.path(dir,"ERR188088.bam"))
+#' export(gap, con=bam.file)
 #' 
 #' library(GenomicRanges)
 #' library(BSgenome.Hsapiens.NCBI.GRCh38)
 #' data(preprocessedData)
-#' readlength <- 100
-#' minsize <- 125 # see vignette how to choose
-#' maxsize <- 175 # see vignette how to choose
+#' 
 #' # here a very small subset, should be ~100 genes
 #' gene.names <- names(ebt.fit)[6:8] 
 #' names(gene.names) <- gene.names
@@ -80,7 +88,11 @@
 #'                 Boundary.knots=gc.bk) + gene",
 #'               offset=c("fraglen"))
 #' )
-#' bam.file <- "~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam"
+#'
+#' readlength <- 100
+#' minsize <- 125 # see vignette how to choose
+#' maxsize <- 175 # see vignette how to choose
+#' 
 #' fitpar <- fitBiasModels(genes=ebt.fit[gene.names],
 #'                         bam.file=bam.file,
 #'                         fragtypes=fragtypes,

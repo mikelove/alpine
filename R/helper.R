@@ -249,8 +249,18 @@ normalizeDESeq <- function(mat, cutoff) {
 #'
 #' @examples
 #'
+#' # these next lines just write out a BAM file from R
+#' # typically you would already have a BAM file
+#' library(alpineData)
+#' library(GenomicAlignments)
+#' library(rtracklayer)
+#' gap <- ERR188088()
+#' dir <- system.file(package="alpineData", "extdata")
+#' bam.file <- c("ERR188088" = file.path(dir,"ERR188088.bam"))
+#' export(gap, con=bam.file)
+#' 
 #' data(preprocessedData)
-#' bam.file <- "~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam"
+#'
 #' w <- getFragmentWidths(bam.file, ebt.fit[[2]])
 #' quantile(w, c(.025, .975))
 #' 
@@ -290,7 +300,16 @@ getFragmentWidths <- function(bam.file, tx) {
 #'
 #' @examples
 #'
-#' bam.file <- "~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam"
+#' # these next lines just write out a BAM file from R
+#' # typically you would already have a BAM file
+#' library(alpineData)
+#' library(GenomicAlignments)
+#' library(rtracklayer)
+#' gap <- ERR188088()
+#' dir <- system.file(package="alpineData", "extdata")
+#' bam.file <- c("ERR188088" = file.path(dir,"ERR188088.bam"))
+#' export(gap, con=bam.file)
+#'
 #' getReadLength(bam.file)
 #'
 #' @export

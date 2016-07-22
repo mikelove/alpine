@@ -2,7 +2,14 @@
 % Please edit documentation in R/data.R
 \docType{data}
 \name{preprocessedData}
+\alias{ebt.fit}
+\alias{ebt.theta}
+\alias{fitpar}
+\alias{fitpar.small}
+\alias{genes.theta}
 \alias{preprocessedData}
+\alias{res}
+\alias{txdf.theta}
 \title{Preprocessed data for vignettes and examples}
 \format{\code{ebt.fit} and \code{ebt.theta} are GRangesList.
 \code{fitpar}, \code{fitpar.small}, \code{res} are lists created

@@ -41,6 +41,16 @@ predicted coverage will underestimate the observed coverage.
 }
 \examples{
 
+# these next lines just write out a BAM file from R
+# typically you would already have a BAM file
+library(alpineData)
+library(GenomicAlignments)
+library(rtracklayer)
+gap <- ERR188088()
+dir <- system.file(package="alpineData", "extdata")
+bam.file <- c("ERR188088" = file.path(dir,"ERR188088.bam"))
+export(gap, con=bam.file)
+
 data(preprocessedData)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
 pred.models <- list(
@@ -57,10 +67,11 @@ pred.models <- list(
   0",
   offset=c("fraglen","vlmm"))
 )
-bam.file <- c(ERR188088="~/proj/alpine/alpine/inst/extdata/ERR188088_galignpairs.bam")
+
 readlength <- 75
 minsize <- 125 # see vignette how to choose
 maxsize <- 175 # see vignette how to choose
+
 pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000379660"]],
                             bam.files=bam.file,
                             fitpar=fitpar.small,

@@ -7,26 +7,99 @@
 
 Here we show a brief example of using the *alpine* package to model
 bias parameters and then using those parameters to estimate transcript
-abundance. We load a subset of reads from four samples from the
-GEUVADIS project. For more details on these files, see
-`?ERR188297` in the *alpineData* package.
+abundance. We load a metadata table and a subset of reads from four
+samples from the GEUVADIS project. For more details on these files,
+see `?alpineData` in the *alpineData* package.
 
 
 
 
 ```r
-library(alpine)
-dir <- system.file("extdata",package="alpine")
+library(alpineData)
+dir <- system.file("extdata",package="alpineData")
 metadata <- read.csv(file.path(dir,"metadata.csv"),
                      stringsAsFactors=FALSE)
-bam.files <- file.path(dir,paste0(metadata$Title,"_galignpairs.bam"))
+metadata[,c("Title","Performer","Date","Population")]
+```
+
+```
+##       Title Performer   Date Population
+## 1 ERR188297     UNIGE 111124        TSI
+## 2 ERR188088     UNIGE 111124        TSI
+## 3 ERR188204  CNAG_CRG 111215        TSI
+## 4 ERR188317  CNAG_CRG 111215        TSI
+```
+
+A subset of the reads from one of the samples:
+
+
+```r
+library(GenomicAlignments)
+ERR188297()
+```
+
+```
+## GAlignmentPairs object with 25531 pairs, strandMode=1, and 0 metadata columns:
+##           seqnames strand   :                 ranges  --
+##              <Rle>  <Rle>   :              <IRanges>  --
+##       [1]        1      +   : [108560389, 108560463]  --
+##       [2]        1      -   : [108560454, 108560528]  --
+##       [3]        1      +   : [108560534, 108600608]  --
+##       [4]        1      -   : [108569920, 108569994]  --
+##       [5]        1      -   : [108587954, 108588028]  --
+##       ...      ...    ... ...                    ... ...
+##   [25527]        X      +   : [119790596, 119790670]  --
+##   [25528]        X      +   : [119790988, 119791062]  --
+##   [25529]        X      +   : [119791037, 119791111]  --
+##   [25530]        X      +   : [119791348, 119791422]  --
+##   [25531]        X      +   : [119791376, 119791450]  --
+##                           ranges
+##                        <IRanges>
+##       [1] [108560454, 108560528]
+##       [2] [108560383, 108560457]
+##       [3] [108600626, 108606236]
+##       [4] [108569825, 108569899]
+##       [5] [108587881, 108587955]
+##       ...                    ...
+##   [25527] [119790717, 119790791]
+##   [25528] [119791086, 119791160]
+##   [25529] [119791142, 119791216]
+##   [25530] [119791475, 119791549]
+##   [25531] [119791481, 119791555]
+##   -------
+##   seqinfo: 194 sequences from an unspecified genome
+```
+
+Before we start, we need to write these paired-end reads, here stored
+in a R/Bioconductor data object, out to a BAM file, because the *alpine*
+software works with alignments stored as BAM files. *This is
+not a typical step*, as you would normally have BAM files already on
+disk.  We write out four BAM files for each of the four samples
+contained in *alpineData*. So you can ignore the following code chunk
+if you are working with your own BAM files.
+
+
+```r
+library(rtracklayer)
+dir <- system.file(package="alpineData", "extdata")
+for (sample.name in metadata$Title) {
+  # the reads are accessed with functions named
+  # after the sample name. the following line calls
+  # the function with the sample name and saves 
+  # the reads to `gap`
+  gap <- match.fun(sample.name)()
+  file.name <- file.path(dir,paste0(sample.name,".bam"))
+  export(gap, con=file.name)
+}
+bam.files <- file.path(dir, paste0(metadata$Title, ".bam"))
 names(bam.files) <- metadata$Title
 stopifnot(all(file.exists(bam.files)))
 ```
 
+Now we continue with the typical steps in an *alpine* workflow.
 To fit the bias model, we need to identify single-isoform genes.
-We used the following chunk of code (here not
-evaluated) to generate a *GRangesList* of exons per single-isoform gene.
+We used the following chunk of code (here not evaluated) to generate a
+*GRangesList* of exons per single-isoform gene. 
 
 
 ```r
@@ -45,7 +118,6 @@ one.iso.txs <- txdf$tx_id[txdf$gene_id %in%
                           intersect(one.iso.genes, selected.genes)]
 ebt0 <- exonsBy(txdb, by="tx")
 ebt.fit <- ebt0[one.iso.txs]
-#save(ebt.fit, file="~/proj/alpine/alpine/data/ebtfit.rda")
 ```
 
 Here we pick a subset of single-isoform genes based on the
@@ -61,8 +133,8 @@ library(GenomicRanges)
 
 
 ```r
-dir <- system.file("data",package="alpine")
-load(file.path(dir,"ebtfit.rda"))
+library(alpine)
+data(preprocessedData)
 # filter small genes and long genes
 min.bp <- 600
 max.bp <- 7000 
@@ -148,25 +220,6 @@ lower quantiles and the maximum of the upper quantiles).
 ```r
 library(alpine)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
-```
-
-```
-## Loading required package: BSgenome
-```
-
-```
-## Loading required package: Biostrings
-```
-
-```
-## Loading required package: XVector
-```
-
-```
-## Loading required package: rtracklayer
-```
-
-```r
 minsize <- 125 # better 80 for this data
 maxsize <- 175 # better 350 for this data
 readlength <- 75 
@@ -194,7 +247,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  15.244   0.416  15.666
+##  10.628   0.104  10.732
 ```
 
 ```r
@@ -303,12 +356,11 @@ fitpar <- lapply(bam.files, function(bf) {
 
 ```
 ##    user  system elapsed 
-##  53.860   0.792  54.784
+##  47.072   0.208  47.288
 ```
 
 ```r
-#fitpar.small <- fitpar # save as fitpar.small for examples
-#save(fitpar.small, file="~/proj/alpine/alpine/data/fitparsmall.rda")
+fitpar.small <- fitpar # save this as `fitpar.small` for examples
 ```
 
 ## Visually exploring the bias parameters
@@ -411,13 +463,6 @@ genes.theta <- c(sample(one.iso.genes, 2),
                  sample(three.iso.genes, 2)) 
 txdf.theta <- txdf[txdf$gene_id %in% genes.theta,]
 ebt.theta <- ebt0[txdf.theta$tx_id]
-#save(ebt.theta, txdf.theta, genes.theta, file="~/proj/alpine/alpine/data/thetaobjs.rda")
-```
-
-
-```r
-dir <- system.file("data",package="alpine")
-load(file.path(dir,"thetaobjs.rda"))
 ```
 
 We specify a set of models. Any formula used here must be equal to
@@ -461,11 +506,7 @@ res <- lapply(genes.theta, function(gene.name) {
 
 ```
 ##    user  system elapsed 
-##  44.836   0.316  45.226
-```
-
-```r
-#save(res, file="~/proj/alpine/alpine/data/res.rda")
+##  40.496   0.088  40.590
 ```
 
 Each element of this list has the abundances (`theta`) and average
@@ -569,7 +610,8 @@ norm.mat <- normalizeDESeq(mat, cutoff=0.1)
 ## Simulating using empirically estimated GC bias
 
 The fragment GC bias which *alpine* estimates can be used in
-downstream simulations, for example in the *polyester* Bioconductor
+downstream simulations, for example in the 
+[polyester](http://bioconductor.org/packages/polyester) Bioconductor
 package. All we need to do is to run the *plotGC* function, but
 specifying that instead of a plot, we want to return a matrix of
 probabilities for each percentile of fragment GC content. This matrix
@@ -580,7 +622,7 @@ We load a `fitpar` object that was run with the fragment length range
 
 
 ```r
-data(fitpar)
+data(preprocessedData)
 prob.mat <- plotGC(fitpar, "all", return.type=2)
 head(prob.mat)
 ```
@@ -637,7 +679,6 @@ with the fragment length range [80,350] bp.
 
 
 ```r
-data(fitpar)
 system.time({
   pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000245479"]],
                               bam.files=bam.files["ERR188204"],
@@ -652,7 +693,7 @@ system.time({
 
 ```
 ##    user  system elapsed 
-##  22.828   0.288  23.206
+##  21.576   0.092  21.670
 ```
 
 We can plot the observed and predicted coverage for one of the
@@ -672,7 +713,7 @@ legend("topright", legend=c("observed",names(pred.models)),
        col=c("black",seq_along(pred.models)), lwd=3)
 ```
 
-![plot of chunk unnamed-chunk-22](figure/unnamed-chunk-22-1.png)
+![plot of chunk unnamed-chunk-23](figure/unnamed-chunk-23-1.png)
 
 ## Session information
 
@@ -702,35 +743,57 @@ sessionInfo()
 ##  [1] RColorBrewer_1.1-2                    
 ##  [2] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
 ##  [3] BSgenome_1.41.2                       
-##  [4] rtracklayer_1.33.2                    
-##  [5] Biostrings_2.41.1                     
-##  [6] XVector_0.13.0                        
-##  [7] GenomicRanges_1.25.0                  
-##  [8] GenomeInfoDb_1.9.1                    
-##  [9] IRanges_2.7.0                         
-## [10] S4Vectors_0.11.1                      
-## [11] BiocGenerics_0.19.0                   
-## [12] alpine_0.1.6                          
-## [13] magrittr_1.5                          
-## [14] knitr_1.13                            
-## [15] devtools_1.11.1                       
-## [16] BiocInstaller_1.23.6                  
+##  [4] alpine_0.1.7                          
+##  [5] rtracklayer_1.33.2                    
+##  [6] GenomicAlignments_1.9.0               
+##  [7] Rsamtools_1.25.0                      
+##  [8] Biostrings_2.41.1                     
+##  [9] XVector_0.13.0                        
+## [10] SummarizedExperiment_1.3.2            
+## [11] Biobase_2.33.0                        
+## [12] alpineData_0.99.0                     
+## [13] ExperimentHubData_0.101.15            
+## [14] AnnotationHubData_1.3.4               
+## [15] futile.logger_1.4.1                   
+## [16] GenomicRanges_1.25.0                  
+## [17] GenomeInfoDb_1.9.1                    
+## [18] IRanges_2.7.0                         
+## [19] S4Vectors_0.11.1                      
+## [20] ExperimentHub_0.101.11                
+## [21] AnnotationHub_2.5.5                   
+## [22] BiocGenerics_0.19.0                   
+## [23] magrittr_1.5                          
+## [24] knitr_1.13                            
+## [25] devtools_1.11.1                       
+## [26] BiocInstaller_1.23.6                  
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] formatR_1.4                GenomicFeatures_1.25.12   
-##  [3] bitops_1.0-6               tools_3.4.0               
-##  [5] zlibbioc_1.19.0            biomaRt_2.29.0            
-##  [7] digest_0.6.9               evaluate_0.9              
-##  [9] memoise_1.0.0              RSQLite_1.0.0             
-## [11] lattice_0.20-33            Matrix_1.2-6              
-## [13] graph_1.51.0               DBI_0.4-1                 
-## [15] speedglm_0.3-1             withr_1.0.1               
-## [17] stringr_1.0.0              grid_3.4.0                
-## [19] Biobase_2.33.0             AnnotationDbi_1.35.3      
-## [21] XML_3.98-1.4               RBGL_1.49.1               
-## [23] BiocParallel_1.7.2         Rsamtools_1.25.0          
-## [25] GenomicAlignments_1.9.0    MASS_7.3-45               
-## [27] splines_3.4.0              SummarizedExperiment_1.3.2
-## [29] stringi_1.0-1              RCurl_1.95-4.8
+##  [1] httr_1.1.0                    jsonlite_0.9.20              
+##  [3] splines_3.4.0                 shiny_0.13.2                 
+##  [5] interactiveDisplayBase_1.11.3 speedglm_0.3-1               
+##  [7] RBGL_1.49.1                   RSQLite_1.0.0                
+##  [9] lattice_0.20-33               RUnit_0.4.31                 
+## [11] chron_2.3-47                  digest_0.6.9                 
+## [13] htmltools_0.3.5               httpuv_1.3.3                 
+## [15] Matrix_1.2-6                  OrganismDbi_1.15.1           
+## [17] GEOquery_2.39.3               XML_3.98-1.4                 
+## [19] biomaRt_2.29.0                rBiopaxParser_2.11.0         
+## [21] zlibbioc_1.19.0               xtable_1.8-2                 
+## [23] getopt_1.20.0                 optparse_1.3.2               
+## [25] BiocParallel_1.7.5            biocViews_1.41.7             
+## [27] withr_1.0.1                   GenomicFeatures_1.25.12      
+## [29] mime_0.4                      memoise_1.0.0                
+## [31] evaluate_0.9                  MASS_7.3-45                  
+## [33] xml2_1.0.0                    graph_1.51.0                 
+## [35] tools_3.4.0                   data.table_1.9.6             
+## [37] formatR_1.4                   stringr_1.0.0                
+## [39] AnnotationDbi_1.35.3          lambda.r_1.1.7               
+## [41] compiler_3.4.0                grid_3.4.0                   
+## [43] RCurl_1.95-4.8                AnnotationForge_1.15.5       
+## [45] bitops_1.0-6                  codetools_0.2-14             
+## [47] DBI_0.4-1                     curl_0.9.7                   
+## [49] markdown_0.7.7                R6_2.1.2                     
+## [51] futile.options_1.0.0          stringi_1.0-1                
+## [53] Rcpp_0.12.5                   BiocCheck_1.9.3
 ```
 
