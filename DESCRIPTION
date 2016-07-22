@@ -1,13 +1,13 @@
 Package: alpine
 Title: alpine
-Version: 0.99.0
+Version: 0.99.1
 Author: Michael Love
 Maintainer: Michael Love <michaelisaiahlove@gmail.com>
 Description: Fragment sequence bias modeling and correction for RNA-seq
     transcript abundance estimation.
 License: GPL (>=2)
 VignetteBuilder: knitr
-Depends: R (>= 3.4)
+Depends: R (>= 3.3)
 Imports:
     Biostrings,
     IRanges,
