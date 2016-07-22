@@ -22,7 +22,7 @@
 #' Default is FALSE.
 #' @param customFeatures an optional function to add custom features
 #' to the fragment types DataFrame. This function takes in a DataFrame
-#' returned by \code{\link{buildFragtypes}} and returns a DataFrame
+#' returned by \link{buildFragtypes} and returns a DataFrame
 #' with additional columns added. Default is NULL, adding no custom features.
 #'
 #' @return a list of lists. For each sample, a list with elements:

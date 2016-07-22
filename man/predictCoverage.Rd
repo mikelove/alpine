@@ -12,11 +12,11 @@ predictCoverage(gene, bam.files, fitpar, genome, models, readlength, minsize,
 
 \item{bam.files}{a character string pointing to indexed BAM files}
 
-\item{fitpar}{the output of running \code{\link{fitBiasModels}}}
+\item{fitpar}{the output of running \link{fitBiasModels}}
 
 \item{genome}{a BSgenome object}
 
-\item{models}{a list describing the models, see \code{link{fitBiasModels}}}
+\item{models}{a list describing the models, see \link{fitBiasModels}}
 
 \item{readlength}{the read length}
 
