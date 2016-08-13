@@ -11,7 +11,7 @@
 #' @param bk the boundary knots for the spline
 #'
 #' @export
-plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) {
+plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1), ...) {
   n <- length(knots)
   coefmat <- sapply(fitpar, function(elem) elem[["coefs"]][[model]][1:(n+2)])
   genecoefs <- lapply(fitpar, function(elem)
@@ -26,7 +26,7 @@ plotGC <- function(fitpar, model, col, lty, ylim, knots=c(.4,.5,.6), bk=c(0,1)) 
   }
   plot(0,0,type="n",xlim=c(.2,.8),ylim=ylim,
        ylab="log fragment rate", xlab="fragment GC content",
-       main="fragment sequence bias")
+       main="fragment sequence bias", ...)
   if (missing(col)) {
     col <- rep("black", ncol(logpred))
   }
