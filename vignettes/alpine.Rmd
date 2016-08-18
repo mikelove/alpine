@@ -1,0 +1,492 @@
+<!--
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{alpine}
+-->
+
+# Modeling and correcting fragment sequence bias
+
+Here we show a brief example of using the *alpine* package to model
+bias parameters and then using those parameters to estimate transcript
+abundance. We load a metadata table and a subset of reads from four
+samples from the GEUVADIS project. For more details on these files,
+see `?alpineData` in the *alpineData* package.
+
+```{r, echo=FALSE} 
+library(knitr)
+opts_chunk$set(cache=FALSE,
+               error=FALSE)
+```
+
+```{r message=FALSE}
+library(alpineData)
+dir <- system.file("extdata",package="alpineData")
+metadata <- read.csv(file.path(dir,"metadata.csv"),
+                     stringsAsFactors=FALSE)
+metadata[,c("Title","Performer","Date","Population")]
+```
+
+A subset of the reads from one of the samples:
+
+```{r message=FALSE}
+library(GenomicAlignments)
+ERR188297()
+```
+
+Before we start, we need to write these paired-end reads, here stored
+in a R/Bioconductor data object, out to a BAM file, because the *alpine*
+software works with alignments stored as BAM files. *This is
+not a typical step*, as you would normally have BAM files already on
+disk.  We write out four BAM files for each of the four samples
+contained in *alpineData*. So you can ignore the following code chunk
+if you are working with your own BAM files.
+
+```{r message=FALSE}
+library(rtracklayer)
+dir <- system.file(package="alpineData", "extdata")
+for (sample.name in metadata$Title) {
+  # the reads are accessed with functions named
+  # after the sample name. the following line calls
+  # the function with the sample name and saves 
+  # the reads to `gap`
+  gap <- match.fun(sample.name)()
+  file.name <- file.path(dir,paste0(sample.name,".bam"))
+  export(gap, con=file.name)
+}
+bam.files <- file.path(dir, paste0(metadata$Title, ".bam"))
+names(bam.files) <- metadata$Title
+stopifnot(all(file.exists(bam.files)))
+```
+
+Now we continue with the typical steps in an *alpine* workflow.
+To fit the bias model, we need to identify single-isoform genes.
+We used the following chunk of code (here not evaluated) to generate a
+*GRangesList* of exons per single-isoform gene. 
+
+```{r, eval=FALSE}
+library(ensembldb)
+gtf.file <- "~/proj/alpine/Homo_sapiens.GRCh38.84.gtf"
+#gtf.file <- "Homo_sapiens.GRCh38.84.gtf"
+txdb <- EnsDb(gtf.file) # already an EnsDb
+txdf <- transcripts(txdb, return.type="DataFrame")
+tab <- table(txdf$gene_id)
+one.iso.genes <- names(tab)[tab == 1]
+# pre-selected genes based on medium to high counts
+# calculated using Rsubread::featureCounts
+selected.genes <- scan("~/proj/alpine/alpine/inst/extdata/selected.genes.txt",
+                       what="char")
+one.iso.txs <- txdf$tx_id[txdf$gene_id %in%
+                          intersect(one.iso.genes, selected.genes)]
+ebt0 <- exonsBy(txdb, by="tx")
+ebt.fit <- ebt0[one.iso.txs]
+```
+
+Here we pick a subset of single-isoform genes based on the
+number of exons, and the length. We show in comments the recommended
+parameters to use in selecting this subset of genes,
+although here we use different parameters to ensure the building of
+the vignette takes only a short period of time and does not use much memory.
+
+```{r message=FALSE}
+library(GenomicRanges)
+```
+
+```{r}
+library(alpine)
+data(preprocessedData)
+# filter small genes and long genes
+min.bp <- 600
+max.bp <- 7000 
+gene.lengths <- sum(width(ebt.fit))
+summary(gene.lengths)
+ebt.fit <- ebt.fit[gene.lengths > min.bp & gene.lengths < max.bp]
+length(ebt.fit)
+set.seed(1)
+# better to use ~100 genes
+ebt.fit <- ebt.fit[sample(length(ebt.fit),10)] 
+```
+
+## Defining a set of fragment types
+
+Robust fitting of these bias parameters is best with ~100 medium to
+high count genes, e.g. mean count across samples between 200 and
+10,000. These counts can be identified by *featureCounts* from the
+*Rsubread* Bioconductor package, for example.
+It is required to specify a minimum and maximum fragment size
+which should be lower and upper quantiles of the fragment length
+distribution. The `minsize` and `maxsize`
+arguments are recommended to be roughly the 2.5% and 97.5% of the
+fragment length distribution. This can be quickly estimated using the
+helper function `getFragmentWidths`, iterating over a few
+single-isoform genes with sufficient counts:
+
+```{r}
+w <- getFragmentWidths(bam.files[1], ebt.fit[[1]])
+c(summary(w), Number=length(w))
+quantile(w, c(.025, .975))
+```
+
+It is also required to specify the read length. Currently *alpine*
+only supports unstranded, paired-end RNA-seq with fixed read
+length. Differences of +/- 1 bp in read length across samples can be
+ignored.
+
+```{r}
+getReadLength(bam.files)
+```
+
+Here we use a very limited range of fragment lengths for speed, but
+for a real analysis we would suggest using the minimum and maximum
+of the quantiles computed above across all samples (the minimum of the
+lower quantiles and the maximum of the upper quantiles).
+
+```{r}
+library(alpine)
+library(BSgenome.Hsapiens.NCBI.GRCh38)
+minsize <- 125 # better 80 for this data
+maxsize <- 175 # better 350 for this data
+readlength <- 75 
+gene.names <- names(ebt.fit)
+names(gene.names) <- gene.names
+```
+
+The following function builds a list of *DataFrames* which store
+information about the fragment types from each gene in our
+training set.
+
+```{r buildFragtype}
+system.time({
+fragtypes <- lapply(gene.names, function(gene.name) {
+                      buildFragtypes(exons=ebt.fit[[gene.name]],
+                                     genome=Hsapiens,
+                                     readlength=readlength,
+                                     minsize=minsize,
+                                     maxsize=maxsize,
+                                     gc.str=FALSE)
+                    })
+})
+object.size(fragtypes)/1e6
+```
+
+We can examine the information for a single gene:
+
+```{r}
+head(fragtypes[[1]], 3)
+```
+
+## Defining and fitting bias models
+
+The definition of bias models is extremely flexible in *alpine*.  The
+`models` argument should be given as a list, where each element is
+model.  The model itself should be provided as a list with elements
+`formula` and `offset`. Either `formula` or `offset` can be set to
+`NULL` for a given model. 
+The allowable offsets are `fraglen` and/or `vlmm` which should be
+provided in a character vector.
+Offsets are only estimated once for all models, so setting
+`formula=NULL` only makes sense if extra offsets are desired
+which were not already calculated by other models.
+
+Any kind of R formula can be provided to `formula`, making use of the
+fragment features:
+
+* `gc` (fragment GC content from 0 to 1)
+* `relpos` (fragment midpoint relative position from 0 to 1)
+* `GC40.80`, `GC40.90`, `GC20.80`, `GC20.90` (indicator variables
+  indicating the presence of, e.g. a 40 bp stretch of 80% or higher GC
+  content within the fragment)
+
+These fragment features reference columns of information stored in
+`fragtypes`.  Interactions between these terms and offsets are also
+possible, e.g. `gc:fraglen`.  We recommend providing formula as
+character vectors, which are converted internally into formula, due to
+details in how R formula make copies of objects from the environment.
+
+```{r}
+models <- list(
+  "GC" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  gene",
+  offset=c("fraglen")),
+  "all" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  gene",
+  offset=c("fraglen","vlmm"))
+)
+```
+
+Here we fit one bias model, `GC`, using fragment length, fragment GC
+content, relative position,
+and a term for differences in expression across the genes (`+
+gene`).  We fit another bias model, `all`, with all the terms of the
+first but additionally with read start bias (encoded by a Variable
+Length Markov Model, or VLMM).  The knots and boundary knots for GC
+content (`gc`) and relative position (`relpos`) splines are fixed
+internally.  The returned object, `fitpar`, stores the information as
+a list of fitted parameters across samples.
+
+```{r fitBiasModels}
+system.time({
+fitpar <- lapply(bam.files, function(bf) {
+                   fitBiasModels(genes=ebt.fit,
+                                 bam.file=bf,
+                                 fragtypes=fragtypes,
+                                 genome=Hsapiens,
+                                 models=models,
+                                 readlength=readlength,
+                                 minsize=minsize,
+                                 maxsize=maxsize)
+                 })
+})
+fitpar.small <- fitpar # save this as `fitpar.small` for examples
+```
+
+## Visually exploring the bias parameters
+
+Note that with more basepairs between `minsize` and `maxsize` and with
+more genes used for estimation, the bias parameters would be more
+precise. As estimated here, they have high variance from too few
+observations (paired-end fragments) across too few genes.
+
+First we set a palette to distinguish between samples
+
+```{r}
+library(RColorBrewer)
+palette(brewer.pal(8,"Dark2"))
+```
+
+The fragment length distribution:
+
+```{r fraglen}
+perf <- as.integer(factor(metadata$Performer))
+plotFragLen(fitpar, col=perf)
+```
+
+The fragment GC bias curves:
+
+```{r gccurve}
+plotGC(fitpar, model="all", col=perf)
+```
+
+
+The relative position curves:
+
+```{r relpos}
+plotRelPos(fitpar, model="all", col=perf)
+```
+
+A 0-order version of the VLMM (note that the VLMM that is used in the
+model includes positions that are 1- and 2-order, so this plot does
+not represent the final VLMM used in bias estimation or in estimation
+of abundances).
+
+```{r vlmm}
+plotOrder0(fitpar[["ERR188297"]][["vlmm.fivep"]][["order0"]])
+plotOrder0(fitpar[["ERR188297"]][["vlmm.threep"]][["order0"]])
+```
+
+A coefficient table for the terms in `formula`:
+
+```{r}
+print(head(fitpar[["ERR188297"]][["summary"]][["all"]]), row.names=FALSE)
+```
+
+## Estimating transcript abundances
+
+We pick a subset of genes for estimating transcript abundances.  If
+the gene annotation includes genes with transcripts which span
+multiple chromosomes or which do not have any overlap and are very far
+apart, `splitGenesAcrossChroms` and `splitLongGenes`, respectively,
+can be used to split these.  For again merging any overlapping
+transcripts into "genes", the `mergeGenes` function can be used.  Here
+we use the ENSEMBL gene annotation as is.
+
+The following code chunk is not evaluated but was used to select 
+a few genes for demonstrating `estimateTheta`:
+
+```{r, eval=FALSE}
+one.iso.genes <- intersect(names(tab)[tab == 1], selected.genes)
+two.iso.genes <- intersect(names(tab)[tab == 2], selected.genes)
+three.iso.genes <- intersect(names(tab)[tab == 3], selected.genes)
+set.seed(1)
+genes.theta <- c(sample(one.iso.genes, 2),
+                 sample(two.iso.genes, 2),
+                 sample(three.iso.genes, 2)) 
+txdf.theta <- txdf[txdf$gene_id %in% genes.theta,]
+ebt.theta <- ebt0[txdf.theta$tx_id]
+```
+
+We specify a set of models. Any formula used here must be equal to
+those used in a fitted model of the same name, except `+ gene` is
+replaced with `+ 0`.
+
+```{r}
+models <- list(
+  "null"=list(formula=NULL, offset=NULL),
+  "GC"=list(formula="count~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  0",
+  offset=c("fraglen"))
+  )
+```
+
+Here we estimate FPKM-scale abundances for multiple genes and multiple
+samples. If `lib.sizes` is not specified, a default value of 1e6
+is used. `estimateTheta` works one gene at a time, where the
+`transcripts` argument expects a *GRangesList* of the exons for each
+transcript (multiple if the gene has multiple isoforms).
+
+```{r estimateTheta}
+system.time({
+res <- lapply(genes.theta, function(gene.name) {
+         txs <- txdf.theta$tx_id[txdf.theta$gene_id == gene.name]
+         estimateTheta(transcripts=ebt.theta[txs],
+                       bam.files=bam.files,
+                       fitpar=fitpar,
+                       genome=Hsapiens,
+                       models=models,
+                       readlength=readlength,
+                       minsize=minsize,
+                       maxsize=maxsize)
+       })
+})
+```
+
+Each element of this list has the abundances (`theta`) and average
+bias (`lambda`) for a single gene across all samples, all models, and all
+isoforms of the gene: 
+
+```{r}
+res[[1]][["ERR188297"]][["GC"]]
+res[[6]][["ERR188297"]][["GC"]]
+```
+
+The `extractAlpine` function can be used to collate estimates from
+across all genes.  `extractAlpine` will scale the estimates such that
+the total bias observed over all transcripts is centered at 1.  The
+estimates produce by `estimateTheta` presume a default library size of
+1e6, but will be rescaled using the total number of fragments across
+genes when using `extractAlpine` (if this library size rescaling is
+not desired, choose `divide.out=FALSE`).
+
+```{r}
+mat <- extractAlpine(res, model="GC")
+mat
+```
+
+If we provide a *GRangesList* which contains the exons for each
+transcript, the returned object will be a *SummarizedExperiment*.
+The *GRangesList* provided to `transcripts` does not have to be in the
+correct order, the transcripts will be extracted by name to match the
+rows of the FPKM matrix.
+
+```{r}
+se <- extractAlpine(res, model="GC", transcripts=ebt.theta)
+se
+```
+
+The matrix of FPKM values can be scaled using the median ratio method
+of DESeq with the `normalizeDESeq` function. This is a robust method
+which removes systematic differences in values across samples, and is
+more appropriate than using the total count which is sensitive to
+very large abundance estimates for a minority of transcripts. 
+
+```{r, eval=FALSE}
+norm.mat <- normalizeDESeq(mat, cutoff=0.1)
+```
+
+## Simulating using empirically estimated GC bias
+
+The fragment GC bias which *alpine* estimates can be used in
+downstream simulations, for example in the 
+[polyester](http://bioconductor.org/packages/polyester) Bioconductor
+package. All we need to do is to run the *plotGC* function, but
+specifying that instead of a plot, we want to return a matrix of
+probabilities for each percentile of fragment GC content. This matrix
+can be provided to the `frag_GC_bias` argument of *simulate_experiment*.
+
+We load a `fitpar` object that was run with the fragment length range
+[80,350] bp. 
+
+```{r}
+data(preprocessedData)
+prob.mat <- plotGC(fitpar, "all", return.type=2)
+head(prob.mat)
+```
+
+If `return.type=0` (the default) the function makes the plot of log
+fragment rate over fragment GC content. If `return.type=1` the
+function returns the matrix of log fragment rate over percentiles of
+fragment GC content, and if `return.type=2`, the matrix returns
+probabilities of observing fragments based on percentiles of fragment
+GC content (the log fragment rate exponentiated and scaled to have a
+maximum of 1). The matrix returned by `return.type=2` is appropriate
+for downstream use with *polyester*.
+
+## Plotting predicted fragment coverage
+
+In the *alpine* paper, it was shown that models incorporating fragment
+GC bias can be a better predictor of test set RNA-seq fragment
+coverage, compared to models incorporating read start bias. Here we
+show how to predict fragment coverage for a single-isoform gene using
+a variety of fitted bias models. The models involving formula need to
+have the exact same name and form as a fitted model in `fitpar`.
+
+```{r}
+pred.models <- list(
+  "fraglen" = list(formula=NULL, offset=c("fraglen")),
+  "readstart" = list(formula=NULL, offset=c("fraglen","vlmm")),
+  "GC" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  0",
+  offset=c("fraglen")),
+  "all" = list(formula = "count ~
+  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
+  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
+  0",
+  offset=c("fraglen","vlmm"))
+)
+```
+
+The following function computes the predicted coverage for one
+single-isoform gene. We load a `fitpar` object that was run
+with the fragment length range [80,350] bp.
+
+```{r predictCoverage}
+system.time({
+  pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000245479"]],
+                              bam.files=bam.files["ERR188204"],
+                              fitpar=fitpar,
+                              genome=Hsapiens,
+                              models=pred.models,
+                              readlength=readlength,
+                              minsize=80,
+                              maxsize=350)
+})
+```
+
+We can plot the observed and predicted coverage for one of the
+samples: 
+
+```{r}
+palette(brewer.pal(9, "Set1"))
+frag.cov <- pred.cov[["ERR188204"]][["frag.cov"]]
+plot(frag.cov, type="l", lwd=3, ylim=c(0,max(frag.cov)*1.5))
+for (i in seq_along(pred.models)) {
+  m <- names(pred.models)[i]
+  pred <- pred.cov[["ERR188204"]][["pred.cov"]][[m]]
+  lines(pred, col=i, lwd=3)
+}
+legend("topright", legend=c("observed",names(pred.models)),
+       col=c("black",seq_along(pred.models)), lwd=3)
+```
+
+## Session information
+
+```{r}
+sessionInfo()
+```
+
