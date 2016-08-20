@@ -1,5 +1,16 @@
 # alpine
 
+## alpine has moved to Bioconductor (8/18/2016)
+
+I will still use the GitHub Issues tracker for new feature ideas &
+TODOs, but the new website for alpine is:
+
+<http://bioconductor.org/packages/alpine>
+
+And support questions should be posted to:
+
+<http://support.bioconductor.org>
+
 ![alpine](http://mikelove.nfshost.com/img/alpine.jpg)
 
 (the [Sassolungo](https://en.wikipedia.org/wiki/Langkofel) mountain in the Dolomites)
