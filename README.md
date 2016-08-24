@@ -7,7 +7,9 @@ TODOs, but the new website for alpine is:
 
 <http://bioconductor.org/packages/alpine>
 
-And support questions should be posted to:
+New feature requests can be submitted as [Issues](https://github.com/mikelove/alpine/issues) here on GitHub
+
+Bug reports and any other support questions should be posted to:
 
 <http://support.bioconductor.org>
 
