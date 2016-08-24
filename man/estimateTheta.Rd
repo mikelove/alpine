@@ -18,7 +18,8 @@ For a single-isoform gene, just wrap the exons in \code{GRangesList()}}
 
 \item{genome}{a BSGenome object}
 
-\item{models}{a list of character strings or formula describing the bias models, see vignette}
+\item{models}{a list of lists describing the bias models,
+see \link{fitBiasModels} and vignette}
 
 \item{readlength}{the read length}
 

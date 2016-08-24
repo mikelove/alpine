@@ -7,8 +7,6 @@
 #' @param col a vector of colors
 #' @param lty a vector of line types
 #' @param ylim the y limits for the plot
-#' @param knots the knots for the spline
-#' @param bk the boundary knots for the spline
 #' @param gc.range a numeric of length two,
 #' the range of the fragment GC content. By default,
 #' [.2,.8] for plotting and [0,1] for returning a matrix
@@ -30,8 +28,8 @@
 #' 
 #' @export
 plotGC <- function(fitpar, model, col, lty, ylim,
-                   knots=c(.4,.5,.6), bk=c(0,1),
                    gc.range=NULL, return.type=0) {
+
   if (is.null(gc.range)) {
     gc.range <- if (return.type == 0) {
       c(.2, .8)
@@ -41,6 +39,14 @@ plotGC <- function(fitpar, model, col, lty, ylim,
   }
   stopifnot(length(gc.range) == 2)
   stopifnot(length(return.type) == 1 & return.type %in% 0:2)
+
+  # just a single sample?
+  if ("models" %in% names(fitpar)) {
+    fitpar <- list(fitpar)
+  }
+  
+  knots <- fitpar[[1]][["model.params"]]$gc.knots
+  bk <- fitpar[[1]][["model.params"]]$gc.bk
   
   n <- length(knots)
   coef.nms <- names(fitpar[[1]][["coefs"]][[model]])
@@ -87,8 +93,6 @@ plotGC <- function(fitpar, model, col, lty, ylim,
 #' @param col a vector of colors
 #' @param lty a vector of line types
 #' @param ylim the y limits for the plot
-#' @param knots the knots for the spline
-#' @param bk the boundary knots for the spline
 #'
 #' @return plot
 #' 
@@ -102,7 +106,16 @@ plotGC <- function(fitpar, model, col, lty, ylim,
 #' plotRelPos(fitpar, "all", col=perf)
 #' 
 #' @export
-plotRelPos <- function(fitpar, model, col, lty, ylim, knots=c(.25,.5,.75), bk=c(0,1)) {
+plotRelPos <- function(fitpar, model, col, lty, ylim) {
+
+  # just a single sample?
+  if ("models" %in% names(fitpar)) {
+    fitpar <- list(fitpar)
+  }
+
+  knots <- fitpar[[1]][["model.params"]]$relpos.knots
+  bk <- fitpar[[1]][["model.params"]]$relpos.bk
+
   n <- length(knots)
   coef.nms <- names(fitpar[[1]][["coefs"]][[model]])
   coef.idx <- c(grep("\\(Intercept\\)",coef.nms), grep("ns\\(relpos", coef.nms))

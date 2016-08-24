@@ -297,8 +297,20 @@ getFPBP <- function(genes, bam.file) {
   out
 }
 getLogLambda <- function(fragtypes, models, modeltype, fitpar, bamname) {
-  # knots and boundary knots should come from the environ where the formula were defined
+
+  # knots and boundary knots need to come from the fitted parameters object
+  # (just use the first sample, knots will be the same across samples)
+  model.params <- fitpar[[1]][["model.params"]]
+  stopifnot(!is.null(model.params))
+  
+  gc.knots <- model.params$gc.knots
+  gc.bk <- model.params$gc.bk
+  relpos.knots <- model.params$relpos.knots
+  relpos.bk <- model.params$relpos.bk
+
+  # which formula to use
   f <- models[[modeltype]]$formula
+  
   offset <- numeric(nrow(fragtypes))
   if ("fraglen" %in% models[[modeltype]]$offset) {
     # message("-- fragment length correction")
@@ -310,10 +322,6 @@ getLogLambda <- function(fragtypes, models, modeltype, fitpar, bamname) {
   }
   if (!is.null(f)) {
     stopifnot(modeltype %in% names(fitpar[[bamname]][["coefs"]]))
-    gc.knots <- seq(from=.4, to=.6, length=3)
-    gc.bk <- c(0,1)
-    relpos.knots <- seq(from=.25, to=.75, length=3)
-    relpos.bk <- c(0,1)
     # assume: no intercept in formula
     # sparse.model.matrix produces different column names, so don't use
     # mm.big <- sparse.model.matrix(f, data=fragtypes)

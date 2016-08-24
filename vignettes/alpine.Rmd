@@ -116,7 +116,7 @@ which should be lower and upper quantiles of the fragment length
 distribution. The `minsize` and `maxsize`
 arguments are recommended to be roughly the 2.5% and 97.5% of the
 fragment length distribution. This can be quickly estimated using the
-helper function `getFragmentWidths`, iterating over a few
+helper function *getFragmentWidths*, iterating over a few
 single-isoform genes with sufficient counts:
 
 ```{r}
@@ -197,8 +197,10 @@ fragment features:
 
 These fragment features reference columns of information stored in
 `fragtypes`.  Interactions between these terms and offsets are also
-possible, e.g. `gc:fraglen`.  We recommend providing formula as
-character vectors, which are converted internally into formula, due to
+possible, e.g. `gc:fraglen`.
+
+**Note:** It is required to provide formula as
+character strings, which are converted internally into formula, due to
 details in how R formula make copies of objects from the environment.
 
 ```{r}
@@ -218,12 +220,17 @@ models <- list(
 
 Here we fit one bias model, `GC`, using fragment length, fragment GC
 content, relative position,
-and a term for differences in expression across the genes (`+
-gene`).  We fit another bias model, `all`, with all the terms of the
+and a term for differences in expression across the genes (`+ gene`).
+It is required if a formula is provided that it end with `+ gene`
+to account for differences in base expression levels while
+fitting the bias parameters. 
+
+We fit another bias model, `all`, with all the terms of the
 first but additionally with read start bias (encoded by a Variable
 Length Markov Model, or VLMM).  The knots and boundary knots for GC
-content (`gc`) and relative position (`relpos`) splines are fixed
-internally.  The returned object, `fitpar`, stores the information as
+content (`gc`) and relative position (`relpos`) splines can be customized
+using arguments to the *fitBiasModels* function.
+The returned object, `fitpar`, stores the information as
 a list of fitted parameters across samples.
 
 ```{r fitBiasModels}
@@ -297,13 +304,13 @@ print(head(fitpar[["ERR188297"]][["summary"]][["all"]]), row.names=FALSE)
 We pick a subset of genes for estimating transcript abundances.  If
 the gene annotation includes genes with transcripts which span
 multiple chromosomes or which do not have any overlap and are very far
-apart, `splitGenesAcrossChroms` and `splitLongGenes`, respectively,
+apart, *splitGenesAcrossChroms* and *splitLongGenes*, respectively,
 can be used to split these.  For again merging any overlapping
-transcripts into "genes", the `mergeGenes` function can be used.  Here
+transcripts into "genes", the *mergeGenes* function can be used.  Here
 we use the ENSEMBL gene annotation as is.
 
 The following code chunk is not evaluated but was used to select 
-a few genes for demonstrating `estimateTheta`:
+a few genes for demonstrating *estimateTheta*:
 
 ```{r, eval=FALSE}
 one.iso.genes <- intersect(names(tab)[tab == 1], selected.genes)
@@ -334,7 +341,7 @@ models <- list(
 
 Here we estimate FPKM-scale abundances for multiple genes and multiple
 samples. If `lib.sizes` is not specified, a default value of 1e6
-is used. `estimateTheta` works one gene at a time, where the
+is used. *estimateTheta* works one gene at a time, where the
 `transcripts` argument expects a *GRangesList* of the exons for each
 transcript (multiple if the gene has multiple isoforms).
 
@@ -363,12 +370,12 @@ res[[1]][["ERR188297"]][["GC"]]
 res[[6]][["ERR188297"]][["GC"]]
 ```
 
-The `extractAlpine` function can be used to collate estimates from
-across all genes.  `extractAlpine` will scale the estimates such that
+The *extractAlpine* function can be used to collate estimates from
+across all genes.  *extractAlpine* will scale the estimates such that
 the total bias observed over all transcripts is centered at 1.  The
-estimates produce by `estimateTheta` presume a default library size of
+estimates produce by *estimateTheta* presume a default library size of
 1e6, but will be rescaled using the total number of fragments across
-genes when using `extractAlpine` (if this library size rescaling is
+genes when using *extractAlpine* (if this library size rescaling is
 not desired, choose `divide.out=FALSE`).
 
 ```{r}
@@ -388,7 +395,7 @@ se
 ```
 
 The matrix of FPKM values can be scaled using the median ratio method
-of DESeq with the `normalizeDESeq` function. This is a robust method
+of DESeq with the *normalizeDESeq* function. This is a robust method
 which removes systematic differences in values across samples, and is
 more appropriate than using the total count which is sensitive to
 very large abundance estimates for a minority of transcripts. 

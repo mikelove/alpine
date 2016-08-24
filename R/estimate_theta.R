@@ -10,7 +10,8 @@
 #' @param bam.files a named vector pointing to the indexed BAM files
 #' @param fitpar the output of \link{fitBiasModels}
 #' @param genome a BSGenome object
-#' @param models a list of character strings or formula describing the bias models, see vignette
+#' @param models a list of lists describing the bias models,
+#' see \link{fitBiasModels} and vignette
 #' @param readlength the read length
 #' @param minsize the minimum fragment length to model
 #' @param maxsize the maximum fragment length to model
@@ -157,7 +158,8 @@ estimateTheta <- function(transcripts, bam.files, fitpar, genome,
       #message("---- ",seqnames(generange),":",start(generange),"-",end(generange))
       # table(strand(ga)[unique(queryHits(fco))]) # are the read counts even across strand?
       # boxplot(lapply(reads, function(x) width(x)))
-      # here called "reads" although they are fragments. everything is already called fragments :-/
+      # here the variable is called "reads" although they are really fragments.
+      # everything is already called fragments :-/
       reads <- gaToReadsOnTx(ga, transcripts, fco)
       fraglist.temp <- matchReadsToFraglist(reads, fraglist)
       txcounts <- sapply(fraglist.temp, function(x) sum(x$count))

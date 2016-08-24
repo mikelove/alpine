@@ -4,8 +4,7 @@
 \alias{plotRelPos}
 \title{Plot relative position bias over samples}
 \usage{
-plotRelPos(fitpar, model, col, lty, ylim, knots = c(0.25, 0.5, 0.75),
-  bk = c(0, 1))
+plotRelPos(fitpar, model, col, lty, ylim)
 }
 \arguments{
 \item{fitpar}{a list of the output of \link{fitBiasModels} over samples}
@@ -17,10 +16,6 @@ plotRelPos(fitpar, model, col, lty, ylim, knots = c(0.25, 0.5, 0.75),
 \item{lty}{a vector of line types}
 
 \item{ylim}{the y limits for the plot}
-
-\item{knots}{the knots for the spline}
-
-\item{bk}{the boundary knots for the spline}
 }
 \value{
 plot

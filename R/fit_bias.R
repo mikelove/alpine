@@ -11,10 +11,11 @@
 #' @param fragtypes the output of \link{buildFragtypes}. must contain
 #' the potential fragment types for the genes named in \code{genes}
 #' @param genome a BSgenome object
-#' @param models a list of lists: the outer list describes multiple models
+#' @param models a list of lists: the outer list describes multiple models.
 #' each element of the inner list has two elements: \code{formula} and \code{offset}.
 #' \code{formula} should be a character strings of an R formula
 #' describing the bias models, e.g. \code{"count ~ ns(gc) + gene"}.
+#' The end of the string is required to be \code{"+ gene"}.
 #' \code{offset} should be a character vector
 #' listing possible bias offsets to be used (\code{"fraglen"} or \code{"vlmm"}).
 #' Either \code{offset} or \code{formula} can be NULL for a model.
@@ -24,8 +25,12 @@
 #' @param maxsize the maximum fragment length to model
 #' @param speedglm logical, whether to use speedglm to estimate the coefficients.
 #' Default is TRUE.
+#' @param gc.knots knots for the GC splines
+#' @param gc.bk boundary knots for the GC splines
+#' @param relpos.knots knots for the relative position splines
+#' @param relpos.bk boundary knots for the relative position splines
 #'
-#' @return a list with elements: coefs, summary, models,
+#' @return a list with elements: coefs, summary, models, model.params,
 #' and optional offets: fraglen.density, vlmm.fivep,
 #' and vlmm.threep.
 #' \itemize{
@@ -33,8 +38,9 @@
 #' for the different models that specified formula.
 #' \item \strong{summary} gives the tables with coefficients, standard
 #' errors and p-values,
-#' \item \strong{models} stores the incoming
-#' \code{models} list,
+#' \item \strong{models} stores the incoming \code{models} list,
+#' \item \strong{model.params} stores parameters for the
+#' models, such as knot locations
 #' \item \strong{fraglen.density} is a
 #' estimated density object for the fragment length distribution,
 #' \item \strong{vlmm.fivep} and \strong{vlmm.threep}
@@ -105,7 +111,11 @@
 #' @export
 fitBiasModels <- function(genes, bam.file, fragtypes, genome,
                           models, readlength, minsize, maxsize,
-                          speedglm=TRUE) {
+                          speedglm=TRUE,
+                          gc.knots=seq(from=.4, to=.6, length=3),
+                          gc.bk=c(0,1),
+                          relpos.knots=seq(from=.25, to=.75, length=3),
+                          relpos.bk=c(0,1)) {
   stopifnot(file.exists(bam.file))
   stopifnot(file.exists(paste0(as.character(bam.file),".bai")))
   stopifnot(is(genes, "GRangesList"))
@@ -115,10 +125,22 @@ fitBiasModels <- function(genes, bam.file, fragtypes, genome,
   if (any(sapply(models, function(m) "vlmm" %in% m$offset))) {
     stopifnot("fivep" %in% colnames(fragtypes[[1]]))
   }
+  for (m in models) {
+    if (!is.null(m$formula)) {
+      stopifnot(is.character(m$formula))
+      if (!grepl("+ gene$",models$GC$formula)) {
+        stop("'+ gene' needs to be at the end of the formula string")
+      }
+    }
+  }
   exon.dna <- getSeq(genome, genes)
   gene.seqs <- as(lapply(exon.dna, unlist), "DNAStringSet")
   # FPBP needed to downsample to a target fragment per kilobase
   fpbp <- getFPBP(genes, bam.file)
+
+  # TODO check these downsampling parameters now that subset 
+  # routine is not related to number of positive counts
+  
   # want ~1000 rows per gene, so ~300 reads per gene
   # so ~300/1500 = 0.2 fragments per basepair 
   target.fpbp <- 0.4
@@ -144,7 +166,6 @@ fitBiasModels <- function(genes, bam.file, fragtypes, genome,
                      })
     if (length(ga) < 20) next
     ga <- keepSeqlevels(ga, as.character(seqnames(gene)[1]))
-    # TODO: do this *after* finding compatible overlaps?
     # downsample to a target FPBP
     nfrags <- length(ga)
     this.fpbp <- nfrags / l
@@ -184,7 +205,12 @@ fitBiasModels <- function(genes, bam.file, fragtypes, genome,
   ## gene.lengths <- sum(width(genes))
   ## round(unname(gene.counts / gene.lengths[names(gene.counts)]), 2)
 
+  # save the models and parameters
   fitpar.sub[["models"]] <- models
+  fitpar.sub[["model.params"]] <- list(gc.knots=gc.knots,
+                                       gc.bk=gc.bk,
+                                       relpos.knots=relpos.knots,
+                                       relpos.bk=relpos.bk)
   
   if (any(sapply(models, function(m) "fraglen" %in% m$offset))) {
     ## -- fragment bias --
@@ -219,10 +245,6 @@ fitBiasModels <- function(genes, bam.file, fragtypes, genome,
     if (is.null(models[[modeltype]]$formula)) {
       next
     }
-    gc.knots <- seq(from=.4, to=.6, length=3)
-    gc.bk <- c(0,1)
-    relpos.knots <- seq(from=.25, to=.75, length=3)
-    relpos.bk <- c(0,1)
     # message("fitting model type: ",modeltype)
     f <- models[[modeltype]]$formula
     offset <- numeric(nrow(fragtypes.sub))
