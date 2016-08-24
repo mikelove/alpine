@@ -14,8 +14,8 @@
 #' \enumerate{
 #' \item \link{buildFragtypes} - build out features for fragment types from exons of a single gene (GRanges)
 #' \item \link{fitBiasModels} - fit parameters for one or more bias models over a set of ~100 medium to highly expressed single isoform genes (GRangesList)
-#' \item \link{estimateTheta} - given a set of genome alignments (BAM files) and a set of isoforms of a gene (GRangesList), estimate the transcript abundances for these isoforms (FPKM) for various bias models
-#' \item \link{extractAlpine} - given a list of output from \code{estimateTheta}, compile an FPKM matrix across transcripts and samples
+#' \item \link{estimateAbundance} - given a set of genome alignments (BAM files) and a set of isoforms of a gene (GRangesList), estimate the transcript abundances for these isoforms (FPKM) for various bias models
+#' \item \link{extractAlpine} - given a list of output from \code{estimateAbundance}, compile an FPKM matrix across transcripts and samples
 #' \item \link{predictCoverage} - given the exons of a single gene (GRanges) predict the coverage for a set of samples given fitted bias parameters and compute the observed coverage
 #' }
 #'
@@ -59,6 +59,7 @@
 #' @importFrom GenomicFeatures mapToTranscripts
 #' @importFrom graphics abline legend lines par plot points segments
 #' @importFrom stats density dpois formula glm model.matrix poisson
+#' @importFrom methods as is
 #' @importFrom GenomeInfoDb seqlevels keepSeqlevels
 #' @importFrom S4Vectors DataFrame queryHits subjectHits
 #' @import Biostrings IRanges GenomicRanges GenomicAlignments Rsamtools SummarizedExperiment
@@ -74,7 +75,7 @@ NULL
 #' This function constructs a DataFrame of fragment features used for
 #' bias modeling, with one row for every potential fragment type that could
 #' arise from a transcript. The output of this function is used by
-#' \link{fitBiasModels}, and this function is used inside \link{estimateTheta}
+#' \link{fitBiasModels}, and this function is used inside \link{estimateAbundance}
 #' in order to model the bias affecting different fragments across isoforms
 #' of a gene.
 #' 

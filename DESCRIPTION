@@ -1,6 +1,6 @@
 Package: alpine
 Title: alpine
-Version: 0.99.3
+Version: 0.99.4
 Author: Michael Love
 Maintainer: Michael Love <michaelisaiahlove@gmail.com>
 Description: Fragment sequence bias modeling and correction for RNA-seq
@@ -10,8 +10,8 @@ VignetteBuilder: knitr
 Depends: R (>= 3.3)
 Imports: Biostrings, IRanges, GenomicRanges, GenomicAlignments,
         Rsamtools, SummarizedExperiment, GenomicFeatures, speedglm,
-        splines, graph, RBGL, stringr, stats, graphics, GenomeInfoDb,
-        S4Vectors
+        splines, graph, RBGL, stringr, stats, methods, graphics,
+	GenomeInfoDb, S4Vectors
 Suggests: knitr, testthat, alpineData, rtracklayer, ensembldb,
         BSgenome.Hsapiens.NCBI.GRCh38, RColorBrewer
 biocViews: Sequencing, RNASeq, AlternativeSplicing,

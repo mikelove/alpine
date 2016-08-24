@@ -37,7 +37,7 @@ potential fragments (rows)
 This function constructs a DataFrame of fragment features used for
 bias modeling, with one row for every potential fragment type that could
 arise from a transcript. The output of this function is used by
-\link{fitBiasModels}, and this function is used inside \link{estimateTheta}
+\link{fitBiasModels}, and this function is used inside \link{estimateAbundance}
 in order to model the bias affecting different fragments across isoforms
 of a gene.
 }

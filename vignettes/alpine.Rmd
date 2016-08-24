@@ -310,7 +310,7 @@ transcripts into "genes", the *mergeGenes* function can be used.  Here
 we use the ENSEMBL gene annotation as is.
 
 The following code chunk is not evaluated but was used to select 
-a few genes for demonstrating *estimateTheta*:
+a few genes for demonstrating *estimateAbundance*:
 
 ```{r, eval=FALSE}
 one.iso.genes <- intersect(names(tab)[tab == 1], selected.genes)
@@ -341,15 +341,15 @@ models <- list(
 
 Here we estimate FPKM-scale abundances for multiple genes and multiple
 samples. If `lib.sizes` is not specified, a default value of 1e6
-is used. *estimateTheta* works one gene at a time, where the
+is used. *estimateAbundance* works one gene at a time, where the
 `transcripts` argument expects a *GRangesList* of the exons for each
 transcript (multiple if the gene has multiple isoforms).
 
-```{r estimateTheta}
+```{r estimateAbundance}
 system.time({
 res <- lapply(genes.theta, function(gene.name) {
          txs <- txdf.theta$tx_id[txdf.theta$gene_id == gene.name]
-         estimateTheta(transcripts=ebt.theta[txs],
+         estimateAbundance(transcripts=ebt.theta[txs],
                        bam.files=bam.files,
                        fitpar=fitpar,
                        genome=Hsapiens,
@@ -373,7 +373,7 @@ res[[6]][["ERR188297"]][["GC"]]
 The *extractAlpine* function can be used to collate estimates from
 across all genes.  *extractAlpine* will scale the estimates such that
 the total bias observed over all transcripts is centered at 1.  The
-estimates produce by *estimateTheta* presume a default library size of
+estimates produce by *estimateAbundance* presume a default library size of
 1e6, but will be rescaled using the total number of fragments across
 genes when using *extractAlpine* (if this library size rescaling is
 not desired, choose `divide.out=FALSE`).

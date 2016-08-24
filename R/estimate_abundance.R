@@ -67,7 +67,7 @@
 #' maxsize <- 175 # see vignette how to choose
 #' txs <- txdf.theta$tx_id[txdf.theta$gene_id == "ENSG00000198918"]
 #' 
-#' res <- estimateTheta(transcripts=ebt.theta[txs],
+#' res <- estimateAbundance(transcripts=ebt.theta[txs],
 #'                      bam.files=bam.file,
 #'                      fitpar=fitpar.small,
 #'                      genome=Hsapiens,
@@ -77,7 +77,7 @@
 #'                      maxsize=maxsize)
 #' 
 #' @export
-estimateTheta <- function(transcripts, bam.files, fitpar, genome,
+estimateAbundance <- function(transcripts, bam.files, fitpar, genome,
                           models, readlength, minsize, maxsize,
                           subset=TRUE, niter=100, 
                           lib.sizes=NULL, optim=FALSE,

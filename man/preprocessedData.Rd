@@ -37,13 +37,13 @@ made in the vignette, but using \code{minsize=80} and \code{maxsize=350}
   \item \strong{fitpar.small} - the fitted parameters from the
 vignette, returned by fitBiasModels
   \item \strong{res} - the results object from the vignette,
-returned by estimateTheta
+returned by estimateAbundance
   \item \strong{ebt.theta} - the GRangesList prepared in the vignette
-for running estimateTheta
+for running estimateAbundance
   \item \strong{genes.theta} - the names of genes used in the vignette
-for running estimateTheta
+for running estimateAbundance
   \item \strong{txdf.theta} - the DataFrame of gene and transcript
-information used in the vignette for running estimateTheta
+information used in the vignette for running estimateAbundance
 }
 }
 

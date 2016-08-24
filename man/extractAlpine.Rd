@@ -2,23 +2,23 @@
 % Please edit documentation in R/helper.R
 \name{extractAlpine}
 \alias{extractAlpine}
-\title{Extract results from estimateTheta run across genes}
+\title{Extract results from estimateAbundance run across genes}
 \usage{
 extractAlpine(res, model, lib.sizes = 1e+06, divide.out = TRUE,
   transcripts = NULL)
 }
 \arguments{
-\item{res}{a list where each element is the output of \link{estimateTheta}}
+\item{res}{a list where each element is the output of \link{estimateAbundance}}
 
 \item{model}{the name of a model, corresponds to names of \code{models}
 used in \link{fitBiasModels}}
 
-\item{lib.sizes}{the vector of library sizes passed to \link{estimateTheta}.
+\item{lib.sizes}{the vector of library sizes passed to \link{estimateAbundance}.
 not needed if \code{divide.out=FALSE}}
 
 \item{divide.out}{logical, whether to divide out the initial estimate of
 library size and to instead use the count of compatible fragments for
-genes calculated by \link{estimateTheta}. Default is TRUE}
+genes calculated by \link{estimateAbundance}. Default is TRUE}
 
 \item{transcripts}{an optional GRangesList of the exons for each
 transcript. If this is provided, the output will be a

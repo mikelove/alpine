@@ -1,4 +1,4 @@
-#' Extract results from estimateTheta run across genes
+#' Extract results from estimateAbundance run across genes
 #'
 #' This function extracts estimates for a given model from a list
 #' over many genes, returning a matrix with dimensions:
@@ -7,14 +7,14 @@
 #' genes is used to estimate the FPKM, dividing out the previously
 #' used estimate \code{lib.sizes}.
 #' 
-#' @param res a list where each element is the output of \link{estimateTheta}
+#' @param res a list where each element is the output of \link{estimateAbundance}
 #' @param model the name of a model, corresponds to names of \code{models}
 #' used in \link{fitBiasModels}
-#' @param lib.sizes the vector of library sizes passed to \link{estimateTheta}.
+#' @param lib.sizes the vector of library sizes passed to \link{estimateAbundance}.
 #' not needed if \code{divide.out=FALSE}
 #' @param divide.out logical, whether to divide out the initial estimate of
 #' library size and to instead use the count of compatible fragments for
-#' genes calculated by \link{estimateTheta}. Default is TRUE
+#' genes calculated by \link{estimateAbundance}. Default is TRUE
 #' @param transcripts an optional GRangesList of the exons for each
 #' transcript. If this is provided, the output will be a
 #' SummarizedExperiment. The transcripts do not need
@@ -36,7 +36,7 @@ extractAlpine <- function(res, model, lib.sizes=1e6,
   # some rough code to figure out how many samples:
   # look at the first 10 (or fewer) elements of res and
   # calculate the length. why? the result for a given gene
-  # could be NULL if it didn't pass some tests in estimateTheta
+  # could be NULL if it didn't pass some tests in estimateAbundance
   nsamp <- max(sapply(res[seq_len(min(10,length(res)))], length))
   fpkm <- extractRes(res, model, "theta", nsamp)
   lambda <- extractRes(res, model, "lambda", nsamp)
