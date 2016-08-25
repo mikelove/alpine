@@ -81,7 +81,7 @@
 #' library(BSgenome.Hsapiens.NCBI.GRCh38)
 #' data(preprocessedData)
 #'
-#' readlength <- 100
+#' readlength <- 75
 #' minsize <- 125 # see vignette how to choose
 #' maxsize <- 175 # see vignette how to choose
 #' 
@@ -207,10 +207,15 @@ fitBiasModels <- function(genes, bam.file, fragtypes, genome,
 
   # save the models and parameters
   fitpar.sub[["models"]] <- models
-  fitpar.sub[["model.params"]] <- list(gc.knots=gc.knots,
-                                       gc.bk=gc.bk,
-                                       relpos.knots=relpos.knots,
-                                       relpos.bk=relpos.bk)
+  fitpar.sub[["model.params"]] <- list(
+    readlength=readlength,
+    minsize=minsize,
+    maxsize=maxsize,
+    gc.knots=gc.knots,
+    gc.bk=gc.bk,
+    relpos.knots=relpos.knots,
+    relpos.bk=relpos.bk
+  )
   
   if (any(sapply(models, function(m) "fraglen" %in% m$offset))) {
     ## -- fragment bias --

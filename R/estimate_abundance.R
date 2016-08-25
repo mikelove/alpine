@@ -68,13 +68,13 @@
 #' txs <- txdf.theta$tx_id[txdf.theta$gene_id == "ENSG00000198918"]
 #' 
 #' res <- estimateAbundance(transcripts=ebt.theta[txs],
-#'                      bam.files=bam.file,
-#'                      fitpar=fitpar.small,
-#'                      genome=Hsapiens,
-#'                      models=models,
-#'                      readlength=readlength,
-#'                      minsize=minsize,
-#'                      maxsize=maxsize)
+#'                          bam.files=bam.file,
+#'                          fitpar=fitpar.small,
+#'                          genome=Hsapiens,
+#'                          models=models,
+#'                          readlength=readlength,
+#'                          minsize=minsize,
+#'                          maxsize=maxsize)
 #' 
 #' @export
 estimateAbundance <- function(transcripts, bam.files, fitpar, genome,

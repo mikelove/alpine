@@ -64,16 +64,14 @@ We used the following chunk of code (here not evaluated) to generate a
 
 ```{r, eval=FALSE}
 library(ensembldb)
-gtf.file <- "~/proj/alpine/Homo_sapiens.GRCh38.84.gtf"
-#gtf.file <- "Homo_sapiens.GRCh38.84.gtf"
+gtf.file <- "Homo_sapiens.GRCh38.84.gtf"
 txdb <- EnsDb(gtf.file) # already an EnsDb
 txdf <- transcripts(txdb, return.type="DataFrame")
 tab <- table(txdf$gene_id)
 one.iso.genes <- names(tab)[tab == 1]
 # pre-selected genes based on medium to high counts
 # calculated using Rsubread::featureCounts
-selected.genes <- scan("~/proj/alpine/alpine/inst/extdata/selected.genes.txt",
-                       what="char")
+selected.genes <- scan("selected.genes.txt", what="char")
 one.iso.txs <- txdf$tx_id[txdf$gene_id %in%
                           intersect(one.iso.genes, selected.genes)]
 ebt0 <- exonsBy(txdb, by="tx")
@@ -350,13 +348,13 @@ system.time({
 res <- lapply(genes.theta, function(gene.name) {
          txs <- txdf.theta$tx_id[txdf.theta$gene_id == gene.name]
          estimateAbundance(transcripts=ebt.theta[txs],
-                       bam.files=bam.files,
-                       fitpar=fitpar,
-                       genome=Hsapiens,
-                       models=models,
-                       readlength=readlength,
-                       minsize=minsize,
-                       maxsize=maxsize)
+                           bam.files=bam.files,
+                           fitpar=fitpar,
+                           genome=Hsapiens,
+                           models=models,
+                           readlength=readlength,
+                           minsize=minsize,
+                           maxsize=maxsize)
        })
 })
 ```

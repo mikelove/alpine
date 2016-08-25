@@ -90,7 +90,7 @@ library(GenomicRanges)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
 data(preprocessedData)
 
-readlength <- 100
+readlength <- 75
 minsize <- 125 # see vignette how to choose
 maxsize <- 175 # see vignette how to choose
 
