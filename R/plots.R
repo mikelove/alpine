@@ -162,6 +162,12 @@ plotRelPos <- function(fitpar, model, col, lty, ylim) {
 #' 
 #' @export
 plotFragLen <- function(fitpar, col, lty) {
+
+  # just a single sample?
+  if ("models" %in% names(fitpar)) {
+    fitpar <- list(fitpar)
+  }
+
   if (missing(col)) {
     col <- rep("black", length(fitpar))
   }

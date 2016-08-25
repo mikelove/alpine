@@ -4,8 +4,7 @@
 \alias{predictCoverage}
 \title{Predict coverage for a single-isoform gene}
 \usage{
-predictCoverage(gene, bam.files, fitpar, genome, models, readlength, minsize,
-  maxsize)
+predictCoverage(gene, bam.files, fitpar, genome, models)
 }
 \arguments{
 \item{gene}{a GRangesList with the exons of different genes}
@@ -17,12 +16,6 @@ predictCoverage(gene, bam.files, fitpar, genome, models, readlength, minsize,
 \item{genome}{a BSgenome object}
 
 \item{models}{a list describing the models, see \link{fitBiasModels}}
-
-\item{readlength}{the read length}
-
-\item{minsize}{the minimum fragment length to model}
-
-\item{maxsize}{the maximum fragment length to model}
 }
 \value{
 a list with elements frag.cov, the observed fragment coverage
@@ -68,21 +61,15 @@ pred.models <- list(
   offset=c("fraglen","vlmm"))
 )
 
-readlength <- 75
-minsize <- 125 # see vignette how to choose
-maxsize <- 175 # see vignette how to choose
-
 pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000379660"]],
                             bam.files=bam.file,
                             fitpar=fitpar.small,
                             genome=Hsapiens,
-                            models=pred.models,
-                            readlength=readlength,
-                            minsize=minsize,
-                            maxsize=maxsize)
+                            models=pred.models)
+
 # plot the coverage:
-# note that, because [125,175] does not cover the
-# fragment width distribution, the predicted curves
+# note that, because [125,175] bp range specified in fitpar.small
+# does not cover the fragment width distribution, the predicted curves
 # will underestimate the observed. we correct here post-hoc
 
 frag.cov <- pred.cov[["ERR188088"]][["frag.cov"]]

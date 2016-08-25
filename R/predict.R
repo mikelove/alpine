@@ -13,9 +13,6 @@
 #' @param fitpar the output of running \link{fitBiasModels}
 #' @param genome a BSgenome object
 #' @param models a list describing the models, see \link{fitBiasModels}
-#' @param readlength the read length
-#' @param minsize the minimum fragment length to model
-#' @param maxsize the maximum fragment length to model
 #'
 #' @return a list with elements frag.cov, the observed fragment coverage
 #' from the \code{bam.files} and pred.cov, a list with the predicted
@@ -50,21 +47,15 @@
 #'   offset=c("fraglen","vlmm"))
 #' )
 #'
-#' readlength <- 75
-#' minsize <- 125 # see vignette how to choose
-#' maxsize <- 175 # see vignette how to choose
-#' 
 #' pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000379660"]],
 #'                             bam.files=bam.file,
 #'                             fitpar=fitpar.small,
 #'                             genome=Hsapiens,
-#'                             models=pred.models,
-#'                             readlength=readlength,
-#'                             minsize=minsize,
-#'                             maxsize=maxsize)
+#'                             models=pred.models)
+#' 
 #' # plot the coverage:
-#' # note that, because [125,175] does not cover the
-#' # fragment width distribution, the predicted curves
+#' # note that, because [125,175] bp range specified in fitpar.small
+#' # does not cover the fragment width distribution, the predicted curves
 #' # will underestimate the observed. we correct here post-hoc
 #' 
 #' frag.cov <- pred.cov[["ERR188088"]][["frag.cov"]]
@@ -78,8 +69,7 @@
 #'        col=seq_len(length(pred.models)+1), lwd=3)
 #' 
 #' @export
-predictCoverage <- function(gene, bam.files, fitpar, genome,
-                            models, readlength, minsize, maxsize) {
+predictCoverage <- function(gene, bam.files, fitpar, genome, models) {
   stopifnot(is(gene, "GRanges"))
   stopifnot(all(sapply(models, function(x) names(x) %in% c("formula","offset"))))
   stopifnot(!is.null(fitpar))
@@ -87,6 +77,14 @@ predictCoverage <- function(gene, bam.files, fitpar, genome,
   if (is.null(names(bam.files))) {
     names(bam.files) <- seq_along(bam.files)
   }
+
+  # pull out some model parameters
+  stopifnot(all(c("readlength","minsize","maxsize","maxsize") %in%
+                names(fitpar[[1]][["model.params"]])))
+  readlength <- fitpar[[1]][["model.params"]][["readlength"]]
+  minsize <- fitpar[[1]][["model.params"]][["minsize"]]
+  maxsize <- fitpar[[1]][["model.params"]][["maxsize"]]
+
   fragtypes <- buildFragtypes(gene, genome, readlength=readlength,
                               minsize=minsize, maxsize=maxsize)
   res <- list()

@@ -4,9 +4,9 @@
 \alias{estimateAbundance}
 \title{Estimate bias-corrected transcript abundances (FPKM)}
 \usage{
-estimateAbundance(transcripts, bam.files, fitpar, genome, models, readlength,
-  minsize, maxsize, subset = TRUE, niter = 100, lib.sizes = NULL,
-  optim = FALSE, custom.features = NULL)
+estimateAbundance(transcripts, bam.files, fitpar, genome, models,
+  subset = TRUE, niter = 100, lib.sizes = NULL, optim = FALSE,
+  custom.features = NULL)
 }
 \arguments{
 \item{transcripts}{a GRangesList of the exons for multiple isoforms of a gene.
@@ -20,12 +20,6 @@ For a single-isoform gene, just wrap the exons in \code{GRangesList()}}
 
 \item{models}{a list of lists describing the bias models,
 see \link{fitBiasModels} and vignette}
-
-\item{readlength}{the read length}
-
-\item{minsize}{the minimum fragment length to model}
-
-\item{maxsize}{the maximum fragment length to model}
 
 \item{subset}{logical, whether to downsample the non-observed fragments. Default is TRUE}
 
@@ -85,19 +79,13 @@ models <- list(
  offset=c("fraglen"))
 )
 
-readlength <- 75
-minsize <- 125 # see vignette how to choose
-maxsize <- 175 # see vignette how to choose
 txs <- txdf.theta$tx_id[txdf.theta$gene_id == "ENSG00000198918"]
 
 res <- estimateAbundance(transcripts=ebt.theta[txs],
                          bam.files=bam.file,
                          fitpar=fitpar.small,
                          genome=Hsapiens,
-                         models=models,
-                         readlength=readlength,
-                         minsize=minsize,
-                         maxsize=maxsize)
+                         models=models)
 
 }
 

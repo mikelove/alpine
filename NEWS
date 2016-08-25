@@ -1,4 +1,10 @@
-CHANGES IN VERSION 0.99.3
+CHANGES IN VERSION 0.99.5
+-------------------------
+
+    o Store readlength, minsize, maxsize in fitpar and so remove
+      as arguments to estimateAbundance() and predictCoverage()
+
+CHANGES IN VERSION 0.99.4
 -------------------------
 
     o Renamed the mysterious estimateTheta() to estimateAbundance()

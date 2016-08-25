@@ -140,9 +140,9 @@ lower quantiles and the maximum of the upper quantiles).
 ```{r}
 library(alpine)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
+readlength <- 75 
 minsize <- 125 # better 80 for this data
 maxsize <- 175 # better 350 for this data
-readlength <- 75 
 gene.names <- names(ebt.fit)
 names(gene.names) <- gene.names
 ```
@@ -351,10 +351,7 @@ res <- lapply(genes.theta, function(gene.name) {
                            bam.files=bam.files,
                            fitpar=fitpar,
                            genome=Hsapiens,
-                           models=models,
-                           readlength=readlength,
-                           minsize=minsize,
-                           maxsize=maxsize)
+                           models=models)
        })
 })
 ```
@@ -460,16 +457,17 @@ The following function computes the predicted coverage for one
 single-isoform gene. We load a `fitpar` object that was run
 with the fragment length range [80,350] bp.
 
+```{r}
+fitpar[[1]][["model.params"]][c("minsize","maxsize")]
+```
+
 ```{r predictCoverage}
 system.time({
   pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000245479"]],
                               bam.files=bam.files["ERR188204"],
                               fitpar=fitpar,
                               genome=Hsapiens,
-                              models=pred.models,
-                              readlength=readlength,
-                              minsize=80,
-                              maxsize=350)
+                              models=pred.models)
 })
 ```
 

@@ -12,9 +12,6 @@
 #' @param genome a BSGenome object
 #' @param models a list of lists describing the bias models,
 #' see \link{fitBiasModels} and vignette
-#' @param readlength the read length
-#' @param minsize the minimum fragment length to model
-#' @param maxsize the maximum fragment length to model
 #' @param subset logical, whether to downsample the non-observed fragments. Default is TRUE
 #' @param niter the number of EM iterations. Default is 100.
 #' @param lib.sizes a named vector of library sizes to use in calculating the FPKM.
@@ -62,26 +59,18 @@
 #'  offset=c("fraglen"))
 #' )
 #'
-#' readlength <- 75
-#' minsize <- 125 # see vignette how to choose
-#' maxsize <- 175 # see vignette how to choose
 #' txs <- txdf.theta$tx_id[txdf.theta$gene_id == "ENSG00000198918"]
 #' 
 #' res <- estimateAbundance(transcripts=ebt.theta[txs],
 #'                          bam.files=bam.file,
 #'                          fitpar=fitpar.small,
 #'                          genome=Hsapiens,
-#'                          models=models,
-#'                          readlength=readlength,
-#'                          minsize=minsize,
-#'                          maxsize=maxsize)
+#'                          models=models)
 #' 
 #' @export
-estimateAbundance <- function(transcripts, bam.files, fitpar, genome,
-                          models, readlength, minsize, maxsize,
-                          subset=TRUE, niter=100, 
-                          lib.sizes=NULL, optim=FALSE,
-                          custom.features=NULL) {
+estimateAbundance <- function(transcripts, bam.files, fitpar, genome, models, 
+                              subset=TRUE, niter=100, lib.sizes=NULL, optim=FALSE,
+                              custom.features=NULL) {
   
   stopifnot(is(transcripts, "GRangesList"))
   stopifnot(length(transcripts) >= 1)
@@ -94,6 +83,13 @@ estimateAbundance <- function(transcripts, bam.files, fitpar, genome,
   stopifnot(all(names(bam.files) %in% names(fitpar)))
   stopifnot(all(file.exists(bam.files)))
 
+  # pull out some model parameters
+  stopifnot(all(c("readlength","minsize","maxsize","maxsize") %in%
+                names(fitpar[[1]][["model.params"]])))
+  readlength <- fitpar[[1]][["model.params"]][["readlength"]]
+  minsize <- fitpar[[1]][["model.params"]][["minsize"]]
+  maxsize <- fitpar[[1]][["model.params"]][["maxsize"]]
+  
   stopifnot(all(file.exists(paste0(bam.files, ".bai"))))
   if (!is.null(lib.sizes)) stopifnot(all(names(bam.files) %in% names(lib.sizes)))
   if (is.null(lib.sizes)) {
