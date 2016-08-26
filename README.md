@@ -1,7 +1,7 @@
 ## alpine has moved to Bioconductor (8/18/2016)
 
 Furthermore, the version here is already out-of-date. The version at 
-Bioconductor includes a much simplified interface.
+Bioconductor has a simplified interface.
 
 I will still use the GitHub Issues tracker for new feature ideas &
 TODOs, but the new website for alpine is:
