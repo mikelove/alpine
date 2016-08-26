@@ -4,7 +4,7 @@
 \alias{estimateAbundance}
 \title{Estimate bias-corrected transcript abundances (FPKM)}
 \usage{
-estimateAbundance(transcripts, bam.files, fitpar, genome, models,
+estimateAbundance(transcripts, bam.files, fitpar, genome, model.names,
   subset = TRUE, niter = 100, lib.sizes = NULL, optim = FALSE,
   custom.features = NULL)
 }
@@ -18,8 +18,11 @@ For a single-isoform gene, just wrap the exons in \code{GRangesList()}}
 
 \item{genome}{a BSGenome object}
 
-\item{models}{a list of lists describing the bias models,
-see \link{fitBiasModels} and vignette}
+\item{model.names}{a character vector of the bias models to use.
+These should have already been specified when calling \link{fitBiasModels}.
+Four exceptions are models that use none, one or both of the offsets,
+and these are called with:
+\code{"null"}, \code{"fraglen"}, \code{"vlmm"}, or \code{"fraglen.vlmm"}.}
 
 \item{subset}{logical, whether to downsample the non-observed fragments. Default is TRUE}
 
@@ -71,13 +74,8 @@ export(gap, con=bam.file)
 data(preprocessedData)
 library(GenomicRanges)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
-models <- list(
- "GC"=list(formula="count~
- ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
- ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
- 0",
- offset=c("fraglen"))
-)
+
+model.names <- c("fraglen","GC")
 
 txs <- txdf.theta$tx_id[txdf.theta$gene_id == "ENSG00000198918"]
 
@@ -85,7 +83,7 @@ res <- estimateAbundance(transcripts=ebt.theta[txs],
                          bam.files=bam.file,
                          fitpar=fitpar.small,
                          genome=Hsapiens,
-                         models=models)
+                         model.names=model.names)
 
 }
 

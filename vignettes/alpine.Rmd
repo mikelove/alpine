@@ -137,7 +137,7 @@ for a real analysis we would suggest using the minimum and maximum
 of the quantiles computed above across all samples (the minimum of the
 lower quantiles and the maximum of the upper quantiles).
 
-```{r}
+```{r message=FALSE}
 library(alpine)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
 readlength <- 75 
@@ -162,7 +162,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
                                      gc.str=FALSE)
                     })
 })
-object.size(fragtypes)/1e6
+print(object.size(fragtypes), units="auto")
 ```
 
 We can examine the information for a single gene:
@@ -203,33 +203,35 @@ details in how R formula make copies of objects from the environment.
 
 ```{r}
 models <- list(
-  "GC" = list(formula = "count ~
-  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
-  gene",
-  offset=c("fraglen")),
-  "all" = list(formula = "count ~
-  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
-  gene",
-  offset=c("fraglen","vlmm"))
+  "GC" = list(
+    formula = "count ~ ns(gc,knots=gc.knots,Boundary.knots=gc.bk) + ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) + gene",
+    offset=c("fraglen")
+  ),
+  "all" = list(
+    formula = "count ~ ns(gc,knots=gc.knots,Boundary.knots=gc.bk) + ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) + gene",
+    offset=c("fraglen","vlmm")
+  )
 )
 ```
 
 Here we fit one bias model, `GC`, using fragment length, fragment GC
-content, relative position,
-and a term for differences in expression across the genes (`+ gene`).
-It is required if a formula is provided that it end with `+ gene`
-to account for differences in base expression levels while
-fitting the bias parameters. 
+content, relative position, and a term for differences in expression
+across the genes (`+ gene`).
 
-We fit another bias model, `all`, with all the terms of the
-first but additionally with read start bias (encoded by a Variable
-Length Markov Model, or VLMM).  The knots and boundary knots for GC
-content (`gc`) and relative position (`relpos`) splines can be customized
-using arguments to the *fitBiasModels* function.
-The returned object, `fitpar`, stores the information as
-a list of fitted parameters across samples.
+We fit another bias model, `all`, with all the terms of the first but
+additionally with read start bias (encoded by a Variable Length Markov
+Model, or VLMM).
+
+**Note:** It is required if a formula is provided that it end with `+
+gene` to account for differences in base expression levels while
+fitting the bias parameters.
+
+The knots and boundary knots for GC content (`gc`) and relative
+position (`relpos`) splines have reasonable default values, but they
+can be customized using arguments to the *fitBiasModels* function.
+
+The returned object, `fitpar`, stores the information as a list of
+fitted parameters across samples.
 
 ```{r fitBiasModels}
 system.time({
@@ -244,14 +246,17 @@ fitpar <- lapply(bam.files, function(bf) {
                                  maxsize=maxsize)
                  })
 })
-fitpar.small <- fitpar # save this as `fitpar.small` for examples
+# this object saved was 'fitpar.small' for examples in alpine man pages
+# fitpar.small <- fitpar 
 ```
 
 ## Visually exploring the bias parameters
 
 Note that with more basepairs between `minsize` and `maxsize` and with
 more genes used for estimation, the bias parameters would be more
-precise. As estimated here, they have high variance from too few
+precise. As estimated here, the curves look a bit wobbly. Compare to
+the curves that are fit in the *alpine* paper (see `citation("alpine")`).
+The estimated spline coefficients have high variance from too few
 observations (paired-end fragments) across too few genes.
 
 First we set a palette to distinguish between samples
@@ -322,19 +327,14 @@ txdf.theta <- txdf[txdf$gene_id %in% genes.theta,]
 ebt.theta <- ebt0[txdf.theta$tx_id]
 ```
 
-We specify a set of models. Any formula used here must be equal to
-those used in a fitted model of the same name, except `+ gene` is
-replaced with `+ 0`.
+Next we specify the set of models we want to use, referring back by
+name to the models that were fit in the previous step. Additionally, 
+we can include any of the following models: `null`, `fraglen`, `vlmm`, 
+or `fraglen.vlmm` which are the four models that can be fit using only
+offsets (none, either or both of the offsets).
 
 ```{r}
-models <- list(
-  "null"=list(formula=NULL, offset=NULL),
-  "GC"=list(formula="count~
-  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
-  0",
-  offset=c("fraglen"))
-  )
+model.names <- c("null","fraglen.vlmm","GC")
 ```
 
 Here we estimate FPKM-scale abundances for multiple genes and multiple
@@ -351,7 +351,7 @@ res <- lapply(genes.theta, function(gene.name) {
                            bam.files=bam.files,
                            fitpar=fitpar,
                            genome=Hsapiens,
-                           models=models)
+                           model.names=model.names)
        })
 })
 ```
@@ -399,7 +399,7 @@ very large abundance estimates for a minority of transcripts.
 norm.mat <- normalizeDESeq(mat, cutoff=0.1)
 ```
 
-## Simulating using empirically estimated GC bias
+## Simulating RNA-seq data with empirical GC bias
 
 The fragment GC bias which *alpine* estimates can be used in
 downstream simulations, for example in the 
@@ -433,24 +433,11 @@ In the *alpine* paper, it was shown that models incorporating fragment
 GC bias can be a better predictor of test set RNA-seq fragment
 coverage, compared to models incorporating read start bias. Here we
 show how to predict fragment coverage for a single-isoform gene using
-a variety of fitted bias models. The models involving formula need to
-have the exact same name and form as a fitted model in `fitpar`.
+a variety of fitted bias models. As with *estimateAbundace*, the
+model need to refer back to models fit using *fitBiasModels*.
 
 ```{r}
-pred.models <- list(
-  "fraglen" = list(formula=NULL, offset=c("fraglen")),
-  "readstart" = list(formula=NULL, offset=c("fraglen","vlmm")),
-  "GC" = list(formula = "count ~
-  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
-  0",
-  offset=c("fraglen")),
-  "all" = list(formula = "count ~
-  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
-  0",
-  offset=c("fraglen","vlmm"))
-)
+model.names <- c("fraglen","fraglen.vlmm","GC","all")
 ```
 
 The following function computes the predicted coverage for one
@@ -467,7 +454,7 @@ system.time({
                               bam.files=bam.files["ERR188204"],
                               fitpar=fitpar,
                               genome=Hsapiens,
-                              models=pred.models)
+                              model.names=model.names)
 })
 ```
 
@@ -478,13 +465,13 @@ samples:
 palette(brewer.pal(9, "Set1"))
 frag.cov <- pred.cov[["ERR188204"]][["frag.cov"]]
 plot(frag.cov, type="l", lwd=3, ylim=c(0,max(frag.cov)*1.5))
-for (i in seq_along(pred.models)) {
-  m <- names(pred.models)[i]
+for (i in seq_along(model.names)) {
+  m <- model.names[i]
   pred <- pred.cov[["ERR188204"]][["pred.cov"]][[m]]
   lines(pred, col=i, lwd=3)
 }
-legend("topright", legend=c("observed",names(pred.models)),
-       col=c("black",seq_along(pred.models)), lwd=3)
+legend("topright", legend=c("observed",model.names),
+       col=c("black",seq_along(model.names)), lwd=3)
 ```
 
 ## Session information

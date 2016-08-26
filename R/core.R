@@ -311,7 +311,7 @@ getLogLambda <- function(fragtypes, models, modeltype, fitpar, bamname) {
 
   # which formula to use
   f <- models[[modeltype]]$formula
-  
+
   offset <- numeric(nrow(fragtypes))
   if ("fraglen" %in% models[[modeltype]]$offset) {
     # message("-- fragment length correction")
@@ -341,3 +341,23 @@ getLogLambda <- function(fragtypes, models, modeltype, fitpar, bamname) {
   if (!all(is.finite(log.lambda))) stop("log.lambda is not finite")
   log.lambda
 }
+namesToModels <- function(model.names, fitpar) {
+  # create the model.bank
+  model.bank <- c(fitpar[[1]][["models"]],
+                  list("null"=list(formula=NULL, offset=NULL),
+                       "fraglen"=list(formula=NULL, offset="fraglen"),
+                       "vlmm"=list(formula=NULL, offset="vlmm"),
+                       "fraglen.vlmm"=list(formula=NULL, offset=c("fraglen","vlmm"))))
+  models <- model.bank[model.names]
+  # replace '+ gene' with '+ 0' in formula
+  for (m in model.names) {
+    if (!is.null(models[[m]]$formula)) {
+      if (!grepl("\\+ gene$",models[[m]]$formula)) {
+        stop("was expecting '+ gene' to be at the end of the formula string from fitpar")
+      }
+      models[[m]]$formula <- sub("\\+ gene$","\\+ 0",models[[m]]$formula)
+    }
+  }
+  models
+}
+

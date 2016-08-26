@@ -19,6 +19,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
                                      minsize, maxsize)
 })
 
+###################################################
 # check model missing '+ gene'
 models <- list(
   "GC"=list(formula="count ~ ns(gc,knots=gc.knots,Boundary.knots=gc.bk)",
@@ -49,21 +50,46 @@ fitpar <- fitBiasModels(
   gc.knots=seq(from=.3,to=.6,length=5), gc.bk=c(0,1)
 )
 plotGC(fitpar, model="GC")
+###################################################
 
-# test estimate abundances
+# check estimate abundances
 models <- list(
   "GC"=list(formula="count ~ ns(gc,knots=gc.knots,Boundary.knots=gc.bk) + gene",
             offset=c("fraglen","vlmm"))
 )
-fitpar <- fitBiasModels(
-  genes=ebt.fit[gene.names],bam.file=bam.file,fragtypes=fragtypes,genome=Hsapiens,
-  models=models,readlength=readlength,minsize=minsize,maxsize=maxsize
+fitpar <- list(
+  ERR188088 = fitBiasModels(
+    genes=ebt.fit[gene.names],bam.file=bam.file,fragtypes=fragtypes,genome=Hsapiens,
+    models=models,readlength=readlength,minsize=minsize,maxsize=maxsize
+  )
 )
-models <- list("fraglen"="fraglen",
-               "readstart"=c("fraglen","vlmm"),
-               "GC"="GC")
-## res <- estimateAbundance(transcripts=ebt.theta[txs],
-##                          bam.files=bam.file,
-##                          fitpar=fitpar.small,
-##                          genome=Hsapiens,
-##                          models=models)
+# specify models using a character vector 
+model.names <- c("fraglen","fraglen.vlmm","GC")
+
+txs <- txdf.theta$tx_id[txdf.theta$gene_id == "ENSG00000198918"]
+
+res <- estimateAbundance(transcripts=ebt.theta[txs],
+                         bam.files=bam.file,
+                         fitpar=fitpar,
+                         genome=Hsapiens,
+                         model.names=model.names)
+
+###
+
+# check predict coverage
+pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000379660"]],
+                            bam.files=bam.file,
+                            fitpar=fitpar.small,
+                            genome=Hsapiens,
+                            model.names=model.names)
+
+# plot
+frag.cov <- pred.cov[["ERR188088"]][["frag.cov"]]
+plot(frag.cov, type="l", lwd=3, ylim=c(0,max(frag.cov)*1.5))
+for (i in seq_along(model.names)) {
+  m <- model.names[i]
+  pred <- pred.cov[["ERR188088"]][["pred.cov"]][[m]]
+  lines(pred/mean(pred)*mean(frag.cov), col=i+1, lwd=3)
+}
+legend("topright", legend=c("observed",model.names),
+       col=seq_len(length(model.names)+1), lwd=3)

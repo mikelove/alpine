@@ -94,8 +94,7 @@
 #'                                      minsize, maxsize)
 #' })
 #' models <- list(
-#'   "GC" = list(formula = "count ~ ns(gc,knots=gc.knots,
-#'                 Boundary.knots=gc.bk) + gene",
+#'   "GC" = list(formula = "count ~ ns(gc,knots=gc.knots, Boundary.knots=gc.bk) + gene",
 #'               offset=c("fraglen","vlmm"))
 #' )
 #' 
@@ -128,7 +127,7 @@ fitBiasModels <- function(genes, bam.file, fragtypes, genome,
   for (m in models) {
     if (!is.null(m$formula)) {
       stopifnot(is.character(m$formula))
-      if (!grepl("+ gene$",models$GC$formula)) {
+      if (!grepl("+ gene$",m$formula)) {
         stop("'+ gene' needs to be at the end of the formula string")
       }
     }

@@ -1,3 +1,11 @@
+CHANGES IN VERSION 0.99.6
+-------------------------
+
+    o Change estimateAbundance() and predictCoverage() interface
+      such that model.names is provided instead of models, using
+      a simple character vector. The gene expression term '+ gene'
+      is taken care of internally.
+
 CHANGES IN VERSION 0.99.5
 -------------------------
 

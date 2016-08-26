@@ -103,8 +103,7 @@ fragtypes <- lapply(gene.names, function(gene.name) {
                                      minsize, maxsize)
 })
 models <- list(
-  "GC" = list(formula = "count ~ ns(gc,knots=gc.knots,
-                Boundary.knots=gc.bk) + gene",
+  "GC" = list(formula = "count ~ ns(gc,knots=gc.knots, Boundary.knots=gc.bk) + gene",
               offset=c("fraglen","vlmm"))
 )
 

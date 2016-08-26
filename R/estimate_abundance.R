@@ -10,8 +10,11 @@
 #' @param bam.files a named vector pointing to the indexed BAM files
 #' @param fitpar the output of \link{fitBiasModels}
 #' @param genome a BSGenome object
-#' @param models a list of lists describing the bias models,
-#' see \link{fitBiasModels} and vignette
+#' @param model.names a character vector of the bias models to use.
+#' These should have already been specified when calling \link{fitBiasModels}.
+#' Four exceptions are models that use none, one or both of the offsets,
+#' and these are called with:
+#' \code{"null"}, \code{"fraglen"}, \code{"vlmm"}, or \code{"fraglen.vlmm"}.
 #' @param subset logical, whether to downsample the non-observed fragments. Default is TRUE
 #' @param niter the number of EM iterations. Default is 100.
 #' @param lib.sizes a named vector of library sizes to use in calculating the FPKM.
@@ -51,27 +54,22 @@
 #' data(preprocessedData)
 #' library(GenomicRanges)
 #' library(BSgenome.Hsapiens.NCBI.GRCh38)
-#' models <- list(
-#'  "GC"=list(formula="count~
-#'  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-#'  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
-#'  0",
-#'  offset=c("fraglen"))
-#' )
-#'
+#' 
+#' model.names <- c("fraglen","GC")
+#' 
 #' txs <- txdf.theta$tx_id[txdf.theta$gene_id == "ENSG00000198918"]
 #' 
 #' res <- estimateAbundance(transcripts=ebt.theta[txs],
 #'                          bam.files=bam.file,
 #'                          fitpar=fitpar.small,
 #'                          genome=Hsapiens,
-#'                          models=models)
+#'                          model.names=model.names)
 #' 
 #' @export
-estimateAbundance <- function(transcripts, bam.files, fitpar, genome, models, 
+estimateAbundance <- function(transcripts, bam.files, fitpar, genome, model.names, 
                               subset=TRUE, niter=100, lib.sizes=NULL, optim=FALSE,
                               custom.features=NULL) {
-  
+
   stopifnot(is(transcripts, "GRangesList"))
   stopifnot(length(transcripts) >= 1)
   singleiso <- length(transcripts) == 1
@@ -89,6 +87,10 @@ estimateAbundance <- function(transcripts, bam.files, fitpar, genome, models,
   readlength <- fitpar[[1]][["model.params"]][["readlength"]]
   minsize <- fitpar[[1]][["model.params"]][["minsize"]]
   maxsize <- fitpar[[1]][["model.params"]][["maxsize"]]
+
+  # take model names and fitpar models and make the
+  # models suitable for bias calculation
+  models <- namesToModels(model.names, fitpar)
   
   stopifnot(all(file.exists(paste0(bam.files, ".bai"))))
   if (!is.null(lib.sizes)) stopifnot(all(names(bam.files) %in% names(lib.sizes)))
@@ -108,8 +110,6 @@ estimateAbundance <- function(transcripts, bam.files, fitpar, genome, models,
   if (min(w) <= maxsize) {
     maxsize <- min(w)
   }
-  
-  # TODO: come up with a check on whether models is compatible with fitpar
   
   # this is a list of fragment types for each transcript
   st <- system.time({
@@ -164,7 +164,6 @@ estimateAbundance <- function(transcripts, bam.files, fitpar, genome, models,
     }
 
     # report 0 output for all models if all txs have 0 count
-    model.names <- names(models)
     names(model.names) <- model.names
     nms.tx <- names(transcripts)
     if (outputZero) {
@@ -258,6 +257,7 @@ estimateAbundance <- function(transcripts, bam.files, fitpar, genome, models,
       } else {
         # TODO: in addition to the interval of considered lengths L
         # account for the triangle of fragments not in the count matrix
+        # (analagous to effective length)
         N <- lib.sizes[bamname] / (1e9 * (maxsize - minsize))
       }
       
