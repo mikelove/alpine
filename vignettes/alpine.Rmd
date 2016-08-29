@@ -434,7 +434,7 @@ GC bias can be a better predictor of test set RNA-seq fragment
 coverage, compared to models incorporating read start bias. Here we
 show how to predict fragment coverage for a single-isoform gene using
 a variety of fitted bias models. As with *estimateAbundace*, the
-model need to refer back to models fit using *fitBiasModels*.
+model names need to refer back to models fit using *fitBiasModels*.
 
 ```{r}
 model.names <- c("fraglen","fraglen.vlmm","GC","all")
@@ -459,7 +459,7 @@ system.time({
 ```
 
 We can plot the observed and predicted coverage for one of the
-samples: 
+genes: 
 
 ```{r}
 palette(brewer.pal(9, "Set1"))
