@@ -118,14 +118,19 @@ fitpar <- fitBiasModels(genes=ebt.fit[gene.names],
 
 }
 \references{
-The complete bias model including fragment sequence bias:
+The complete bias model including fragment sequence bias
+is described in detail in the Supplemental Note of the
+following publication:
 
 Love, M.I., Hogenesch, J.B., and Irizarry, R.A.,
 Modeling of RNA-seq fragment sequence bias reduces
 systematic errors in transcript abundance estimation.
-bioRxiv (2015) doi: 10.1101/025767
+Nature Biotechnologyh (2016) doi: 10.1038/nbt.3682
 
-The read start VLMM:
+The read start variable length Markov model (VLMM) for
+addressing bias introduced by random hexamer priming
+was introduced in the following publication (the sequence
+bias model used in Cufflinks):
 
 Roberts, A., Trapnell, C., Donaghey, J., Rinn, J.L., and Pachter, L.,
 Improving RNA-Seq expression estimates by correcting for fragment bias.

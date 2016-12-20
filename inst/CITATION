@@ -1,0 +1,15 @@
+citEntry(entry="article",
+         title = "Modeling of RNA-seq fragment sequence bias reduces systematic errors in transcript abundance estimation",
+         author = personList( as.person("Michael I. Love"),
+                              as.person("John B. Hogenesch"),
+                              as.person("Rafael A. Irizarry")),
+         year = 2016,
+         journal = "Nature Biotechnology",
+         doi = "10.1038/nbt.3682",
+         volume = 34,
+         issue = 12,
+         pages = 1287-1291,
+         textVersion =
+         paste("Love, M.I., Hogenesch, J.B., Irizarry, R.A.",
+               "Modeling of RNA-seq fragment sequence bias reduces systematic errors in transcript abundance estimation",
+                "Nature Biotechnology 34(12):1287-1291 (2016)" ) )

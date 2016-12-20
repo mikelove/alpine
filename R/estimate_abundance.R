@@ -37,6 +37,25 @@
 #' compatible with any of the isoforms in \code{transcripts}
 #' }
 #'
+#' @references
+#'
+#' The model describing how bias estimates are used to
+#' estimate bias-corrected abundances is described in
+#' the Supplemental Note of the following publication:
+#'
+#' Love, M.I., Hogenesch, J.B., and Irizarry, R.A.,
+#' Modeling of RNA-seq fragment sequence bias reduces
+#' systematic errors in transcript abundance estimation.
+#' Nature Biotechnologyh (2016) doi: 10.1038/nbt.3682
+#'
+#' The likelihood formulation and EM algorithm
+#' for finding the maximum likelihood estimate for abundances
+#' follows this publication:
+#'
+#' Salzman, J., Jiang, H., and Wong, W.H.,
+#' Statistical Modeling of RNA-Seq Data.
+#' Statistical Science (2011) doi: 10.1214/10-STS343
+#' 
 #' @examples
 #'
 #' # see vignette for a more realistic example

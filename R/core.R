@@ -44,10 +44,10 @@
 #'
 #' @references
 #'
-#' Michael I Love, John B Hogenesch, Rafael A Irizarry:
+#' Love, M.I., Hogenesch, J.B., and Irizarry, R.A.,
 #' Modeling of RNA-seq fragment sequence bias reduces
-#' systematic errors in transcript abundance estimation
-#' Posted to bioRxiv August 2015, \url{http://biorxiv.org/content/early/2015/08/28/025767}
+#' systematic errors in transcript abundance estimation.
+#' Nature Biotechnologyh (2016) doi: 10.1038/nbt.3682
 #'
 #' @author Michael Love
 #'
