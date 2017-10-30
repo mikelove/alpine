@@ -1,6 +1,6 @@
 Package: alpine
 Title: alpine
-Version: 1.4.0
+Version: 1.5.0
 Author: Michael Love, Rafael Irizarry
 Maintainer: Michael Love <michaelisaiahlove@gmail.com>
 Description: Fragment sequence bias modeling and correction for RNA-seq
