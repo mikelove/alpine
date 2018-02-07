@@ -42,7 +42,7 @@ if you are working with your own BAM files.
 
 ```{r message=FALSE}
 library(rtracklayer)
-dir <- system.file(package="alpineData", "extdata")
+dir <- tempdir()
 for (sample.name in metadata$Title) {
   # the reads are accessed with functions named
   # after the sample name. the following line calls

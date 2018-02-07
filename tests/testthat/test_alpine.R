@@ -4,7 +4,7 @@ test_that("alpine works", {
   library(GenomicAlignments)
   library(rtracklayer)
   gap <- ERR188088()
-  dir <- system.file(package="alpineData", "extdata")
+  dir <- tempdir()
   bam.file <- c("ERR188088" = file.path(dir,"ERR188088.bam"))
   export(gap, con=bam.file)
   library(GenomicRanges)
