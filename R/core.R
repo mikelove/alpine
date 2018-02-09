@@ -192,11 +192,8 @@ endRight <- function(x) {
 mapTxToGenome <- function(exons) {
   strand <- as.character(strand(exons)[1])
   stopifnot(all(exons$exon_rank == seq_along(exons)))
-  bases <- if (strand == "+") {
-    do.call(c,lapply(exons, function(exon) start(exon):end(exon)))
-  } else if (strand == "-") {
-    do.call(c,lapply(exons, function(exon) end(exon):start(exon)))    
-  }
+  bases <- S4Vectors:::fancy_mseq(width(exons), start(exons)-1L,
+                                  rev=(strand == "-"))
   data.frame(tx=seq_along(bases),
              genome=bases,
              exon_rank=rep(exons$exon_rank, width(exons)))
