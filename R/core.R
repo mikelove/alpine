@@ -14,8 +14,8 @@
 #' \enumerate{
 #' \item \link{buildFragtypes} - build out features for fragment types from exons of a single gene (GRanges)
 #' \item \link{fitBiasModels} - fit parameters for one or more bias models over a set of ~100 medium to highly expressed single isoform genes (GRangesList)
-#' \item \link{estimateTheta} - given a set of genome alignments (BAM files) and a set of isoforms of a gene (GRangesList), estimate the transcript abundances for these isoforms (FPKM) for various bias models
-#' \item \link{extractAlpine} - given a list of output from \code{estimateTheta}, compile an FPKM matrix across transcripts and samples
+#' \item \link{estimateAbundance} - given a set of genome alignments (BAM files) and a set of isoforms of a gene (GRangesList), estimate the transcript abundances for these isoforms (FPKM) for various bias models
+#' \item \link{extractAlpine} - given a list of output from \code{estimateAbundance}, compile an FPKM matrix across transcripts and samples
 #' \item \link{predictCoverage} - given the exons of a single gene (GRanges) predict the coverage for a set of samples given fitted bias parameters and compute the observed coverage
 #' }
 #'
@@ -44,10 +44,10 @@
 #'
 #' @references
 #'
-#' Michael I Love, John B Hogenesch, Rafael A Irizarry:
+#' Love, M.I., Hogenesch, J.B., and Irizarry, R.A.,
 #' Modeling of RNA-seq fragment sequence bias reduces
-#' systematic errors in transcript abundance estimation
-#' Posted to bioRxiv August 2015, \url{http://biorxiv.org/content/early/2015/08/28/025767}
+#' systematic errors in transcript abundance estimation.
+#' Nature Biotechnologyh (2016) doi: 10.1038/nbt.3682
 #'
 #' @author Michael Love
 #'
@@ -59,6 +59,7 @@
 #' @importFrom GenomicFeatures mapToTranscripts
 #' @importFrom graphics abline legend lines par plot points segments
 #' @importFrom stats density dpois formula glm model.matrix poisson
+#' @importFrom methods as is
 #' @importFrom GenomeInfoDb seqlevels keepSeqlevels
 #' @importFrom S4Vectors DataFrame queryHits subjectHits
 #' @import Biostrings IRanges GenomicRanges GenomicAlignments Rsamtools SummarizedExperiment
@@ -74,7 +75,7 @@ NULL
 #' This function constructs a DataFrame of fragment features used for
 #' bias modeling, with one row for every potential fragment type that could
 #' arise from a transcript. The output of this function is used by
-#' \link{fitBiasModels}, and this function is used inside \link{estimateTheta}
+#' \link{fitBiasModels}, and this function is used inside \link{estimateAbundance}
 #' in order to model the bias affecting different fragments across isoforms
 #' of a gene.
 #' 
@@ -191,11 +192,8 @@ endRight <- function(x) {
 mapTxToGenome <- function(exons) {
   strand <- as.character(strand(exons)[1])
   stopifnot(all(exons$exon_rank == seq_along(exons)))
-  bases <- if (strand == "+") {
-    do.call(c,lapply(exons, function(exon) start(exon):end(exon)))
-  } else if (strand == "-") {
-    do.call(c,lapply(exons, function(exon) end(exon):start(exon)))    
-  }
+  bases <- S4Vectors:::fancy_mseq(width(exons), start(exons)-1L,
+                                  rev=(strand == "-"))
   data.frame(tx=seq_along(bases),
              genome=bases,
              exon_rank=rep(exons$exon_rank, width(exons)))
@@ -297,8 +295,20 @@ getFPBP <- function(genes, bam.file) {
   out
 }
 getLogLambda <- function(fragtypes, models, modeltype, fitpar, bamname) {
-  # knots and boundary knots should come from the environ where the formula were defined
+
+  # knots and boundary knots need to come from the fitted parameters object
+  # (just use the first sample, knots will be the same across samples)
+  model.params <- fitpar[[1]][["model.params"]]
+  stopifnot(!is.null(model.params))
+  
+  gc.knots <- model.params$gc.knots
+  gc.bk <- model.params$gc.bk
+  relpos.knots <- model.params$relpos.knots
+  relpos.bk <- model.params$relpos.bk
+
+  # which formula to use
   f <- models[[modeltype]]$formula
+
   offset <- numeric(nrow(fragtypes))
   if ("fraglen" %in% models[[modeltype]]$offset) {
     # message("-- fragment length correction")
@@ -310,10 +320,6 @@ getLogLambda <- function(fragtypes, models, modeltype, fitpar, bamname) {
   }
   if (!is.null(f)) {
     stopifnot(modeltype %in% names(fitpar[[bamname]][["coefs"]]))
-    gc.knots <- seq(from=.4, to=.6, length=3)
-    gc.bk <- c(0,1)
-    relpos.knots <- seq(from=.25, to=.75, length=3)
-    relpos.bk <- c(0,1)
     # assume: no intercept in formula
     # sparse.model.matrix produces different column names, so don't use
     # mm.big <- sparse.model.matrix(f, data=fragtypes)
@@ -332,3 +338,23 @@ getLogLambda <- function(fragtypes, models, modeltype, fitpar, bamname) {
   if (!all(is.finite(log.lambda))) stop("log.lambda is not finite")
   log.lambda
 }
+namesToModels <- function(model.names, fitpar) {
+  # create the model.bank
+  model.bank <- c(fitpar[[1]][["models"]],
+                  list("null"=list(formula=NULL, offset=NULL),
+                       "fraglen"=list(formula=NULL, offset="fraglen"),
+                       "vlmm"=list(formula=NULL, offset="vlmm"),
+                       "fraglen.vlmm"=list(formula=NULL, offset=c("fraglen","vlmm"))))
+  models <- model.bank[model.names]
+  # replace '+ gene' with '+ 0' in formula
+  for (m in model.names) {
+    if (!is.null(models[[m]]$formula)) {
+      if (!grepl("\\+ gene$",models[[m]]$formula)) {
+        stop("was expecting '+ gene' to be at the end of the formula string from fitpar")
+      }
+      models[[m]]$formula <- sub("\\+ gene$","\\+ 0",models[[m]]$formula)
+    }
+  }
+  models
+}
+

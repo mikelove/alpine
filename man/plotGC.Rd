@@ -4,8 +4,7 @@
 \alias{plotGC}
 \title{Plot the fragment GC bias over samples}
 \usage{
-plotGC(fitpar, model, col, lty, ylim, knots = c(0.4, 0.5, 0.6), bk = c(0,
-  1), gc.range = NULL, return.type = 0)
+plotGC(fitpar, model, col, lty, ylim, gc.range = NULL, return.type = 0)
 }
 \arguments{
 \item{fitpar}{a list of the output of \link{fitBiasModels} over samples}
@@ -17,10 +16,6 @@ plotGC(fitpar, model, col, lty, ylim, knots = c(0.4, 0.5, 0.6), bk = c(0,
 \item{lty}{a vector of line types}
 
 \item{ylim}{the y limits for the plot}
-
-\item{knots}{the knots for the spline}
-
-\item{bk}{the boundary knots for the spline}
 
 \item{gc.range}{a numeric of length two,
 the range of the fragment GC content. By default,

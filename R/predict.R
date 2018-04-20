@@ -12,10 +12,8 @@
 #' @param bam.files a character string pointing to indexed BAM files
 #' @param fitpar the output of running \link{fitBiasModels}
 #' @param genome a BSgenome object
-#' @param models a list describing the models, see \link{fitBiasModels}
-#' @param readlength the read length
-#' @param minsize the minimum fragment length to model
-#' @param maxsize the maximum fragment length to model
+#' @param model.names a character vector listing the models,
+#' see same argument in \link{estimateAbundance}
 #'
 #' @return a list with elements frag.cov, the observed fragment coverage
 #' from the \code{bam.files} and pred.cov, a list with the predicted
@@ -35,58 +33,50 @@
 #' 
 #' data(preprocessedData)
 #' library(BSgenome.Hsapiens.NCBI.GRCh38)
-#' pred.models <- list(
-#'   "fraglen" = list(formula=NULL, offset=c("fraglen")),
-#'   "readstart" = list(formula=NULL, offset=c("fraglen","vlmm")),
-#'   "GC" = list(formula = "count ~
-#'   ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-#'   ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
-#'   0",
-#'   offset=c("fraglen")),
-#'   "all" = list(formula = "count ~
-#'   ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-#'   ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
-#'   0",
-#'   offset=c("fraglen","vlmm"))
-#' )
-#'
-#' readlength <- 75
-#' minsize <- 125 # see vignette how to choose
-#' maxsize <- 175 # see vignette how to choose
+#' 
+#' model.names <- c("fraglen","fraglen.vlmm","GC","all")
 #' 
 #' pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000379660"]],
 #'                             bam.files=bam.file,
 #'                             fitpar=fitpar.small,
 #'                             genome=Hsapiens,
-#'                             models=pred.models,
-#'                             readlength=readlength,
-#'                             minsize=minsize,
-#'                             maxsize=maxsize)
+#'                             model.names=model.names)
+#' 
 #' # plot the coverage:
-#' # note that, because [125,175] does not cover the
-#' # fragment width distribution, the predicted curves
+#' # note that, because [125,175] bp range specified in fitpar.small
+#' # does not cover the fragment width distribution, the predicted curves
 #' # will underestimate the observed. we correct here post-hoc
 #' 
 #' frag.cov <- pred.cov[["ERR188088"]][["frag.cov"]]
 #' plot(frag.cov, type="l", lwd=3, ylim=c(0,max(frag.cov)*1.5))
-#' for (i in seq_along(pred.models)) {
-#'   m <- names(pred.models)[i]
+#' for (i in seq_along(model.names)) {
+#'   m <- model.names[i]
 #'   pred <- pred.cov[["ERR188088"]][["pred.cov"]][[m]]
 #'   lines(pred/mean(pred)*mean(frag.cov), col=i+1, lwd=3)
 #' }
-#' legend("topright", legend=c("observed",names(pred.models)),
-#'        col=seq_len(length(pred.models)+1), lwd=3)
+#' legend("topright", legend=c("observed",model.names),
+#'        col=seq_len(length(model.names)+1), lwd=3)
 #' 
 #' @export
-predictCoverage <- function(gene, bam.files, fitpar, genome,
-                            models, readlength, minsize, maxsize) {
+predictCoverage <- function(gene, bam.files, fitpar, genome, model.names) {
   stopifnot(is(gene, "GRanges"))
-  stopifnot(all(sapply(models, function(x) names(x) %in% c("formula","offset"))))
   stopifnot(!is.null(fitpar))
   stopifnot(all(names(bam.files) %in% names(fitpar)))
   if (is.null(names(bam.files))) {
     names(bam.files) <- seq_along(bam.files)
   }
+
+  # pull out some model parameters
+  stopifnot(all(c("readlength","minsize","maxsize","maxsize") %in%
+                names(fitpar[[1]][["model.params"]])))
+  readlength <- fitpar[[1]][["model.params"]][["readlength"]]
+  minsize <- fitpar[[1]][["model.params"]][["minsize"]]
+  maxsize <- fitpar[[1]][["model.params"]][["maxsize"]]
+
+  # take model names and fitpar models and make the
+  # models suitable for bias calculation
+  models <- namesToModels(model.names, fitpar)
+  
   fragtypes <- buildFragtypes(gene, genome, readlength=readlength,
                               minsize=minsize, maxsize=maxsize)
   res <- list()

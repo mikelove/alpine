@@ -4,8 +4,7 @@
 \alias{predictCoverage}
 \title{Predict coverage for a single-isoform gene}
 \usage{
-predictCoverage(gene, bam.files, fitpar, genome, models, readlength, minsize,
-  maxsize)
+predictCoverage(gene, bam.files, fitpar, genome, model.names)
 }
 \arguments{
 \item{gene}{a GRangesList with the exons of different genes}
@@ -16,13 +15,8 @@ predictCoverage(gene, bam.files, fitpar, genome, models, readlength, minsize,
 
 \item{genome}{a BSgenome object}
 
-\item{models}{a list describing the models, see \link{fitBiasModels}}
-
-\item{readlength}{the read length}
-
-\item{minsize}{the minimum fragment length to model}
-
-\item{maxsize}{the maximum fragment length to model}
+\item{model.names}{a character vector listing the models,
+see same argument in \link{estimateAbundance}}
 }
 \value{
 a list with elements frag.cov, the observed fragment coverage
@@ -53,47 +47,29 @@ export(gap, con=bam.file)
 
 data(preprocessedData)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
-pred.models <- list(
-  "fraglen" = list(formula=NULL, offset=c("fraglen")),
-  "readstart" = list(formula=NULL, offset=c("fraglen","vlmm")),
-  "GC" = list(formula = "count ~
-  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
-  0",
-  offset=c("fraglen")),
-  "all" = list(formula = "count ~
-  ns(gc,knots=gc.knots,Boundary.knots=gc.bk) +
-  ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) +
-  0",
-  offset=c("fraglen","vlmm"))
-)
 
-readlength <- 75
-minsize <- 125 # see vignette how to choose
-maxsize <- 175 # see vignette how to choose
+model.names <- c("fraglen","fraglen.vlmm","GC","all")
 
 pred.cov <- predictCoverage(gene=ebt.fit[["ENST00000379660"]],
                             bam.files=bam.file,
                             fitpar=fitpar.small,
                             genome=Hsapiens,
-                            models=pred.models,
-                            readlength=readlength,
-                            minsize=minsize,
-                            maxsize=maxsize)
+                            model.names=model.names)
+
 # plot the coverage:
-# note that, because [125,175] does not cover the
-# fragment width distribution, the predicted curves
+# note that, because [125,175] bp range specified in fitpar.small
+# does not cover the fragment width distribution, the predicted curves
 # will underestimate the observed. we correct here post-hoc
 
 frag.cov <- pred.cov[["ERR188088"]][["frag.cov"]]
 plot(frag.cov, type="l", lwd=3, ylim=c(0,max(frag.cov)*1.5))
-for (i in seq_along(pred.models)) {
-  m <- names(pred.models)[i]
+for (i in seq_along(model.names)) {
+  m <- model.names[i]
   pred <- pred.cov[["ERR188088"]][["pred.cov"]][[m]]
   lines(pred/mean(pred)*mean(frag.cov), col=i+1, lwd=3)
 }
-legend("topright", legend=c("observed",names(pred.models)),
-       col=seq_len(length(pred.models)+1), lwd=3)
+legend("topright", legend=c("observed",model.names),
+       col=seq_len(length(model.names)+1), lwd=3)
 
 }
 

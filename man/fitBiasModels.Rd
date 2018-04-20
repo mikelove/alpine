@@ -5,7 +5,9 @@
 \title{Fit bias models over single-isoform genes}
 \usage{
 fitBiasModels(genes, bam.file, fragtypes, genome, models, readlength, minsize,
-  maxsize, speedglm = TRUE)
+  maxsize, speedglm = TRUE, gc.knots = seq(from = 0.4, to = 0.6, length =
+  3), gc.bk = c(0, 1), relpos.knots = seq(from = 0.25, to = 0.75, length =
+  3), relpos.bk = c(0, 1))
 }
 \arguments{
 \item{genes}{a GRangesList with the exons of different
@@ -18,10 +20,11 @@ the potential fragment types for the genes named in \code{genes}}
 
 \item{genome}{a BSgenome object}
 
-\item{models}{a list of lists: the outer list describes multiple models
+\item{models}{a list of lists: the outer list describes multiple models.
 each element of the inner list has two elements: \code{formula} and \code{offset}.
 \code{formula} should be a character strings of an R formula
 describing the bias models, e.g. \code{"count ~ ns(gc) + gene"}.
+The end of the string is required to be \code{"+ gene"}.
 \code{offset} should be a character vector
 listing possible bias offsets to be used (\code{"fraglen"} or \code{"vlmm"}).
 Either \code{offset} or \code{formula} can be NULL for a model.
@@ -35,9 +38,17 @@ See vignette for recommendations and details.}
 
 \item{speedglm}{logical, whether to use speedglm to estimate the coefficients.
 Default is TRUE.}
+
+\item{gc.knots}{knots for the GC splines}
+
+\item{gc.bk}{boundary knots for the GC splines}
+
+\item{relpos.knots}{knots for the relative position splines}
+
+\item{relpos.bk}{boundary knots for the relative position splines}
 }
 \value{
-a list with elements: coefs, summary, models,
+a list with elements: coefs, summary, models, model.params,
 and optional offets: fraglen.density, vlmm.fivep,
 and vlmm.threep.
 \itemize{
@@ -45,8 +56,9 @@ and vlmm.threep.
 for the different models that specified formula.
 \item \strong{summary} gives the tables with coefficients, standard
 errors and p-values,
-\item \strong{models} stores the incoming
-\code{models} list,
+\item \strong{models} stores the incoming \code{models} list,
+\item \strong{model.params} stores parameters for the
+models, such as knot locations
 \item \strong{fraglen.density} is a
 estimated density object for the fragment length distribution,
 \item \strong{vlmm.fivep} and \strong{vlmm.threep}
@@ -78,7 +90,7 @@ library(GenomicRanges)
 library(BSgenome.Hsapiens.NCBI.GRCh38)
 data(preprocessedData)
 
-readlength <- 100
+readlength <- 75
 minsize <- 125 # see vignette how to choose
 maxsize <- 175 # see vignette how to choose
 
@@ -91,9 +103,8 @@ fragtypes <- lapply(gene.names, function(gene.name) {
                                      minsize, maxsize)
 })
 models <- list(
-  "GC" = list(formula = "count ~ ns(gc,knots=gc.knots,
-                Boundary.knots=gc.bk) + gene",
-              offset=c("fraglen"))
+  "GC" = list(formula = "count ~ ns(gc,knots=gc.knots, Boundary.knots=gc.bk) + gene",
+              offset=c("fraglen","vlmm"))
 )
 
 fitpar <- fitBiasModels(genes=ebt.fit[gene.names],
@@ -107,14 +118,19 @@ fitpar <- fitBiasModels(genes=ebt.fit[gene.names],
 
 }
 \references{
-The complete bias model including fragment sequence bias:
+The complete bias model including fragment sequence bias
+is described in detail in the Supplemental Note of the
+following publication:
 
 Love, M.I., Hogenesch, J.B., and Irizarry, R.A.,
 Modeling of RNA-seq fragment sequence bias reduces
 systematic errors in transcript abundance estimation.
-bioRxiv (2015) doi: 10.1101/025767
+Nature Biotechnologyh (2016) doi: 10.1038/nbt.3682
 
-The read start VLMM:
+The read start variable length Markov model (VLMM) for
+addressing bias introduced by random hexamer priming
+was introduced in the following publication (the sequence
+bias model used in Cufflinks):
 
 Roberts, A., Trapnell, C., Donaghey, J., Rinn, J.L., and Pachter, L.,
 Improving RNA-Seq expression estimates by correcting for fragment bias.
