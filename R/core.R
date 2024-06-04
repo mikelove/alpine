@@ -9,7 +9,7 @@
 #' un-stranded paired-end RNA-seq data.
 #'
 #' See the package vignette for a detailed workflow.
-#' 
+#'
 #' The main functions in this package are:
 #' \enumerate{
 #' \item \link{buildFragtypes} - build out features for fragment types from exons of a single gene (GRanges)
@@ -32,7 +32,7 @@
 #' \item \link{getFragmentWidths} - return a vector estimated fragment lengths given a set of exons for a single gene (GRanges) and a BAM file
 #' \item \link{getReadLength} - return the read length of the first read across BAM files
 #' }
-#' 
+#'
 #' The plotting functions are:
 #' \enumerate{
 #' \item \link{plotGC} - plot the fragment GC bias curves
@@ -63,7 +63,7 @@
 #' @importFrom GenomeInfoDb seqlevels keepSeqlevels
 #' @importFrom S4Vectors DataFrame queryHits subjectHits
 #' @import Biostrings IRanges GenomicRanges GenomicAlignments Rsamtools SummarizedExperiment
-#' 
+#'
 #' @docType package
 #' @name alpine-package
 #' @aliases alpine-package
@@ -78,7 +78,7 @@ NULL
 #' \link{fitBiasModels}, and this function is used inside \link{estimateAbundance}
 #' in order to model the bias affecting different fragments across isoforms
 #' of a gene.
-#' 
+#'
 #' @param exons a GRanges object with the exons for a single transcript
 #' @param genome a BSgenome object
 #' @param readlength the length of the reads. This doesn't necessarily
@@ -107,10 +107,10 @@ NULL
 #' fragtypes <- buildFragtypes(ebt.fit[["ENST00000624447"]],
 #'                             Hsapiens, readlength,
 #'                             minsize, maxsize)
-#' 
+#'
 #' @export
 buildFragtypes <- function(exons, genome, readlength,
-                           minsize, maxsize, 
+                           minsize, maxsize,
                            gc=TRUE, gc.str=TRUE, vlmm=TRUE) {
   stopifnot(is(exons,"GRanges"))
   stopifnot(is(genome,"BSgenome"))
@@ -118,11 +118,11 @@ buildFragtypes <- function(exons, genome, readlength,
   stopifnot(sum(width(exons)) >= maxsize)
   stopifnot(all(c("exon_rank","exon_id") %in% names(mcols(exons))))
   stopifnot(!any(strand(exons) == "*"))
-  
+
   # these parameters must be fixed, as dictated by fitVLMM()
   npre <- 8
   npost <- 12
-  
+
   map <- mapTxToGenome(exons)
   l <- nrow(map)
   strand <- as.character(strand(exons)[1])
@@ -141,7 +141,7 @@ buildFragtypes <- function(exons, genome, readlength,
     fragtypes$fivep.test <- fragtypes$start - npre >= 1
     fragtypes$fivep <- as(Views(tx.dna, fragtypes$start - ifelse(fragtypes$fivep.test, npre, 0),
                                 fragtypes$start + npost), "DNAStringSet")
-    fragtypes$threep.test <- fragtypes$end + npre <= length(tx.dna) 
+    fragtypes$threep.test <- fragtypes$end + npre <= length(tx.dna)
     fragtypes$threep <- as(Views(tx.dna, fragtypes$end - npost,
                                  fragtypes$end + ifelse(fragtypes$threep.test, npre, 0),),
                            "DNAStringSet")
@@ -192,13 +192,20 @@ endRight <- function(x) {
 mapTxToGenome <- function(exons) {
   strand <- as.character(strand(exons)[1])
   stopifnot(all(exons$exon_rank == seq_along(exons)))
-  
+
   # Hack to replicate `rev` from old S4Vectors:::fancy_mseq
-  froms <- ifelse(strand == "-",
-                  start(exons) + width(exons) - 1L,
-                  start(exons))
-  bys <- 1L*ifelse(strand == "-", -1L, 1L)
-  
+  if(strand == "-"){
+
+    froms <- start(exons) + width(exons) - 1L
+    bys <- -1L
+
+  }else{
+
+    froms <- start(exons)
+    bys <- 1L
+
+  }
+
   bases <- sequence(width(exons), from = froms,
                     by = bys)
 
@@ -308,7 +315,7 @@ getLogLambda <- function(fragtypes, models, modeltype, fitpar, bamname) {
   # (just use the first sample, knots will be the same across samples)
   model.params <- fitpar[[1]][["model.params"]]
   stopifnot(!is.null(model.params))
-  
+
   gc.knots <- model.params$gc.knots
   gc.bk <- model.params$gc.bk
   relpos.knots <- model.params$relpos.knots
