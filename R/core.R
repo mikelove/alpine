@@ -194,10 +194,17 @@ mapTxToGenome <- function(exons) {
   stopifnot(all(exons$exon_rank == seq_along(exons)))
   
   # Hack to replicate `rev` from old S4Vectors:::fancy_mseq
-  froms <- ifelse(strand == "-",
-                  start(exons) + width(exons) - 1L,
-                  start(exons))
-  bys <- 1L*ifelse(strand == "-", -1L, 1L)
+  if(strand == "-"){
+      
+    froms <- start(exons) + width(exons) - 1L
+    bys <- -1L
+                  
+  }else{
+
+    from <- start(exons)
+    bys <- 1L
+
+  }
   
   bases <- sequence(width(exons), from = froms,
                     by = bys)
